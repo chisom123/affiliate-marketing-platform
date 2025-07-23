@@ -118,61 +118,64 @@ const RatingPage = () => {
       alert('Please select a star rating first!');
       return;
     }
-
+  
     setSubmitting(true);
-
+    setError('');
+  
     try {
-      // Generate fingerprint and hash
       const fingerprint = generateFingerprint();
       const fingerprintHash = simpleHash(JSON.stringify(fingerprint));
-
-      // Step 1: Validate with Cloud Function
-      const validateRating = httpsCallable(functions, 'validateRating');
-      await validateRating({ 
+  
+      // Call Cloud Function with timeout
+      const validationPromise = httpsCallable(functions, 'validateRating')({
         affiliateId,
         linkId,
         fingerprintHash,
         ratingValue: rating
       });
-
-      // Step 2: Create rating record
-      const ratingData = {
-        linkId: linkData.id,
-        linkIdString: linkData.linkId,
-        affiliateId,
-        rating,
-        createdAt: serverTimestamp(),
-        fingerprintHash,
-        source: navigator.userAgent.includes('Instagram') ? 'instagram' : 'snapchat',
-        validated: true,
-        earnings: 0.01
-      };
-
-      // Firestore write
-      await addDoc(collection(db, 'ratings'), ratingData);
-
-      // Update counters
-      const batchUpdates = [
-        updateDoc(doc(db, 'rating_links', linkData.id), {
-          totalRatings: increment(1),
-          earnings: increment(0.01),
-          lastRatedAt: serverTimestamp()
-        }),
-        updateDoc(doc(db, 'affiliates', affiliateId), {
-          totalRatings: increment(1),
-          totalEarnings: increment(0.01)
-        })
-      ];
-
-      await Promise.all(batchUpdates);
+  
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Validation timeout')), 10000)
+      );
+  
+      await Promise.race([validationPromise, timeoutPromise]);
+  
+      // Proceed with Firestore writes...
+      const ratingRef = await addDoc(collection(db, 'ratings'), {
+        // ... your rating data
+      });
+  
       setSubmitted(true);
-
+  
     } catch (error) {
-      console.error('Rating submission failed:', error);
-      setError(error.message || 'Failed to submit rating. Please try again later.');
+      let errorMessage = 'Failed to submit rating';
+      
+      // Handle different error types
+      switch (error.code) {
+        case 'permission-denied':
+          errorMessage = 'Please open in Instagram/Snapchat to rate';
+          break;
+        case 'resource-exhausted':
+          errorMessage = 'Rating limit reached (3/hour)';
+          break;
+        case 'invalid-argument':
+          errorMessage = 'Invalid rating data';
+          break;
+        case 'internal':
+          errorMessage = 'Temporary system issue. Please try again.';
+          break;
+        default:
+          if (error.message.includes('timeout')) {
+            errorMessage = 'Request timed out. Check your connection.';
+          }
+      }
+  
+      setError(errorMessage);
+      console.error('Rating error:', error.code, error.message);
+    } finally {
+      setSubmitting(false);
     }
-
-    setSubmitting(false);
   };
 
   if (loading) {
@@ -210,7 +213,20 @@ const RatingPage = () => {
       <div className="error-container">
         <div className="error-icon">!</div>
         <h2>Oops!</h2>
-        <p className="error-message">{error}</p>
+        {error && (
+          <div className="error-message">
+            <div className="error-icon">⚠️</div>
+            <p>{error}</p>
+            {error.includes('Instagram') && (
+              <button 
+                onClick={() => window.location.href = 'instagram://user?username=socialstar'}
+                className="social-retry-button"
+              >
+                Open Instagram
+              </button>
+            )}
+          </div>
+        )}
         <div className="social-buttons">
           <a href="instagram://user?username=socialstar" className="instagram-button">
             Open Instagram
@@ -237,6 +253,27 @@ const RatingPage = () => {
             justify-content: center;
             font-size: 28px;
             margin: 0 auto 20px;
+          }
+          .error-message {
+            background: #fff3f3;
+            border-left: 4px solid #ff6b6b;
+            padding: 12px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+          .error-icon {
+            font-size: 24px;
+          }
+          .social-retry-button {
+            background: #e1306c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            margin-top: 10px;
+            cursor: pointer;
           }
           .social-buttons {
             display: flex;
