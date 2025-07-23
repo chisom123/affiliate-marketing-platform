@@ -1,25 +1,25 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const LandingPage = () => {
-  const [estimatedRatings, setEstimatedRatings] = useState(50);
+  const [estimatedRatings, setEstimatedRatings] = useState(100);
 
-  const handleGetStarted = () => {
-    // In a real app, this would navigate to dashboard
-    alert('In a real app, this would navigate to the dashboard!');
-  };
+  const navigate = useNavigate();
 
   const handleDashboard = () => {
-    // In a real app, this would navigate to dashboard
-    alert('In a real app, this would navigate to the dashboard!');
+    navigate('/dashboard');
   };
-
+  
+  const handleGetStarted = (e) => {
+    e.preventDefault();
+    navigate('/dashboard');
+  };
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', lineHeight: '1.6' }}>
       
       {/* Header */}
       <header style={{ 
         backgroundColor: '#1A2245',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
         position: 'sticky',
         top: '0',
         zIndex: 100
@@ -55,16 +55,15 @@ const LandingPage = () => {
           <button
             onClick={handleDashboard}
             style={{
-              padding: '8px 20px',
-              backgroundColor: '#4169E1',
+              fontSize: '16px',
+              backgroundColor: 'transparent',
               color: 'white',
               border: 'none',
-              borderRadius: '20px',
               cursor: 'pointer',
               fontWeight: 'bold'
             }}
           >
-            Dashboard
+            Login
           </button>
         </div>
       </header>
@@ -91,8 +90,7 @@ const LandingPage = () => {
             marginBottom: '40px',
             opacity: 0.9
           }}>
-            Earn £0.01 for every rating on your Instagram and Snapchat stories. 
-            No followers required. Start earning today.
+            Get paid everytime your friends rate your story
           </p>
 
           <button
@@ -105,8 +103,7 @@ const LandingPage = () => {
               borderRadius: '30px',
               fontSize: '18px',
               fontWeight: 'bold',
-              cursor: 'pointer',
-              boxShadow: '0 5px 15px rgba(65, 105, 225, 0.3)'
+              cursor: 'pointer'
             }}
           >
             Start Earning Now
@@ -148,7 +145,6 @@ const LandingPage = () => {
               backgroundColor: '#323862',
               padding: '30px',
               borderRadius: '15px',
-              boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
               textAlign: 'center'
             }}>
               <h3 style={{ 
@@ -156,13 +152,10 @@ const LandingPage = () => {
                 marginBottom: '20px',
                 color: 'white'
               }}>
-                1. Your Instagram Story
+                Your Instagram Story
               </h3>
               <div style={{
-                backgroundColor: '#1A2245',
-                borderRadius: '12px',
-                padding: '20px',
-                marginBottom: '20px'
+
               }}>
                 <img 
                   src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/IMG_4128%202.PNG?alt=media&token=89ecbb80-8e3d-4c0a-9ed8-35552ccf70d0"
@@ -170,8 +163,7 @@ const LandingPage = () => {
                   style={{
                     maxWidth: '200px',
                     height: 'auto',
-                    borderRadius: '8px',
-                    boxShadow: '0 3px 10px rgba(0,0,0,0.3)'
+                    borderRadius: '8px'
                   }}
                 />
               </div>
@@ -187,7 +179,6 @@ const LandingPage = () => {
               backgroundColor: '#323862',
               padding: '30px',
               borderRadius: '15px',
-              boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
               textAlign: 'center'
             }}>
               <h3 style={{ 
@@ -195,13 +186,10 @@ const LandingPage = () => {
                 marginBottom: '20px',
                 color: 'white'
               }}>
-                2. They Rate Your Story
+                They Rate Your Story
               </h3>
               <div style={{
-                backgroundColor: '#1A2245',
-                borderRadius: '12px',
-                padding: '20px',
-                marginBottom: '20px'
+  
               }}>
                 <img 
                   src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/IMG_4145.PNG?alt=media&token=5ab1a099-0799-4b89-9b95-ffcafd9467ea"
@@ -209,8 +197,7 @@ const LandingPage = () => {
                   style={{
                     maxWidth: '200px',
                     height: 'auto',
-                    borderRadius: '8px',
-                    boxShadow: '0 3px 10px rgba(0,0,0,0.3)'
+                    borderRadius: '8px'
                   }}
                 />
               </div>
@@ -218,7 +205,7 @@ const LandingPage = () => {
                 color: 'rgba(255,255,255,0.8)',
                 lineHeight: '1.6'
               }}>
-                When they tap the link, they see this simple rating screen. One tap = £0.01 in your pocket!
+                When they tap the link, they see this simple rating screen. One tap = $0.02 in your pocket!
               </p>
             </div>
           </div>
@@ -271,7 +258,7 @@ const LandingPage = () => {
               {
                 step: '3',
                 title: 'Get Paid Instantly',
-                description: 'Earn £0.01 for every rating you receive. Money is tracked in real-time',
+                description: 'Earn with for every rating you receive. Money is tracked in real-time',
                 icon: '💰'
               }
             ].map((item, index) => (
@@ -279,7 +266,6 @@ const LandingPage = () => {
                 backgroundColor: '#323862',
                 padding: '40px 30px',
                 borderRadius: '15px',
-                boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
                 textAlign: 'center'
               }}>
                 <div style={{
@@ -352,7 +338,7 @@ const LandingPage = () => {
             marginBottom: '40px'
           }}>
             <h3 style={{ marginBottom: '25px', fontSize: '24px' }}>
-              Your Earnings Calculator
+              Earnings Calculator
             </h3>
             <div style={{ marginBottom: '30px' }}>
               <label style={{ display: 'block', marginBottom: '15px', fontSize: '18px' }}>
@@ -361,7 +347,7 @@ const LandingPage = () => {
               <input
                 type="range"
                 min="10"
-                max="200"
+                max="500"
                 value={estimatedRatings}
                 onChange={(e) => setEstimatedRatings(e.target.value)}
                 style={{ 
@@ -372,7 +358,7 @@ const LandingPage = () => {
                 }}
               />
               <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px' }}>
-                {estimatedRatings} ratings = £{(estimatedRatings * 0.01).toFixed(2)} per story
+                {estimatedRatings} ratings = ${(estimatedRatings * 0.02).toFixed(2)} per story
               </div>
             </div>
             
@@ -385,21 +371,21 @@ const LandingPage = () => {
               padding: '25px'
             }}>
               <div>
-                <div style={{ fontSize: '18px', opacity: '0.9' }}>Per Week (5 stories)</div>
+                <div style={{ fontSize: '18px', opacity: '0.9' }}>Per Week (7 stories)</div>
                 <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
-                  £{(estimatedRatings * 0.01 * 5).toFixed(2)}
+                  ${(estimatedRatings * 0.02 * 7).toFixed(2)}
                 </div>
               </div>
               <div>
                 <div style={{ fontSize: '18px', opacity: '0.9' }}>Per Month</div>
                 <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
-                  £{(estimatedRatings * 0.01 * 5 * 4).toFixed(2)}
+                  ${(estimatedRatings * 0.02 * 7 * 4).toFixed(2)}
                 </div>
               </div>
               <div>
                 <div style={{ fontSize: '18px', opacity: '0.9' }}>Per Year</div>
                 <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
-                  £{(estimatedRatings * 0.01 * 5 * 52).toFixed(2)}
+                  ${(estimatedRatings * 0.02 * 7 * 52).toFixed(2)}
                 </div>
               </div>
             </div>
@@ -415,11 +401,10 @@ const LandingPage = () => {
               borderRadius: '30px',
               fontSize: '18px',
               fontWeight: 'bold',
-              cursor: 'pointer',
-              boxShadow: '0 5px 15px rgba(65, 105, 225, 0.3)'
+              cursor: 'pointer'
             }}
           >
-            Start Earning £{(estimatedRatings * 0.01).toFixed(2)} Per Story
+            Start Earning ${(estimatedRatings * 0.02).toFixed(2)} Per Story
           </button>
         </div>
       </section>
@@ -435,7 +420,7 @@ const LandingPage = () => {
             marginBottom: '50px',
             color: 'white'
           }}>
-            Join Creators Already Earning
+            Join Partners Already Earning
           </h2>
 
           <div style={{ 
@@ -445,16 +430,16 @@ const LandingPage = () => {
             marginBottom: '50px'
           }}>
             {[
-              { name: 'Sarah M.', earnings: '£47.23', stories: '156 stories rated' },
-              { name: 'Jake R.', earnings: '£32.10', stories: '89 stories rated' },
-              { name: 'Emma L.', earnings: '£71.45', stories: '203 stories rated' }
+              { name: 'Sarah M.', earnings: '$47.23', stories: '156 stories rated' },
+              { name: 'Jake R.', earnings: '$32.10', stories: '89 stories rated' },
+              { name: 'Emma L.', earnings: '$71.45', stories: '203 stories rated' },
+              { name: 'Toni W.', earnings: '$32.45', stories: '203 stories rated' }
             ].map((creator, index) => (
               <div key={index} style={{
                 backgroundColor: '#323862',
                 padding: '30px',
                 borderRadius: '12px',
                 textAlign: 'center',
-                boxShadow: '0 5px 15px rgba(0,0,0,0.3)'
               }}>
                 <div style={{
                   width: '60px',
@@ -514,15 +499,11 @@ const LandingPage = () => {
             {[
               {
                 q: 'How much can I realistically earn?',
-                a: 'Most creators earn £10-50 per month depending on their engagement. Active creators with engaged followers can earn £100+ monthly. You earn £0.01 per rating regardless of follower count.'
+                a: 'Most creators earn $10-50 per month depending on their engagement. Active creators with engaged followers can earn $100+ monthly. You earn $0.02 per rating regardless of follower count.'
               },
               {
                 q: 'When do I get paid?',
-                a: 'Earnings are tracked in real-time. We process payouts weekly via PayPal for amounts over £5. No hidden fees or charges.'
-              },
-              {
-                q: 'Do I need a minimum number of followers?',
-                a: 'No! You can start earning immediately regardless of follower count. Even 10 engaged friends rating your stories can earn you money.'
+                a: 'Earnings are tracked in real-time. We process payouts weekly via PayPal for amounts over $5. No hidden fees or charges.'
               },
               {
                 q: 'Is this legit? How do you make money?',
@@ -541,7 +522,7 @@ const LandingPage = () => {
               }}>
                 <h4 style={{ 
                   color: 'white',
-                  marginBottom: '10px',
+                  margin: '0 0 10px 0',
                   fontSize: '18px'
                 }}>
                   {faq.q}
@@ -562,7 +543,7 @@ const LandingPage = () => {
       {/* Final CTA */}
       <section style={{ 
         padding: '80px 20px',
-        background: 'linear-gradient(135deg, #4169E1 0%, #3B4374 100%)',
+        background: '#4169E1',
         color: 'white',
         textAlign: 'center'
       }}>
@@ -579,7 +560,7 @@ const LandingPage = () => {
             marginBottom: '40px',
             opacity: '0.9'
           }}>
-            Join hundreds of creators already monetizing their social content. 
+            Join hundreds of partners already monetizing their social content. 
             Free to start, no commitment required.
           </p>
 
@@ -593,8 +574,7 @@ const LandingPage = () => {
               borderRadius: '30px',
               fontSize: '18px',
               fontWeight: 'bold',
-              cursor: 'pointer',
-              boxShadow: '0 5px 15px rgba(0,0,0,0.3)'
+              cursor: 'pointer'
             }}
           >
             Create Your First Rating Link
@@ -611,34 +591,37 @@ const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer style={{ 
-        backgroundColor: '#10183C',
-        color: 'white',
-        padding: '40px 20px',
-        textAlign: 'center'
-      }}>
+      <footer style={{ backgroundColor: '#10183C', color: 'white', padding: '40px 20px', textAlign: 'center' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ 
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '20px'
-          }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
             <div>
-              <h3 style={{ margin: '0 0 10px 0' }}>SocialStar Affiliates</h3>
-              <p style={{ margin: '0', opacity: '0.8' }}>
-                Turn your social content into cash
-              </p>
+            <img 
+                src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a"
+                alt="Star icon"
+                style={{
+                  width: '30px',
+                  height: '30px'
+                }}
+              />
+            </div>
+            <div>
+              <a 
+                href="mailto:pingbearapp@gmail.com"
+                style={{ 
+                  fontSize: '16px',
+                  backgroundColor: 'transparent',
+                  color: 'white',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  textDecoration: 'none'
+                }}
+              >
+                Contact
+              </a>
             </div>
           </div>
-          
-          <div style={{ 
-            borderTop: '1px solid rgba(255,255,255,0.2)',
-            marginTop: '30px',
-            paddingTop: '20px',
-            opacity: '0.6'
-          }}>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', marginTop: '30px', paddingTop: '20px', opacity: '0.6' }}>
             <p style={{ margin: '0' }}>
               © 2025 SocialStar. All rights reserved.
             </p>
