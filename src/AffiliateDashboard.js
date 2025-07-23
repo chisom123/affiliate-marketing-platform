@@ -241,10 +241,15 @@ const Dashboard = ({ user, onLogout }) => {
     loadAffiliateData();
   };
 
-  // Calculate total earnings from all links
-  const totalEarnings = ratingLinks.reduce((sum, link) => sum + (link.earnings || 0), 0);
-  const totalRatings = ratingLinks.reduce((sum, link) => sum + (link.totalRatings || 0), 0);
-  const totalEverEarned = totalEarnings + (payoutHistory.reduce((sum, p) => sum + p.amount, 0));
+// Calculate total earnings from all links (current unpaid balance)
+const totalEarnings = ratingLinks.reduce((sum, link) => sum + (link.earnings || 0), 0);
+const totalRatings = ratingLinks.reduce((sum, link) => sum + (link.totalRatings || 0), 0);
+
+// Calculate total amount actually paid out from payout history
+const totalPaidOut = payoutHistory.reduce((sum, p) => sum + p.amount, 0);
+
+// Calculate lifetime earnings (paid out + current balance)
+const lifetimeEarnings = totalPaidOut + totalEarnings;
 
   // Payment status component
   const PaymentStatus = () => {
@@ -532,25 +537,34 @@ const Dashboard = ({ user, onLogout }) => {
           <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', color: '#28a745' }}>
             £{totalEarnings.toFixed(2)}
           </p>
+          <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#6c757d' }}>
+            Unpaid earnings
+          </p>
         </div>
         
         <div style={{ padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
           <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>Total Earned</h3>
           <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', color: '#007bff' }}>
-            £{totalEverEarned.toFixed(2)}
+            £{lifetimeEarnings.toFixed(2)}
+          </p>
+          <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#6c757d' }}>
+            Lifetime earnings
           </p>
         </div>
 
         <div style={{ padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
-          <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>Total Ratings</h3>
-          <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', color: '#ffc107' }}>{totalRatings}</p>
+          <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>Total Paid Out</h3>
+          <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', color: '#6c757d' }}>
+            £{totalPaidOut.toFixed(2)}
+          </p>
+          <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#6c757d' }}>
+            Already received
+          </p>
         </div>
         
         <div style={{ padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
-          <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>Active Links</h3>
-          <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', color: '#17a2b8' }}>
-            {ratingLinks.filter(link => link.status === 'active').length}
-          </p>
+          <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>Total Ratings</h3>
+          <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', color: '#ffc107' }}>{totalRatings}</p>
         </div>
       </div>
 

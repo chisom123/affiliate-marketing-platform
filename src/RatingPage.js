@@ -1,8 +1,5 @@
 // RATING PAGE COMPONENT
-// Purpose: Mobile-optimized page for rating Instagram/Snapchat stories
-// Features: Star rating, fraud prevention, app download prompt, analytics
-// URL Format: /rate/:affiliateId/:linkId
-
+// Enhanced with social media in-app browser detection
 import React, { useState, useEffect } from 'react';
 import { db } from './firebase';
 import { 
@@ -32,21 +29,49 @@ const generateFingerprint = () => {
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     language: navigator.language,
     platform: navigator.platform,
-    userAgent: navigator.userAgent.substring(0, 100), // Truncate for storage
-    canvas: canvas.toDataURL().substring(0, 100), // Truncate canvas fingerprint
+    userAgent: navigator.userAgent.substring(0, 100),
+    canvas: canvas.toDataURL().substring(0, 100),
     timestamp: Date.now()
   };
 };
 
-// Hash function for IP/fingerprint (client-side approximation)
+// Hash function for IP/fingerprint
 const simpleHash = (str) => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
+    hash = hash & hash;
   }
   return Math.abs(hash).toString(36);
+};
+
+// Detect social media in-app browsers
+const isSocialMediaApp = () => {
+  const ua = navigator.userAgent.toLowerCase();
+  
+  // Instagram detection
+  const isInstagram = /instagram/i.test(ua);
+  
+  // Snapchat detection - uses WebView with specific identifiers
+  const isSnapchat = ua.includes('snapchat') || 
+                     ua.includes('snap_ios') || 
+                     ua.includes('snap_android');
+  
+  // Facebook in-app browser (optional)
+  const isFacebook = /fban|fbav|fb_iab|fb4a/i.test(ua);
+  
+  return isInstagram || isSnapchat || isFacebook;
+};
+
+// Generate a client token that persists across sessions
+const getClientToken = () => {
+  let token = localStorage.getItem('socialstar_client_token');
+  if (!token) {
+    token = 'ct_' + Math.random().toString(36).substr(2, 12);
+    localStorage.setItem('socialstar_client_token', token);
+  }
+  return token;
 };
 
 const RatingPage = () => {
@@ -60,8 +85,20 @@ const RatingPage = () => {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Load rating link and affiliate data
+  // Check if user is in a social media app
+  const [isValidBrowser, setIsValidBrowser] = useState(false);
+
   useEffect(() => {
+    // Check browser environment immediately
+    const validBrowser = isSocialMediaApp();
+    setIsValidBrowser(validBrowser);
+    
+    if (!validBrowser) {
+      setError('Ratings are only allowed from Instagram or Snapchat stories. Please open this link in the Instagram or Snapchat app.');
+      setLoading(false);
+      return;
+    }
+
     const loadData = async () => {
       try {
         // Find the rating link
@@ -103,13 +140,18 @@ const RatingPage = () => {
       setLoading(false);
     };
 
-    if (affiliateId && linkId) {
+    if (affiliateId && linkId && isValidBrowser) {
       loadData();
     }
-  }, [affiliateId, linkId]);
+  }, [affiliateId, linkId, isValidBrowser]);
 
-  // Submit rating with fraud prevention
+  // Submit rating with enhanced fraud prevention
   const submitRating = async () => {
+    if (!isValidBrowser) {
+      setError('Invalid browser detected. Please rate from Instagram or Snapchat.');
+      return;
+    }
+
     if (rating === 0) {
       alert('Please select a star rating first!');
       return;
@@ -118,29 +160,19 @@ const RatingPage = () => {
     setSubmitting(true);
 
     try {
-      // Generate device fingerprint
-      const fingerprint = generateFingerprint();
-      const fingerprintHash = simpleHash(JSON.stringify(fingerprint));
-
-      // Check for recent ratings from same fingerprint (basic fraud prevention)
-      const recentRatingsQuery = query(
-        collection(db, 'ratings'),
-        where('fingerprintHash', '==', fingerprintHash)
-      );
-      const recentRatings = await getDocs(recentRatingsQuery);
+      // Check if user has already rated this link
+      const clientToken = getClientToken();
+      const alreadyRated = localStorage.getItem(`rated_${linkId}`);
       
-      // Check if this fingerprint has rated in the last hour
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-      const recentRating = recentRatings.docs.find(doc => {
-        const ratingTime = doc.data().createdAt?.toDate();
-        return ratingTime && ratingTime > oneHourAgo;
-      });
-
-      if (recentRating) {
-        setError('You can only rate once per hour. Thanks for your enthusiasm!');
+      if (alreadyRated) {
+        setError('You have already rated this story!');
         setSubmitting(false);
         return;
       }
+
+      // Generate device fingerprint
+      const fingerprint = generateFingerprint();
+      const fingerprintHash = simpleHash(JSON.stringify(fingerprint));
 
       // Create rating document
       const ratingData = {
@@ -152,8 +184,12 @@ const RatingPage = () => {
         fingerprint: fingerprint,
         fingerprintHash: fingerprintHash,
         referrer: document.referrer,
-        validated: true, // Will be updated by fraud detection later
-        earnings: 0.01 // £0.01 per rating
+        validated: true,
+        earnings: 0.01,
+        clientToken: clientToken,
+        sourceApp: isSocialMediaApp() ? 
+          (navigator.userAgent.includes('Instagram') ? 'instagram' : 'snapchat') : 
+          'unknown'
       };
 
       await addDoc(collection(db, 'ratings'), ratingData);
@@ -171,6 +207,8 @@ const RatingPage = () => {
         totalEarnings: increment(0.01)
       });
 
+      // Mark as rated in localStorage
+      localStorage.setItem(`rated_${linkId}`, 'true');
       setSubmitted(true);
 
     } catch (error) {
@@ -226,35 +264,119 @@ const RatingPage = () => {
           padding: '40px',
           borderRadius: '12px',
           boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-          maxWidth: '400px'
+          maxWidth: '500px'
         }}>
-          <h2 style={{ color: '#dc3545', marginBottom: '20px' }}>Oops!</h2>
-          <p style={{ color: '#6c757d', marginBottom: '30px' }}>{error}</p>
-          <a 
-            href="https://socialstar.app" 
-            style={{ 
-              display: 'inline-block',
-              padding: '12px 24px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              textDecoration: 'none',
-              borderRadius: '6px',
-              fontWeight: 'bold'
-            }}
-          >
-            Download SocialStar App
-          </a>
+          <div style={{
+            backgroundColor: '#ff6b6b',
+            color: 'white',
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 20px',
+            fontSize: '28px'
+          }}>
+            !
+          </div>
+          
+          <h2 style={{ color: '#495057', marginBottom: '15px' }}>
+            Browser Not Supported
+          </h2>
+          
+          <p style={{ color: '#6c757d', marginBottom: '20px' }}>
+            {error}
+          </p>
+          
+          <div style={{ 
+            backgroundColor: '#f8f9fa',
+            padding: '15px',
+            borderRadius: '8px',
+            marginBottom: '25px',
+            textAlign: 'left'
+          }}>
+            <p style={{ margin: '0 0 10px 0', fontWeight: 'bold' }}>
+              To rate this story:
+            </p>
+            <ol style={{ 
+              paddingLeft: '20px',
+              margin: '0',
+              color: '#495057'
+            }}>
+              <li>Open Instagram or Snapchat</li>
+              <li>Find the story with this rating link</li>
+              <li>Tap the link in the story</li>
+            </ol>
+          </div>
+          
+          <p style={{ 
+            color: '#6c757d', 
+            fontSize: '14px',
+            marginBottom: '25px'
+          }}>
+            If you think this is a mistake, contact support@socialstar.app
+          </p>
+          
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '15px'
+          }}>
+            <a 
+              href="instagram://user?username=socialstar" 
+              style={{
+                backgroundColor: '#e1306c',
+                color: 'white',
+                padding: '10px 15px',
+                borderRadius: '6px',
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <div style={{
+                width: '20px',
+                height: '20px',
+                backgroundImage: 'url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xMiAyaDMiLz48cmVjdCB4PSIyIiB5PSIyIiB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHJ4PSI1IiByeT0iNSI+PC9yZWN0PjxwYXRoIGQ9Ik0xNiAxMS4zN0ExNCAxNCAwIDEgMSA4IDExLjM3Ij48L3BhdGg+PC9zdmc+")',
+                backgroundSize: 'cover'
+              }}></div>
+              Open Instagram
+            </a>
+            
+            <a 
+              href="snapchat://add/socialstar" 
+              style={{
+                backgroundColor: '#fffc00',
+                color: 'black',
+                padding: '10px 15px',
+                borderRadius: '6px',
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <div style={{
+                width: '20px',
+                height: '20px',
+                backgroundImage: 'url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xMiAxM2MtMS44IDAtMy40IDEuNi0zLjQgMy40czEuNiAzLjQgMy40IDMuNCAzLjQtMS42IDMuNC0zLjQtMS42LTMuNC0zLjQtMy40eiI+PC9wYXRoPjxwYXRoIGQ9Ik0xOCA2Yy0uNiAwLTEuMS40LTEuNS44LS40LjQtLjggMS0uOCAxLjYgMCAuNi40IDEuMS44IDEuNS40LjQgMSAuOCAxLjYuOC42IDAgMS4xLS40IDEuNS0uOC40LS40LjgtMSAuOC0xLjYgMC0uNi0uNC0xLjEtLjgtMS41QzE5LjEgNi40IDE4LjYgNiAxOCA2eiI+PC9wYXRoPjxwYXRoIGQ9Ik02IDE4Yy0uNiAwLTEuMS40LTEuNS44LS40LjQtLjggMS0uOCAxLjYgMCAuNi40IDEuMS44IDEuNS40LjQgMSAuOCAxLjYuOC42IDAgMS4xLS40IDEuNS0uOC40LS40LjgtMSAuOC0xLjYgMC0uNi0uNC0xLjEtLjgtMS41LS40LS40LTEtLjgtMS42LS44eiI+PC9wYXRoPjwvc3ZnPg==")',
+                backgroundSize: 'cover'
+              }}></div>
+              Open Snapchat
+            </a>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Success state - show app download prompt
+  // Success state
   if (submitted) {
     return (
       <div style={{ 
         minHeight: '100vh',
-        backgroundColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         display: 'flex',
         alignItems: 'center',
@@ -271,7 +393,6 @@ const RatingPage = () => {
           width: '100%',
           boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
         }}>
-          {/* Success animation */}
           <div style={{ 
             width: '80px',
             height: '80px',
@@ -325,7 +446,6 @@ const RatingPage = () => {
             </p>
           </div>
 
-          {/* App Store Buttons */}
           <div style={{ marginBottom: '20px' }}>
             <a 
               href="https://apps.apple.com/app/socialstar" 
@@ -335,11 +455,21 @@ const RatingPage = () => {
                 textDecoration: 'none'
               }}
             >
-              <img 
-                src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjQwIiB2aWV3Qm94PSIwIDAgMTIwIDQwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMTIwIiBoZWlnaHQ9IjQwIiByeD0iNSIgZmlsbD0iYmxhY2siLz4KPHRleHQgeD0iNjAiIHk9IjI1IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+RG93bmxvYWQgb24gQXBwIFN0b3JlPC90ZXh0Pgo8L3N2Zz4K"
-                alt="Download on App Store"
-                style={{ height: '40px' }}
-              />
+              <div style={{
+                backgroundColor: '#000',
+                color: '#fff',
+                borderRadius: '8px',
+                padding: '10px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                <div style={{fontSize: '24px'}}></div>
+                <div>
+                  <div style={{fontSize: '10px'}}>Download on the</div>
+                  <div style={{fontSize: '18px', fontWeight: 'bold'}}>App Store</div>
+                </div>
+              </div>
             </a>
             
             <a 
@@ -350,11 +480,21 @@ const RatingPage = () => {
                 textDecoration: 'none'
               }}
             >
-              <img 
-                src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjQwIiB2aWV3Qm94PSIwIDAgMTIwIDQwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMTIwIiBoZWlnaHQ9IjQwIiByeD0iNSIgZmlsbD0iYmxhY2siLz4KPHRleHQgeD0iNjAiIHk9IjI1IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+R2V0IGl0IG9uIEdvb2dsZSBQbGF5PC90ZXh0Pgo8L3N2Zz4K"
-                alt="Get it on Google Play"
-                style={{ height: '40px' }}
-              />
+              <div style={{
+                backgroundColor: '#000',
+                color: '#fff',
+                borderRadius: '8px',
+                padding: '10px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                <div style={{fontSize: '24px'}}>▶</div>
+                <div>
+                  <div style={{fontSize: '10px'}}>GET IT ON</div>
+                  <div style={{fontSize: '18px', fontWeight: 'bold'}}>Google Play</div>
+                </div>
+              </div>
             </a>
           </div>
 
@@ -377,13 +517,26 @@ const RatingPage = () => {
       backgroundColor: '#f8f9fa',
       fontFamily: 'Arial, sans-serif'
     }}>
-      {/* Header */}
       <div style={{ 
         backgroundColor: 'white',
         padding: '20px',
         borderBottom: '1px solid #dee2e6',
-        textAlign: 'center'
+        textAlign: 'center',
+        position: 'relative'
       }}>
+        <div style={{
+          position: 'absolute',
+          top: '10px',
+          right: '10px',
+          backgroundColor: '#28a745',
+          color: 'white',
+          fontSize: '12px',
+          padding: '4px 8px',
+          borderRadius: '4px'
+        }}>
+          {navigator.userAgent.includes('Instagram') ? 'Instagram' : 'Snapchat'}
+        </div>
+        
         <h1 style={{ 
           margin: '0 0 5px 0',
           color: '#495057',
@@ -400,7 +553,6 @@ const RatingPage = () => {
         </p>
       </div>
 
-      {/* Content Preview */}
       <div style={{ 
         padding: '30px 20px',
         textAlign: 'center'
@@ -410,8 +562,23 @@ const RatingPage = () => {
           borderRadius: '12px',
           padding: '30px',
           marginBottom: '30px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+          position: 'relative'
         }}>
+          <div style={{
+            position: 'absolute',
+            top: '-10px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: '#007bff',
+            color: 'white',
+            padding: '4px 12px',
+            borderRadius: '20px',
+            fontSize: '12px'
+          }}>
+            Rating Link
+          </div>
+          
           <h2 style={{ 
             color: '#495057',
             marginBottom: '15px',
@@ -430,7 +597,6 @@ const RatingPage = () => {
             </p>
           )}
 
-          {/* Placeholder for story content */}
           <div style={{ 
             backgroundColor: '#f8f9fa',
             borderRadius: '8px',
@@ -447,7 +613,6 @@ const RatingPage = () => {
             </p>
           </div>
 
-          {/* Star Rating */}
           <div style={{ marginBottom: '30px' }}>
             <p style={{ 
               color: '#495057',
@@ -496,7 +661,6 @@ const RatingPage = () => {
             )}
           </div>
 
-          {/* Submit Button */}
           <button
             onClick={submitRating}
             disabled={rating === 0 || submitting}
@@ -517,7 +681,6 @@ const RatingPage = () => {
           </button>
         </div>
 
-        {/* Footer */}
         <p style={{ 
           color: '#adb5bd',
           fontSize: '12px',
@@ -527,7 +690,6 @@ const RatingPage = () => {
         </p>
       </div>
 
-      {/* Inline CSS for animations */}
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
