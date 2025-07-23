@@ -1,24 +1,45 @@
-import logo from './logo.svg';
-import './App.css';
+// MAIN APP COMPONENT WITH ROUTING
+// Purpose: Handle routing between affiliate dashboard and rating pages
+// Routes: / (dashboard), /rate/:affiliateId/:linkId (rating page)
+
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import LandingPage from './LandingPage';
+import AffiliateDashboard from './AffiliateDashboard';
+import RatingPage from './RatingPage';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        {/* Landing Page - Main marketing page */}
+        <Route path="/" element={<LandingPage />} />
+        
+        {/* Affiliate Dashboard */}
+        <Route path="/dashboard" element={<AffiliateDashboard />} />
+        
+        {/* Rating Page - Public rating interface */}
+        <Route path="/rate/:affiliateId/:linkId" element={<RatingPage />} />
+        
+        {/* Catch-all route for invalid URLs */}
+        <Route path="*" element={
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '100vh',
+            fontFamily: 'Arial, sans-serif',
+            textAlign: 'center'
+          }}>
+            <div>
+              <h1>Page Not Found</h1>
+              <p>The page you're looking for doesn't exist.</p>
+              <a href="/" style={{ color: '#007bff' }}>Go to Dashboard</a>
+            </div>
+          </div>
+        } />
+      </Routes>
+    </Router>
   );
 }
 
