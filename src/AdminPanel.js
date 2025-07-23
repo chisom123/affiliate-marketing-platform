@@ -43,7 +43,7 @@ const AdminPanel = () => {
           ...doc.data()
         }));
         setAffiliates(affiliatesData);
-
+  
         // Get recent ratings
         const ratingsQuery = query(
           collection(db, 'ratings'), 
@@ -56,17 +56,30 @@ const AdminPanel = () => {
           ...doc.data()
         }));
         setRecentRatings(ratingsData);
-
+  
+        // ADD THIS: Load suspicious activity from the new collection
+        const suspiciousQuery = query(
+          collection(db, 'suspicious_activity'), 
+          orderBy('timestamp', 'desc'), 
+          limit(50)
+        );
+        const suspiciousSnapshot = await getDocs(suspiciousQuery);
+        const suspiciousData = suspiciousSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setSuspiciousActivity(suspiciousData);
+  
         // Get rating links
         const linksSnapshot = await getDocs(collection(db, 'rating_links'));
         const linksData = linksSnapshot.docs.map(doc => doc.data());
-
+  
         // Calculate stats
         const totalAffiliates = affiliatesData.length;
         const totalRatings = ratingsData.length;
         const totalEarnings = affiliatesData.reduce((sum, affiliate) => sum + (affiliate.totalEarnings || 0), 0);
         const activeLinks = linksData.filter(link => link.status === 'active').length;
-
+  
         setStats({
           totalAffiliates,
           totalRatings,
@@ -74,31 +87,14 @@ const AdminPanel = () => {
           totalRevenue: totalEarnings,
           activeLinks
         });
-
-        // Detect suspicious activity
-        const suspicious = ratingsData.filter(rating => {
-          const ratingTime = rating.createdAt?.toDate();
-          const now = new Date();
-          const timeDiff = now - ratingTime;
-          
-          const tooFast = timeDiff < 5000;
-          const recentDuplicates = ratingsData.filter(r => 
-            r.fingerprintHash === rating.fingerprintHash && 
-            r.id !== rating.id
-          ).length > 0;
-
-          return tooFast || recentDuplicates;
-        });
-        
-        setSuspiciousActivity(suspicious);
-
+  
       } catch (error) {
         console.error('Error loading admin data:', error);
       }
       
       setLoading(false);
     };
-
+  
     loadAdminData();
   }, []);
 
@@ -1011,7 +1007,7 @@ const PayoutModal = () => {
         {selectedTab === 'fraud' && (
           <div>
             <h2 style={{ marginBottom: '20px', color: '#495057' }}>
-              Suspicious Activity ({suspiciousActivity.length} items)
+              Fraud Detection ({suspiciousActivity.length} items)
             </h2>
             
             {suspiciousActivity.length === 0 ? (
@@ -1025,6 +1021,9 @@ const PayoutModal = () => {
                 <p style={{ color: '#28a745', fontSize: '18px', margin: '0' }}>
                   ✅ No suspicious activity detected
                 </p>
+                <p style={{ color: '#6c757d', fontSize: '14px', marginTop: '10px' }}>
+                  Enhanced fraud prevention is actively monitoring all rating attempts.
+                </p>
               </div>
             ) : (
               <div style={{ 
@@ -1033,164 +1032,181 @@ const PayoutModal = () => {
                 boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
                 padding: '20px'
               }}>
-                {suspiciousActivity.map((rating, index) => (
-                  <div key={rating.id} style={{ 
+                {/* Fraud Summary Stats */}
+                <div style={{ 
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: '15px',
+                  marginBottom: '30px',
+                  padding: '20px',
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: '8px'
+                }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#dc3545' }}>
+                      {suspiciousActivity.length}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#6c757d' }}>Total Blocked</div>
+                  </div>
+                  
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ffc107' }}>
+                      {suspiciousActivity.filter(a => a.reason?.includes('device')).length}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#6c757d' }}>Device Duplicates</div>
+                  </div>
+                  
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#17a2b8' }}>
+                      {suspiciousActivity.filter(a => a.reason?.includes('rapid')).length}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#6c757d' }}>Rapid Attempts</div>
+                  </div>
+                  
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#6f42c1' }}>
+                      {suspiciousActivity.filter(a => a.confidence >= 90).length}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#6c757d' }}>High Confidence</div>
+                  </div>
+                </div>
+
+                {/* Fraud Activity List */}
+                {suspiciousActivity.map((activity, index) => (
+                  <div key={activity.id} style={{ 
                     padding: '15px',
                     borderBottom: index < suspiciousActivity.length - 1 ? '1px solid #eee' : 'none',
-                    backgroundColor: '#fff3cd',
-                    borderLeft: '4px solid #ffc107',
+                    backgroundColor: activity.confidence >= 90 ? '#f8d7da' : '#fff3cd',
+                    borderLeft: `4px solid ${activity.confidence >= 90 ? '#dc3545' : '#ffc107'}`,
                     marginBottom: '10px',
                     borderRadius: '4px'
                   }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <p style={{ margin: '0 0 5px 0', fontWeight: 'bold', color: '#856404' }}>
-                          ⚠️ Suspicious Rating Detected
-                        </p>
-                        <p style={{ margin: '0', fontSize: '14px', color: '#856404' }}>
-                          Rating: {rating.rating} stars • 
-                          Affiliate: {rating.affiliateId?.substring(0, 8)}... • 
-                          Time: {rating.createdAt?.toDate?.()?.toLocaleString()}
-                        </p>
-                        <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#6c757d' }}>
-                          Fingerprint: {rating.fingerprintHash}
-                        </p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+                          <span style={{ 
+                            backgroundColor: activity.confidence >= 90 ? '#dc3545' : '#ffc107',
+                            color: 'white',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            marginRight: '10px'
+                          }}>
+                            {activity.confidence}% confidence
+                          </span>
+                          <p style={{ margin: '0', fontWeight: 'bold', color: activity.confidence >= 90 ? '#721c24' : '#856404' }}>
+                            ⚠️ {activity.type}: {activity.reason}
+                          </p>
+                        </div>
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', marginBottom: '10px' }}>
+                          <div>
+                            <p style={{ margin: '0', fontSize: '12px', color: '#6c757d' }}>Affiliate:</p>
+                            <p style={{ margin: '0', fontSize: '14px' }}>{activity.affiliateId?.substring(0, 8)}...</p>
+                          </div>
+                          
+                          <div>
+                            <p style={{ margin: '0', fontSize: '12px', color: '#6c757d' }}>Time:</p>
+                            <p style={{ margin: '0', fontSize: '14px' }}>
+                              {activity.timestamp?.toDate?.()?.toLocaleString() || 'Recent'}
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <p style={{ margin: '0', fontSize: '12px', color: '#6c757d' }}>Link ID:</p>
+                            <p style={{ margin: '0', fontSize: '14px' }}>{activity.linkId}</p>
+                          </div>
+                        </div>
+                        
+                        {activity.fingerprint && (
+                          <div style={{ marginTop: '10px' }}>
+                            <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d' }}>Device Info:</p>
+                            <div style={{ 
+                              backgroundColor: 'white',
+                              padding: '8px',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              fontFamily: 'monospace'
+                            }}>
+                              <div>Screen: {activity.fingerprint.screen}</div>
+                              <div>Platform: {activity.fingerprint.platform}</div>
+                              <div>Browser: {activity.fingerprint.userAgent?.substring(0, 60)}...</div>
+                              {activity.fingerprint.audio && <div>Audio: {activity.fingerprint.audio}</div>}
+                            </div>
+                          </div>
+                        )}
                       </div>
                       
-                      <div>
-                        <button
-                          onClick={() => {
-                            if (window.confirm('Mark this rating as reviewed?')) {
-                              setSuspiciousActivity(suspiciousActivity.filter(r => r.id !== rating.id));
-                            }
-                          }}
-                          style={{
+                      <div style={{ marginLeft: '15px' }}>
+                        {!activity.reviewed && (
+                          <button
+                            onClick={async () => {
+                              if (window.confirm('Mark this fraud attempt as reviewed?')) {
+                                try {
+                                  await updateDoc(doc(db, 'suspicious_activity', activity.id), {
+                                    reviewed: true,
+                                    reviewedAt: new Date(),
+                                    reviewedBy: 'admin'
+                                  });
+                                  // Refresh the suspicious activity list
+                                  setSuspiciousActivity(suspiciousActivity.map(a => 
+                                    a.id === activity.id ? { ...a, reviewed: true } : a
+                                  ));
+                                } catch (error) {
+                                  alert('Error updating activity: ' + error.message);
+                                }
+                              }
+                            }}
+                            style={{
+                              padding: '5px 10px',
+                              backgroundColor: '#28a745',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Mark Reviewed
+                          </button>
+                        )}
+                        
+                        {activity.reviewed && (
+                          <span style={{
                             padding: '5px 10px',
-                            backgroundColor: '#28a745',
-                            color: 'white',
-                            border: 'none',
+                            backgroundColor: '#d4edda',
+                            color: '#155724',
                             borderRadius: '4px',
-                            cursor: 'pointer',
                             fontSize: '12px'
-                          }}
-                        >
-                          Mark Reviewed
-                        </button>
+                          }}>
+                            ✅ Reviewed
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
                 ))}
+                
+                {suspiciousActivity.length > 10 && (
+                  <div style={{ 
+                    textAlign: 'center',
+                    marginTop: '20px',
+                    padding: '15px',
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: '6px'
+                  }}>
+                    <p style={{ margin: '0', color: '#6c757d', fontSize: '14px' }}>
+                      Showing latest {Math.min(suspiciousActivity.length, 50)} fraud attempts
+                    </p>
+                    <p style={{ margin: '5px 0 0 0', color: '#6c757d', fontSize: '12px' }}>
+                      Enhanced protection is blocking {((suspiciousActivity.length / (suspiciousActivity.length + recentRatings.length)) * 100).toFixed(1)}% of attempts
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
-
-        {/* Payout History Tab */}
-        {selectedTab === 'payouts' && (
-        <div>
-            <h2 style={{ marginBottom: '20px', color: '#495057' }}>Payout History</h2>
-            
-            <div style={{ 
-            backgroundColor: 'white',
-            borderRadius: '10px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-            padding: '20px'
-            }}>
-            {/* Summary Stats */}
-            <div style={{ 
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '20px',
-                marginBottom: '30px'
-            }}>
-                <div style={{ 
-                backgroundColor: '#f8f9fa',
-                padding: '20px',
-                borderRadius: '8px',
-                textAlign: 'center'
-                }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#495057' }}>Total Paid Out</h4>
-                <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#28a745' }}>
-                    £{affiliates.reduce((sum, a) => sum + (a.payoutHistory?.reduce((s, p) => s + p.amount, 0) || 0), 0).toFixed(2)}
-                </p>
-                </div>
-                
-                <div style={{ 
-                backgroundColor: '#f8f9fa',
-                padding: '20px',
-                borderRadius: '8px',
-                textAlign: 'center'
-                }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#495057' }}>Total Batches</h4>
-                <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#007bff' }}>
-                    {new Set(affiliates.flatMap(a => a.payoutHistory?.map(p => p.batchId) || [])).size}
-                </p>
-                </div>
-                
-                <div style={{ 
-                backgroundColor: '#f8f9fa',
-                padding: '20px',
-                borderRadius: '8px',
-                textAlign: 'center'
-                }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#495057' }}>Affiliates Paid</h4>
-                <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#ffc107' }}>
-                    {affiliates.filter(a => a.payoutHistory && a.payoutHistory.length > 0).length}
-                </p>
-                </div>
-            </div>
-
-            {/* Recent Payouts */}
-            <h3 style={{ marginBottom: '15px', color: '#495057' }}>Recent Payouts</h3>
-            
-            {affiliates.flatMap(affiliate => 
-                (affiliate.payoutHistory || []).map(payout => ({
-                ...payout,
-                affiliateName: affiliate.name,
-                affiliateEmail: affiliate.email
-                }))
-            ).sort((a, b) => new Date(b.processedAt) - new Date(a.processedAt)).slice(0, 20).map((payout, index) => (
-                <div key={index} style={{ 
-                padding: '15px',
-                borderBottom: '1px solid #eee',
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr 1fr',
-                gap: '15px',
-                alignItems: 'center'
-                }}>
-                <div>
-                    <p style={{ margin: '0 0 5px 0', fontWeight: 'bold' }}>
-                    {payout.affiliateName}
-                    </p>
-                    <p style={{ margin: '0', fontSize: '12px', color: '#6c757d' }}>
-                    {payout.affiliateEmail}
-                    </p>
-                </div>
-                
-                <div>
-                    <p style={{ margin: '0', fontSize: '12px', color: '#6c757d' }}>Amount</p>
-                    <p style={{ margin: '0', fontSize: '16px', fontWeight: 'bold', color: '#28a745' }}>
-                    £{payout.amount.toFixed(2)}
-                    </p>
-                </div>
-                
-                <div>
-                    <p style={{ margin: '0', fontSize: '12px', color: '#6c757d' }}>Method</p>
-                    <p style={{ margin: '0', fontSize: '14px' }}>
-                    {payout.method === 'paypal' ? '💙 PayPal' : '🏦 Bank Transfer'}
-                    </p>
-                </div>
-                
-                <div>
-                    <p style={{ margin: '0', fontSize: '12px', color: '#6c757d' }}>Date</p>
-                    <p style={{ margin: '0', fontSize: '14px' }}>
-                    {payout.processedAt?.toDate?.()?.toLocaleDateString() || 'Recent'}
-                    </p>
-                </div>
-                </div>
-            ))}
-            </div>
-        </div>
         )}
       </div>
 
