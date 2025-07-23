@@ -1,19 +1,16 @@
-// SOCIALSTAR AFFILIATES LANDING PAGE
-// Purpose: Convert visitors into affiliates, explain value proposition
-// Features: Hero section, how it works, earnings calculator, social proof, FAQ
-
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 const LandingPage = () => {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState('');
   const [estimatedRatings, setEstimatedRatings] = useState(50);
 
-  const handleGetStarted = (e) => {
-    e.preventDefault();
-    // Navigate to dashboard (which will show signup if not logged in)
-    navigate('/dashboard');
+  const handleGetStarted = () => {
+    // In a real app, this would navigate to dashboard
+    alert('In a real app, this would navigate to the dashboard!');
+  };
+
+  const handleDashboard = () => {
+    // In a real app, this would navigate to dashboard
+    alert('In a real app, this would navigate to the dashboard!');
   };
 
   return (
@@ -21,8 +18,8 @@ const LandingPage = () => {
       
       {/* Header */}
       <header style={{ 
-        backgroundColor: 'white',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+        backgroundColor: '#1A2245',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
         position: 'sticky',
         top: '0',
         zIndex: 100
@@ -35,30 +32,31 @@ const LandingPage = () => {
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ 
-              width: '32px',
-              height: '32px',
-              background: 'linear-gradient(45deg, #667eea, #764ba2)',
-              borderRadius: '8px',
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <div style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontWeight: 'bold'
+              justifyContent: 'center'
             }}>
-              ⭐
+              <img 
+                src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a"
+                alt="Star icon"
+                style={{
+                  width: '30px',
+                  height: '30px'
+                }}
+              />
             </div>
-            <h1 style={{ margin: '0', fontSize: '24px', color: '#2c3e50' }}>
-              SocialStar Affiliates
+            <h1 style={{ margin: '2px 0px 0px 0px', fontSize: '20px', color: 'white' }}>
+              SocialStar Partners
             </h1>
           </div>
           
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={handleDashboard}
             style={{
               padding: '8px 20px',
-              backgroundColor: '#007bff',
+              backgroundColor: '#4169E1',
               color: 'white',
               border: 'none',
               borderRadius: '20px',
@@ -73,7 +71,7 @@ const LandingPage = () => {
 
       {/* Hero Section */}
       <section style={{ 
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #10183C 0%, #1A2245 100%)',
         color: 'white',
         padding: '80px 20px',
         textAlign: 'center'
@@ -97,104 +95,153 @@ const LandingPage = () => {
             No followers required. Start earning today.
           </p>
 
-          <div style={{ 
-            backgroundColor: 'rgba(255,255,255,0.2)',
-            borderRadius: '15px',
-            padding: '30px',
-            marginBottom: '40px',
-            backdropFilter: 'blur(10px)'
-          }}>
-            <h3 style={{ marginBottom: '15px', fontSize: '24px' }}>
-              Quick Earnings Calculator
-            </h3>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '10px' }}>
-                How many ratings do you think you'll get per story?
-              </label>
-              <input
-                type="range"
-                min="10"
-                max="200"
-                value={estimatedRatings}
-                onChange={(e) => setEstimatedRatings(e.target.value)}
-                style={{ width: '100%', marginBottom: '10px' }}
-              />
-              <div style={{ fontSize: '18px' }}>
-                <strong>{estimatedRatings} ratings = £{(estimatedRatings * 0.01).toFixed(2)} per story</strong>
-              </div>
-            </div>
-            <p style={{ margin: '0', opacity: '0.8' }}>
-              Post 5 stories per week = <strong>£{(estimatedRatings * 0.01 * 5 * 4).toFixed(2)} per month</strong>
-            </p>
-          </div>
+          <button
+            onClick={handleGetStarted}
+            style={{
+              padding: '20px 40px',
+              backgroundColor: '#4169E1',
+              color: 'white',
+              border: 'none',
+              borderRadius: '30px',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              boxShadow: '0 5px 15px rgba(65, 105, 225, 0.3)'
+            }}
+          >
+            Start Earning Now
+          </button>
+        </div>
+      </section>
 
-          <form onSubmit={handleGetStarted} style={{ 
-            display: 'flex',
-            gap: '15px',
-            maxWidth: '500px',
-            margin: '0 auto',
-            flexWrap: 'wrap',
-            justifyContent: 'center'
+      {/* See It In Action */}
+      <section style={{ 
+        padding: '80px 20px',
+        backgroundColor: '#1A2245'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ 
+            fontSize: '36px',
+            marginBottom: '20px',
+            color: 'white'
           }}>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{
-                flex: '1',
-                minWidth: '250px',
-                padding: '15px 20px',
-                border: 'none',
-                borderRadius: '25px',
-                fontSize: '16px'
-              }}
-            />
-            <button
-              type="submit"
-              style={{
-                padding: '15px 30px',
-                backgroundColor: '#28a745',
-                color: 'white',
-                border: 'none',
-                borderRadius: '25px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              Start Earning Now
-            </button>
-          </form>
+            See It In Action
+          </h2>
           
           <p style={{ 
-            marginTop: '20px',
-            fontSize: '14px',
-            opacity: '0.8'
+            fontSize: '18px',
+            color: 'rgba(255,255,255,0.8)',
+            marginBottom: '50px',
+            maxWidth: '600px',
+            margin: '0 auto 50px'
           }}>
-            Free to join • No followers required • Instant payments
+            Here's exactly how it looks when you add a rating link to your story
           </p>
+
+          <div style={{ 
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '40px',
+            marginBottom: '80px'
+          }}>
+            <div style={{
+              backgroundColor: '#323862',
+              padding: '30px',
+              borderRadius: '15px',
+              boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+              textAlign: 'center'
+            }}>
+              <h3 style={{ 
+                fontSize: '24px',
+                marginBottom: '20px',
+                color: 'white'
+              }}>
+                1. Your Instagram Story
+              </h3>
+              <div style={{
+                backgroundColor: '#1A2245',
+                borderRadius: '12px',
+                padding: '20px',
+                marginBottom: '20px'
+              }}>
+                <img 
+                  src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/IMG_4128%202.PNG?alt=media&token=89ecbb80-8e3d-4c0a-9ed8-35552ccf70d0"
+                  alt="Instagram story with rating link"
+                  style={{
+                    maxWidth: '200px',
+                    height: 'auto',
+                    borderRadius: '8px',
+                    boxShadow: '0 3px 10px rgba(0,0,0,0.3)'
+                  }}
+                />
+              </div>
+              <p style={{ 
+                color: 'rgba(255,255,255,0.8)',
+                lineHeight: '1.6'
+              }}>
+                Add your rating link to any Instagram story. Friends see your content with an easy "Rate this" button.
+              </p>
+            </div>
+
+            <div style={{
+              backgroundColor: '#323862',
+              padding: '30px',
+              borderRadius: '15px',
+              boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+              textAlign: 'center'
+            }}>
+              <h3 style={{ 
+                fontSize: '24px',
+                marginBottom: '20px',
+                color: 'white'
+              }}>
+                2. They Rate Your Story
+              </h3>
+              <div style={{
+                backgroundColor: '#1A2245',
+                borderRadius: '12px',
+                padding: '20px',
+                marginBottom: '20px'
+              }}>
+                <img 
+                  src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/IMG_4145.PNG?alt=media&token=5ab1a099-0799-4b89-9b95-ffcafd9467ea"
+                  alt="Rating interface on mobile"
+                  style={{
+                    maxWidth: '200px',
+                    height: 'auto',
+                    borderRadius: '8px',
+                    boxShadow: '0 3px 10px rgba(0,0,0,0.3)'
+                  }}
+                />
+              </div>
+              <p style={{ 
+                color: 'rgba(255,255,255,0.8)',
+                lineHeight: '1.6'
+              }}>
+                When they tap the link, they see this simple rating screen. One tap = £0.01 in your pocket!
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* How It Works */}
       <section style={{ 
         padding: '80px 20px',
-        backgroundColor: '#f8f9fa'
+        backgroundColor: '#10183C'
       }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
           <h2 style={{ 
             fontSize: '36px',
             marginBottom: '20px',
-            color: '#2c3e50'
+            color: 'white'
           }}>
             How It Works
           </h2>
           
           <p style={{ 
             fontSize: '18px',
-            color: '#6c757d',
+            color: 'rgba(255,255,255,0.8)',
             marginBottom: '50px',
             maxWidth: '600px',
             margin: '0 auto 50px'
@@ -229,10 +276,10 @@ const LandingPage = () => {
               }
             ].map((item, index) => (
               <div key={index} style={{
-                backgroundColor: 'white',
+                backgroundColor: '#323862',
                 padding: '40px 30px',
                 borderRadius: '15px',
-                boxShadow: '0 5px 15px rgba(0,0,0,0.1)',
+                boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
                 textAlign: 'center'
               }}>
                 <div style={{
@@ -244,7 +291,7 @@ const LandingPage = () => {
                 <div style={{
                   width: '40px',
                   height: '40px',
-                  backgroundColor: '#007bff',
+                  backgroundColor: '#4169E1',
                   color: 'white',
                   borderRadius: '50%',
                   display: 'flex',
@@ -259,12 +306,12 @@ const LandingPage = () => {
                 <h3 style={{ 
                   fontSize: '20px',
                   marginBottom: '15px',
-                  color: '#2c3e50'
+                  color: 'white'
                 }}>
                   {item.title}
                 </h3>
                 <p style={{ 
-                  color: '#6c757d',
+                  color: 'rgba(255,255,255,0.8)',
                   lineHeight: '1.6'
                 }}>
                   {item.description}
@@ -275,16 +322,118 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Earnings Calculator */}
+      <section style={{ 
+        padding: '80px 20px',
+        backgroundColor: '#1A2245'
+      }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ 
+            fontSize: '36px',
+            marginBottom: '20px',
+            color: 'white'
+          }}>
+            Calculate Your Potential Earnings
+          </h2>
+          
+          <p style={{ 
+            fontSize: '18px',
+            color: 'rgba(255,255,255,0.8)',
+            marginBottom: '50px'
+          }}>
+            Now that you understand how it works, see how much you could earn based on your typical story engagement
+          </p>
+
+          <div style={{ 
+            background: 'linear-gradient(135deg, #323862 0%, #3B4374 100%)',
+            color: 'white',
+            borderRadius: '20px',
+            padding: '40px',
+            marginBottom: '40px'
+          }}>
+            <h3 style={{ marginBottom: '25px', fontSize: '24px' }}>
+              Your Earnings Calculator
+            </h3>
+            <div style={{ marginBottom: '30px' }}>
+              <label style={{ display: 'block', marginBottom: '15px', fontSize: '18px' }}>
+                How many ratings do you think you'll get per story?
+              </label>
+              <input
+                type="range"
+                min="10"
+                max="200"
+                value={estimatedRatings}
+                onChange={(e) => setEstimatedRatings(e.target.value)}
+                style={{ 
+                  width: '100%', 
+                  marginBottom: '15px',
+                  height: '8px',
+                  borderRadius: '4px'
+                }}
+              />
+              <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px' }}>
+                {estimatedRatings} ratings = £{(estimatedRatings * 0.01).toFixed(2)} per story
+              </div>
+            </div>
+            
+            <div style={{ 
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '20px',
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              borderRadius: '15px',
+              padding: '25px'
+            }}>
+              <div>
+                <div style={{ fontSize: '18px', opacity: '0.9' }}>Per Week (5 stories)</div>
+                <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
+                  £{(estimatedRatings * 0.01 * 5).toFixed(2)}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '18px', opacity: '0.9' }}>Per Month</div>
+                <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
+                  £{(estimatedRatings * 0.01 * 5 * 4).toFixed(2)}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '18px', opacity: '0.9' }}>Per Year</div>
+                <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
+                  £{(estimatedRatings * 0.01 * 5 * 52).toFixed(2)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={handleDashboard}
+            style={{
+              padding: '18px 40px',
+              background: '#4169E1',
+              color: 'white',
+              border: 'none',
+              borderRadius: '30px',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              boxShadow: '0 5px 15px rgba(65, 105, 225, 0.3)'
+            }}
+          >
+            Start Earning £{(estimatedRatings * 0.01).toFixed(2)} Per Story
+          </button>
+        </div>
+      </section>
+
       {/* Social Proof */}
       <section style={{ 
         padding: '80px 20px',
-        backgroundColor: 'white'
+        backgroundColor: '#10183C'
       }}>
         <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
           <h2 style={{ 
             fontSize: '36px',
             marginBottom: '50px',
-            color: '#2c3e50'
+            color: 'white'
           }}>
             Join Creators Already Earning
           </h2>
@@ -301,15 +450,16 @@ const LandingPage = () => {
               { name: 'Emma L.', earnings: '£71.45', stories: '203 stories rated' }
             ].map((creator, index) => (
               <div key={index} style={{
-                backgroundColor: '#f8f9fa',
+                backgroundColor: '#323862',
                 padding: '30px',
                 borderRadius: '12px',
-                textAlign: 'center'
+                textAlign: 'center',
+                boxShadow: '0 5px 15px rgba(0,0,0,0.3)'
               }}>
                 <div style={{
                   width: '60px',
                   height: '60px',
-                  backgroundColor: '#28a745',
+                  backgroundColor: '#4169E1',
                   color: 'white',
                   borderRadius: '50%',
                   display: 'flex',
@@ -321,49 +471,26 @@ const LandingPage = () => {
                 }}>
                   {creator.name.split(' ').map(n => n[0]).join('')}
                 </div>
-                <h4 style={{ margin: '0 0 10px 0', color: '#2c3e50' }}>
+                <h4 style={{ margin: '0 0 10px 0', color: 'white' }}>
                   {creator.name}
                 </h4>
                 <p style={{ 
                   margin: '0 0 5px 0',
                   fontSize: '20px',
                   fontWeight: 'bold',
-                  color: '#28a745'
+                  color: '#4169E1'
                 }}>
                   {creator.earnings}
                 </p>
                 <p style={{ 
                   margin: '0',
                   fontSize: '14px',
-                  color: '#6c757d'
+                  color: 'rgba(255,255,255,0.7)'
                 }}>
                   {creator.stories}
                 </p>
               </div>
             ))}
-          </div>
-
-          <div style={{
-            backgroundColor: '#e3f2fd',
-            padding: '40px',
-            borderRadius: '15px',
-            border: '2px solid #2196f3'
-          }}>
-            <h3 style={{ 
-              color: '#1976d2',
-              marginBottom: '15px',
-              fontSize: '24px'
-            }}>
-              🚀 Limited Time: 2x Earnings!
-            </h3>
-            <p style={{ 
-              color: '#1976d2',
-              fontSize: '18px',
-              margin: '0'
-            }}>
-              First 100 creators earn <strong>£0.02 per rating</strong> for their first month. 
-              Join now before this offer ends!
-            </p>
           </div>
         </div>
       </section>
@@ -371,14 +498,14 @@ const LandingPage = () => {
       {/* FAQ */}
       <section style={{ 
         padding: '80px 20px',
-        backgroundColor: '#f8f9fa'
+        backgroundColor: '#1A2245'
       }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           <h2 style={{ 
             fontSize: '36px',
             textAlign: 'center',
             marginBottom: '50px',
-            color: '#2c3e50'
+            color: 'white'
           }}>
             Frequently Asked Questions
           </h2>
@@ -407,20 +534,20 @@ const LandingPage = () => {
               }
             ].map((faq, index) => (
               <div key={index} style={{
-                backgroundColor: 'white',
+                backgroundColor: '#323862',
                 padding: '25px',
-                borderRadius: '10px',
-                boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                borderRadius: '12px',
+                border: '1px solid #3B4374'
               }}>
                 <h4 style={{ 
-                  color: '#2c3e50',
+                  color: 'white',
                   marginBottom: '10px',
                   fontSize: '18px'
                 }}>
                   {faq.q}
                 </h4>
                 <p style={{ 
-                  color: '#6c757d',
+                  color: 'rgba(255,255,255,0.8)',
                   margin: '0',
                   lineHeight: '1.6'
                 }}>
@@ -435,7 +562,7 @@ const LandingPage = () => {
       {/* Final CTA */}
       <section style={{ 
         padding: '80px 20px',
-        background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+        background: 'linear-gradient(135deg, #4169E1 0%, #3B4374 100%)',
         color: 'white',
         textAlign: 'center'
       }}>
@@ -457,17 +584,17 @@ const LandingPage = () => {
           </p>
 
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={handleDashboard}
             style={{
               padding: '20px 40px',
               backgroundColor: 'white',
-              color: '#28a745',
+              color: '#4169E1',
               border: 'none',
               borderRadius: '30px',
               fontSize: '18px',
               fontWeight: 'bold',
               cursor: 'pointer',
-              boxShadow: '0 5px 15px rgba(0,0,0,0.2)'
+              boxShadow: '0 5px 15px rgba(0,0,0,0.3)'
             }}
           >
             Create Your First Rating Link
@@ -485,7 +612,7 @@ const LandingPage = () => {
 
       {/* Footer */}
       <footer style={{ 
-        backgroundColor: '#2c3e50',
+        backgroundColor: '#10183C',
         color: 'white',
         padding: '40px 20px',
         textAlign: 'center'
@@ -503,12 +630,6 @@ const LandingPage = () => {
               <p style={{ margin: '0', opacity: '0.8' }}>
                 Turn your social content into cash
               </p>
-            </div>
-            
-            <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
-              <a href="#" style={{ color: 'white', textDecoration: 'none' }}>Terms</a>
-              <a href="#" style={{ color: 'white', textDecoration: 'none' }}>Privacy</a>
-              <a href="#" style={{ color: 'white', textDecoration: 'none' }}>Support</a>
             </div>
           </div>
           
