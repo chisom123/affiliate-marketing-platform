@@ -164,11 +164,11 @@ const detectSocialMediaApp = () => {
   // Touch support
   if ('ontouchstart' in window) confidence += 5;
   
-  // Multiple validation conditions - SECURE VERSION
+  // STRICT validation - ONLY direct app detection
   const isValidDirect = isInstagram || isSnapchat || isTikTok || isFacebookApp;
   
-  // Remove the loose validation that allows Safari
-  const isValid = isValidDirect || (confidence >= 60 && isMobile);
+  // Remove ALL fallback validation - no confidence scoring allowed
+  const isValid = isValidDirect;
   
   // Debug logging
   console.log('Detection results:', {
@@ -362,9 +362,8 @@ const RatingPage = () => {
     const browserCheck = detectSocialMediaApp();
     console.log('Browser check result:', browserCheck);
     
-    // Secure validation - only direct detection OR high confidence mobile
-    const isAcceptable = browserCheck.isValid || 
-                        (browserCheck.confidence >= 60 && browserCheck.details.isMobile);
+    // STRICT validation - ONLY direct app detection allowed
+    const isAcceptable = browserCheck.isValid;
     
     setIsValidBrowser(isAcceptable);
     
@@ -436,12 +435,10 @@ const RatingPage = () => {
         throw new Error(`Please wait ${Math.ceil(rateLimit.delay / 1000)} seconds before rating again.`);
       }
       
-      // Step 2: Secure browser validation
+      // Step 2: STRICT browser validation - ONLY direct app detection
       const browserCheck = detectSocialMediaApp();
-      const isValidForRating = browserCheck.isValid || 
-                              (browserCheck.confidence >= 60 && browserCheck.details.isMobile);
       
-      if (!isValidForRating) {
+      if (!browserCheck.isValid) {
         throw new Error('Invalid browser detected. Please rate from Instagram, Snapchat, or TikTok.');
       }
       
