@@ -1,6 +1,6 @@
-// AFFILIATE DASHBOARD COMPONENT
-// Purpose: Main interface for affiliates to create rating links and track earnings
-// Features: Authentication, link creation, earnings display, real-time analytics
+// AFFILIATE DASHBOARD COMPONENT - UPDATED WITH PAYOUT HISTORY
+// Purpose: Main interface for affiliates with payment setup and payout tracking
+// Features: Authentication, link creation, earnings display, payment setup, payout history
 
 import React, { useState, useEffect } from 'react';
 import { auth, db } from './firebase';
@@ -18,8 +18,10 @@ import {
   onSnapshot,
   doc,
   setDoc,
-  getDoc
+  getDoc,
+  updateDoc
 } from 'firebase/firestore';
+import PaymentSetupModal from './PaymentSetupModal';
 
 // LOGIN/SIGNUP COMPONENT
 const AuthForm = ({ onLogin }) => {
@@ -50,7 +52,9 @@ const AuthForm = ({ onLogin }) => {
           totalEarnings: 0,
           totalRatings: 0,
           createdAt: new Date(),
-          status: 'active'
+          status: 'active',
+          paymentInfo: null, // Will be set up later
+          payoutHistory: [] // Initialize empty payout history
         });
       }
     } catch (error) {
@@ -136,9 +140,14 @@ const AuthForm = ({ onLogin }) => {
 const Dashboard = ({ user, onLogout }) => {
   const [affiliateData, setAffiliateData] = useState(null);
   const [ratingLinks, setRatingLinks] = useState([]);
+  const [payoutHistory, setPayoutHistory] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showFirstEarningsPrompt, setShowFirstEarningsPrompt] = useState(false);
   const [newLink, setNewLink] = useState({ title: '', description: '' });
   const [loading, setLoading] = useState(false);
+  const [hasShownFirstEarningsPrompt, setHasShownFirstEarningsPrompt] = useState(false);
 
   // Load affiliate data and rating links
   useEffect(() => {
@@ -148,7 +157,19 @@ const Dashboard = ({ user, onLogout }) => {
     const loadAffiliateData = async () => {
       const affiliateDoc = await getDoc(doc(db, 'affiliates', user.uid));
       if (affiliateDoc.exists()) {
-        setAffiliateData(affiliateDoc.data());
+        const data = affiliateDoc.data();
+        setAffiliateData(data);
+        
+        // Set payout history from affiliate document
+        if (data.payoutHistory) {
+          setPayoutHistory([...data.payoutHistory].reverse()); // Most recent first
+        }
+        
+        // Check if we should show first earnings prompt
+        if (data.totalEarnings > 0 && !data.paymentInfo && !hasShownFirstEarningsPrompt) {
+          setShowFirstEarningsPrompt(true);
+          setHasShownFirstEarningsPrompt(true);
+        }
       }
     };
 
@@ -166,7 +187,7 @@ const Dashboard = ({ user, onLogout }) => {
 
     loadAffiliateData();
     return () => unsubscribe();
-  }, [user]);
+  }, [user, hasShownFirstEarningsPrompt]);
 
   // Create new rating link
   const createRatingLink = async () => {
@@ -208,9 +229,95 @@ const Dashboard = ({ user, onLogout }) => {
     alert('Link copied to clipboard!');
   };
 
+  // Handle payment info saved
+  const handlePaymentInfoSaved = () => {
+    // Refresh affiliate data
+    const loadAffiliateData = async () => {
+      const affiliateDoc = await getDoc(doc(db, 'affiliates', user.uid));
+      if (affiliateDoc.exists()) {
+        setAffiliateData(affiliateDoc.data());
+      }
+    };
+    loadAffiliateData();
+  };
+
   // Calculate total earnings from all links
   const totalEarnings = ratingLinks.reduce((sum, link) => sum + (link.earnings || 0), 0);
   const totalRatings = ratingLinks.reduce((sum, link) => sum + (link.totalRatings || 0), 0);
+  const totalEverEarned = totalEarnings + (payoutHistory.reduce((sum, p) => sum + p.amount, 0));
+
+  // Payment status component
+  const PaymentStatus = () => {
+    if (!affiliateData?.paymentInfo) {
+      return (
+        <div style={{ 
+          backgroundColor: '#fff3cd',
+          border: '1px solid #ffeaa7',
+          borderRadius: '8px',
+          padding: '15px',
+          marginBottom: '20px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h4 style={{ margin: '0 0 5px 0', color: '#856404' }}>⚠️ Payment Setup Required</h4>
+              <p style={{ margin: '0', color: '#856404' }}>
+                Set up your payment information to receive earnings
+              </p>
+            </div>
+            <button
+              onClick={() => setShowPaymentModal(true)}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#ffc107',
+                color: '#212529',
+                border: 'none',
+                borderRadius: '4px',
+                fontWeight: 'bold',
+                cursor: 'pointer'
+              }}
+            >
+              Setup Now
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ 
+        backgroundColor: '#d4edda',
+        border: '1px solid #c3e6cb',
+        borderRadius: '8px',
+        padding: '15px',
+        marginBottom: '20px'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h4 style={{ margin: '0 0 5px 0', color: '#155724' }}>✅ Payment Setup Complete</h4>
+            <p style={{ margin: '0', color: '#155724' }}>
+              {affiliateData.paymentInfo.method === 'paypal' 
+                ? `PayPal: ${affiliateData.paymentInfo.details.email}`
+                : `Bank: ${affiliateData.paymentInfo.details.bankName}`
+              }
+            </p>
+          </div>
+          <button
+            onClick={() => setShowPaymentModal(true)}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Edit
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
@@ -221,37 +328,228 @@ const Dashboard = ({ user, onLogout }) => {
           <p>Welcome back, {affiliateData?.name || user.email}!</p>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>Total Earnings</p>
+          <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>Current Balance</p>
           <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#28a745' }}>
             £{totalEarnings.toFixed(2)}
           </p>
-          <button 
-            onClick={onLogout}
-            style={{ marginTop: '10px', padding: '5px 15px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-          >
-            Logout
-          </button>
+          {affiliateData?.lastPayoutAmount && (
+            <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#6c757d' }}>
+              Last payout: £{affiliateData.lastPayoutAmount.toFixed(2)} on{' '}
+              {affiliateData.lastPayoutDate?.toDate?.()?.toLocaleDateString()}
+            </p>
+          )}
+          <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
+            <button 
+              onClick={() => setShowSettings(!showSettings)}
+              style={{ padding: '5px 15px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              Settings
+            </button>
+            <button 
+              onClick={onLogout}
+              style={{ padding: '5px 15px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Settings Panel */}
+      {showSettings && (
+        <div style={{ 
+          backgroundColor: '#f8f9fa',
+          border: '1px solid #dee2e6',
+          borderRadius: '8px',
+          padding: '20px',
+          marginBottom: '30px'
+        }}>
+          <h3 style={{ margin: '0 0 20px 0' }}>Settings</h3>
+          
+          <div style={{ marginBottom: '20px' }}>
+            <h4 style={{ margin: '0 0 10px 0' }}>Payment Information</h4>
+            {affiliateData?.paymentInfo ? (
+              <div>
+                <p style={{ margin: '0 0 10px 0' }}>
+                  <strong>Method:</strong> {affiliateData.paymentInfo.method === 'paypal' ? 'PayPal' : 'Bank Transfer'}
+                </p>
+                <p style={{ margin: '0 0 10px 0' }}>
+                  <strong>Details:</strong> {
+                    affiliateData.paymentInfo.method === 'paypal' 
+                      ? affiliateData.paymentInfo.details.email
+                      : `${affiliateData.paymentInfo.details.bankName} - ${affiliateData.paymentInfo.details.accountNumber.slice(-4)}`
+                  }
+                </p>
+                <button
+                  onClick={() => setShowPaymentModal(true)}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#007bff',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Edit Payment Info
+                </button>
+              </div>
+            ) : (
+              <div>
+                <p style={{ margin: '0 0 10px 0', color: '#6c757d' }}>
+                  No payment information set up yet.
+                </p>
+                <button
+                  onClick={() => setShowPaymentModal(true)}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#28a745',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Setup Payment Info
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Payout History */}
+          <div style={{ marginBottom: '20px' }}>
+            <h4 style={{ margin: '0 0 15px 0' }}>Payout History</h4>
+            {payoutHistory.length === 0 ? (
+              <p style={{ margin: '0', color: '#6c757d' }}>
+                No payouts yet. Your first payout will appear here once processed.
+              </p>
+            ) : (
+              <div style={{ 
+                backgroundColor: 'white',
+                borderRadius: '6px',
+                border: '1px solid #dee2e6',
+                overflow: 'hidden'
+              }}>
+                {payoutHistory.map((payout, index) => (
+                  <div key={index} style={{ 
+                    padding: '15px',
+                    borderBottom: index < payoutHistory.length - 1 ? '1px solid #eee' : 'none',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <div>
+                      <p style={{ margin: '0 0 5px 0', fontWeight: 'bold', color: '#28a745' }}>
+                        £{payout.amount.toFixed(2)}
+                      </p>
+                      <p style={{ margin: '0', fontSize: '12px', color: '#6c757d' }}>
+                        {payout.method === 'paypal' ? '💙 PayPal' : '🏦 Bank Transfer'} • 
+                        {payout.processedAt?.toDate?.()?.toLocaleDateString() || 'Recent'}
+                      </p>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: '#adb5bd' }}>
+                        Batch: {payout.batchId}
+                      </p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{
+                        padding: '3px 8px',
+                        borderRadius: '12px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        backgroundColor: '#d4edda',
+                        color: '#155724'
+                      }}>
+                        ✅ Paid
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h4 style={{ margin: '0 0 10px 0' }}>Account Information</h4>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Name:</label>
+              <input
+                type="text"
+                value={affiliateData?.name || ''}
+                onChange={(e) => setAffiliateData(prev => ({ ...prev, name: e.target.value }))}
+                style={{
+                  width: '200px',
+                  padding: '8px',
+                  border: '1px solid #dee2e6',
+                  borderRadius: '4px',
+                  marginRight: '10px'
+                }}
+              />
+              <button
+                onClick={async () => {
+                  try {
+                    await updateDoc(doc(db, 'affiliates', user.uid), {
+                      name: affiliateData.name
+                    });
+                    alert('Name updated successfully!');
+                  } catch (error) {
+                    alert('Error updating name: ' + error.message);
+                  }
+                }}
+                style={{
+                  padding: '8px 12px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '12px'
+                }}
+              >
+                Update
+              </button>
+            </div>
+            
+            <div style={{ marginBottom: '15px' }}>
+              <p style={{ margin: '0 0 5px 0' }}><strong>Email:</strong> {affiliateData?.email}</p>
+              <p style={{ margin: '0', fontSize: '12px', color: '#6c757d' }}>
+                This is your login email and cannot be changed
+              </p>
+            </div>
+            
+            <p style={{ margin: '0 0 5px 0' }}><strong>Member Since:</strong> {affiliateData?.createdAt?.toDate?.()?.toLocaleDateString()}</p>
+            <p style={{ margin: '0' }}><strong>Account Status:</strong> <span style={{ color: '#28a745' }}>Active</span></p>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Status */}
+      <PaymentStatus />
 
       {/* Stats Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
         <div style={{ padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
-          <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>Total Ratings</h3>
-          <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', color: '#007bff' }}>{totalRatings}</p>
-        </div>
-        
-        <div style={{ padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
-          <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>Active Links</h3>
+          <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>Current Balance</h3>
           <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', color: '#28a745' }}>
-            {ratingLinks.filter(link => link.status === 'active').length}
+            £{totalEarnings.toFixed(2)}
           </p>
         </div>
         
         <div style={{ padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
-          <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>Avg per Link</h3>
-          <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', color: '#ffc107' }}>
-            {ratingLinks.length > 0 ? (totalRatings / ratingLinks.length).toFixed(1) : '0.0'}
+          <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>Total Earned</h3>
+          <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', color: '#007bff' }}>
+            £{totalEverEarned.toFixed(2)}
+          </p>
+        </div>
+
+        <div style={{ padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
+          <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>Total Ratings</h3>
+          <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', color: '#ffc107' }}>{totalRatings}</p>
+        </div>
+        
+        <div style={{ padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
+          <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>Active Links</h3>
+          <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', color: '#17a2b8' }}>
+            {ratingLinks.filter(link => link.status === 'active').length}
           </p>
         </div>
       </div>
@@ -352,6 +650,85 @@ const Dashboard = ({ user, onLogout }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* First Earnings Celebration Modal */}
+      {showFirstEarningsPrompt && (
+        <div style={{ 
+          position: 'fixed', 
+          top: '0', 
+          left: '0', 
+          right: '0', 
+          bottom: '0', 
+          backgroundColor: 'rgba(0,0,0,0.7)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{ 
+            backgroundColor: 'white', 
+            padding: '40px', 
+            borderRadius: '15px', 
+            maxWidth: '400px', 
+            width: '90%',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: '20px' }}>🎉</div>
+            <h2 style={{ color: '#28a745', marginBottom: '15px' }}>Congratulations!</h2>
+            <p style={{ marginBottom: '20px', fontSize: '18px' }}>
+              You just earned your first money with SocialStar!
+            </p>
+            <p style={{ marginBottom: '30px', color: '#6c757d' }}>
+              Set up your payment information so we can send you your earnings.
+            </p>
+            
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => {
+                  setShowFirstEarningsPrompt(false);
+                  setShowPaymentModal(true);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  backgroundColor: '#28a745',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                Setup Payments
+              </button>
+              
+              <button
+                onClick={() => setShowFirstEarningsPrompt(false)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Setup Modal */}
+      {showPaymentModal && (
+        <PaymentSetupModal
+          user={user}
+          onClose={() => setShowPaymentModal(false)}
+          onPaymentInfoSaved={handlePaymentInfoSaved}
+        />
       )}
 
       {/* Rating Links List */}

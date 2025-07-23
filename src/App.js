@@ -7,6 +7,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LandingPage from './LandingPage';
 import AffiliateDashboard from './AffiliateDashboard';
 import RatingPage from './RatingPage';
+import AdminPanel from './AdminPanel';
 
 function App() {
   return (
@@ -20,6 +21,9 @@ function App() {
         
         {/* Rating Page - Public rating interface */}
         <Route path="/rate/:affiliateId/:linkId" element={<RatingPage />} />
+        
+        {/* Admin Panel - Business management */}
+        <Route path="/admin" element={<AdminPanel />} />
         
         {/* Catch-all route for invalid URLs */}
         <Route path="*" element={
