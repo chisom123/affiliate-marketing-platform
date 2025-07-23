@@ -768,24 +768,10 @@ if (submitted) {
           padding: '40px 30px',
           marginBottom: '30px'
         }}>
-          <div style={{ 
-            width: '80px',
-            height: '80px',
-            backgroundColor: '#28a745',
-            borderRadius: '50%',
-            margin: '0 auto 30px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: '36px'
-          }}>
-            ✓
-          </div>
-
           <h2 style={{ 
             color: '#fff',
-            marginBottom: '20px',
+            marginTop: '0px',
+            marginBottom: '30px',
             fontSize: '24px',
             fontWeight: 'bold'
           }}>
@@ -862,7 +848,7 @@ if (submitted) {
             marginTop: '30px',
             fontWeight: 'bold'
           }}>
-            Want the full competition experience?
+            Want your photos rated by friends?
           </p>
 
           <div style={{ marginTop: '30px' }}>
@@ -879,7 +865,7 @@ if (submitted) {
                 cursor: 'pointer'
               }}
             >
-              Open SocialStar
+              Get Started
             </button>
           </div>
         </div>
