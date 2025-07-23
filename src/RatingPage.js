@@ -18,6 +18,14 @@ import {
 } from 'firebase/firestore';
 import { useParams } from 'react-router-dom';
 
+// DEVELOPMENT BYPASS HELPER
+const isLocalDevelopment = () => {
+  return window.location.hostname === 'localhost' || 
+         window.location.hostname === '127.0.0.1' || 
+         window.location.port === '3000' ||
+         window.location.hostname.includes('.local');
+};
+
 // Enhanced fingerprinting with multiple data points
 const generateEnhancedFingerprint = () => {
   const canvas = document.createElement('canvas');
@@ -90,6 +98,27 @@ const simpleHash = (str) => {
 
 // Enhanced browser detection with confidence scoring and debugging
 const detectSocialMediaApp = () => {
+  // LOCALHOST BYPASS
+  if (isLocalDevelopment()) {
+    console.log('🔧 Development mode detected - bypassing social media checks');
+    return {
+      isValid: true,
+      app: 'development',
+      isWebView: false,
+      confidence: 100,
+      details: {
+        isInstagram: false,
+        isSnapchat: false,
+        isTikTok: false,
+        isFacebookApp: false,
+        isMobile: false,
+        screenSize: `${window.screen.width}x${window.screen.height}`,
+        patterns: { isInstagram: false, isSnapchat: false, isTikTok: false, isFacebookApp: false },
+        developmentMode: true
+      }
+    };
+  }
+
   const ua = navigator.userAgent.toLowerCase();
   
   // Debug logging
@@ -204,6 +233,12 @@ const detectSocialMediaApp = () => {
 
 // Rate limiting with progressive delays
 const checkRateLimit = () => {
+  // LOCALHOST BYPASS
+  if (isLocalDevelopment()) {
+    console.log('🔧 Development mode - bypassing rate limits');
+    return { allowed: true, delay: 0, attempts: 1 };
+  }
+
   const rateKey = 'socialstar_rate_limit';
   const stored = localStorage.getItem(rateKey);
   
@@ -251,6 +286,12 @@ const checkRateLimit = () => {
 
 // Server-side fraud detection
 const checkForFraud = async (fingerprint, linkId, affiliateId) => {
+  // LOCALHOST BYPASS
+  if (isLocalDevelopment()) {
+    console.log('🔧 Development mode - bypassing fraud detection');
+    return { fraud: false, confidence: 100, developmentMode: true };
+  }
+
   const fingerprintHash = simpleHash(JSON.stringify(fingerprint));
   const now = new Date();
   const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
@@ -353,6 +394,8 @@ const RatingPage = () => {
   const [hoveredStar, setHoveredStar] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [averageRating, setAverageRating] = useState(null);
+  const [totalRatingsCount, setTotalRatingsCount] = useState(0);
 
   // Check if user is in a valid browser
   const [isValidBrowser, setIsValidBrowser] = useState(false);
@@ -419,9 +462,31 @@ const RatingPage = () => {
     }
   }, [affiliateId, linkId, isValidBrowser]);
 
+  const calculateAverageRating = async () => {
+    try {
+      const ratingsQuery = query(
+        collection(db, 'ratings'),
+        where('linkIdString', '==', linkId)
+      );
+      const ratingsSnapshot = await getDocs(ratingsQuery);
+      
+      if (!ratingsSnapshot.empty) {
+        const ratings = ratingsSnapshot.docs.map(doc => doc.data().rating);
+        const total = ratings.reduce((sum, rating) => sum + rating, 0);
+        const average = total / ratings.length;
+        
+        setAverageRating(average);
+        setTotalRatingsCount(ratings.length);
+      }
+    } catch (error) {
+      console.error('Error calculating average rating:', error);
+    }
+  };
+
   // Enhanced submit rating with bulletproof fraud prevention
-  const submitRating = async () => {
-    if (rating === 0) {
+  const submitRating = async (selectedRating = rating) => {
+    const finalRating = selectedRating || rating;
+    if (finalRating === 0) {
       alert('Please select a star rating first!');
       return;
     }
@@ -448,25 +513,27 @@ const RatingPage = () => {
       // Step 4: Server-side fraud detection
       const fraudCheck = await checkForFraud(fingerprint, linkId, affiliateId);
       if (fraudCheck.fraud) {
-        // Log suspicious activity
-        await addDoc(collection(db, 'suspicious_activity'), {
-          type: 'fraud_attempt',
-          reason: fraudCheck.reason,
-          confidence: fraudCheck.confidence,
-          fingerprint: fingerprint,
-          linkId: linkId,
-          affiliateId: affiliateId,
-          timestamp: serverTimestamp()
-        });
+        // Log suspicious activity (skip in development)
+        if (!isLocalDevelopment()) {
+          await addDoc(collection(db, 'suspicious_activity'), {
+            type: 'fraud_attempt',
+            reason: fraudCheck.reason,
+            confidence: fraudCheck.confidence,
+            fingerprint: fingerprint,
+            linkId: linkId,
+            affiliateId: affiliateId,
+            timestamp: serverTimestamp()
+          });
+        }
         
         throw new Error('Rating not allowed due to suspicious activity.');
       }
       
-      // Step 5: Double rating check
+      // Step 5: Double rating check (bypassed in localhost)
       const clientToken = generateSecureClientToken();
       const ratingKey = `rated_${linkId}`;
       
-      if (localStorage.getItem(ratingKey)) {
+      if (!isLocalDevelopment() && localStorage.getItem(ratingKey)) {
         throw new Error('You have already rated this story!');
       }
       
@@ -477,7 +544,7 @@ const RatingPage = () => {
         linkId: linkData.id,
         linkIdString: linkData.linkId,
         affiliateId: affiliateId,
-        rating: rating,
+        rating: finalRating,
         createdAt: serverTimestamp(),
         fingerprint: fingerprint,
         fingerprintHash: fingerprintHash,
@@ -487,7 +554,8 @@ const RatingPage = () => {
         referrer: document.referrer,
         validated: true,
         earnings: 0.01,
-        protectionVersion: '2.0'
+        protectionVersion: isLocalDevelopment() ? '2.0-dev' : '2.0',
+        developmentMode: isLocalDevelopment()
       };
       
       await addDoc(collection(db, 'ratings'), ratingData);
@@ -504,13 +572,16 @@ const RatingPage = () => {
         totalEarnings: increment(0.01)
       });
       
-      // Mark as rated
-      localStorage.setItem(ratingKey, JSON.stringify({
-        rated: true,
-        timestamp: Date.now(),
-        rating: rating
-      }));
+      // Mark as rated (skip in development to allow multiple ratings)
+      if (!isLocalDevelopment()) {
+        localStorage.setItem(ratingKey, JSON.stringify({
+          rated: true,
+          timestamp: Date.now(),
+          rating: finalRating
+        }));
+      }
       
+      await calculateAverageRating();
       setSubmitted(true);
 
     } catch (error) {
@@ -529,20 +600,19 @@ const RatingPage = () => {
         justifyContent: 'center', 
         alignItems: 'center', 
         height: '100vh',
-        backgroundColor: '#f8f9fa',
+        backgroundColor: '#10183C',
         fontFamily: 'Arial, sans-serif'
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ 
             width: '40px', 
             height: '40px', 
-            border: '4px solid #e3e3e3',
-            borderTop: '4px solid #007bff',
+            border: '4px solid #323862',
+            borderTop: '4px solid #fff',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite',
             margin: '0 auto 20px'
           }}></div>
-          <p>Loading rating page...</p>
         </div>
       </div>
     );
@@ -674,26 +744,29 @@ const RatingPage = () => {
     );
   }
 
-  // Success state
-  if (submitted) {
-    return (
+// Success state
+if (submitted) {
+  return (
+    <div style={{ 
+      minHeight: '100vh',
+      backgroundColor: '#10183C',
+      fontFamily: 'Arial, sans-serif',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px'
+    }}>
       <div style={{ 
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '20px',
-        fontFamily: 'Arial, sans-serif'
+        padding: '30px 20px',
+        textAlign: 'center',
+        width: '100%',
+        maxWidth: '500px'
       }}>
         <div style={{ 
-          backgroundColor: 'white',
-          borderRadius: '20px',
+          backgroundColor: '#1A2245',
+          borderRadius: '12px',
           padding: '40px 30px',
-          textAlign: 'center',
-          maxWidth: '400px',
-          width: '100%',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
+          marginBottom: '30px'
         }}>
           <div style={{ 
             width: '80px',
@@ -711,36 +784,87 @@ const RatingPage = () => {
           </div>
 
           <h2 style={{ 
-            color: '#2c3e50',
+            color: '#fff',
             marginBottom: '15px',
-            fontSize: '24px'
+            fontSize: '24px',
+            fontWeight: 'bold'
           }}>
             Thanks for rating!
           </h2>
 
           <p style={{ 
-            color: '#6c757d',
-            marginBottom: '30px',
-            lineHeight: '1.5'
+            color: '#B8C5D1',
+            marginBottom: '20px',          // ← Changed from 30px to 20px
+            lineHeight: '1.5',
+            fontSize: '18px'
           }}>
             You gave {affiliateData?.name || 'this story'} {rating} star{rating !== 1 ? 's' : ''}!
           </p>
 
+          {/* NEW: Average Rating Display */}
+          {averageRating && (
+            <div style={{ 
+              backgroundColor: '#243055',
+              borderRadius: '12px',
+              padding: '20px',
+              marginBottom: '20px'
+            }}>
+              <div style={{ 
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '10px'
+              }}>
+                <div style={{ 
+                  fontSize: '32px',
+                  fontWeight: 'bold',
+                  color: '#ffc107',
+                  marginRight: '10px'
+                }}>
+                  {averageRating.toFixed(1)}
+                </div>
+                <div style={{ 
+                  display: 'flex',
+                  gap: '2px'
+                }}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span
+                      key={star}
+                      style={{
+                        fontSize: '20px',
+                        color: star <= Math.round(averageRating) ? '#ffc107' : '#dee2e6'
+                      }}
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <p style={{ 
+                color: '#B8C5D1',
+                fontSize: '14px',
+                margin: '0'
+              }}>
+                Average from {totalRatingsCount} rating{totalRatingsCount !== 1 ? 's' : ''}
+              </p>
+            </div>
+          )}
+
           <div style={{ 
-            backgroundColor: '#f8f9fa',
+            backgroundColor: '#243055',
             borderRadius: '12px',
             padding: '20px',
             marginBottom: '30px'
           }}>
             <h3 style={{ 
-              color: '#495057',
+              color: '#fff',
               marginBottom: '15px',
               fontSize: '18px'
             }}>
               Want to rate more friends?
             </h3>
             <p style={{ 
-              color: '#6c757d',
+              color: '#B8C5D1',
               fontSize: '14px',
               marginBottom: '0'
             }}>
@@ -799,132 +923,47 @@ const RatingPage = () => {
               </div>
             </a>
           </div>
-
-          <p style={{ 
-            fontSize: '12px',
-            color: '#adb5bd',
-            margin: '0'
-          }}>
-            Rate friends • Share moments • Win prizes
-          </p>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   // Main rating interface
   return (
     <div style={{ 
       minHeight: '100vh',
-      backgroundColor: '#f8f9fa',
-      fontFamily: 'Arial, sans-serif'
+      backgroundColor: '#10183C',
+      fontFamily: 'Arial, sans-serif',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
     }}>
-      <div style={{ 
-        backgroundColor: 'white',
-        padding: '20px',
-        borderBottom: '1px solid #dee2e6',
-        textAlign: 'center',
-        position: 'relative'
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: '10px',
-          right: '10px',
-          backgroundColor: '#28a745',
-          color: 'white',
-          fontSize: '12px',
-          padding: '4px 8px',
-          borderRadius: '4px'
-        }}>
-          {navigator.userAgent.includes('Instagram') ? 'Instagram' : 
-           navigator.userAgent.includes('Snapchat') ? 'Snapchat' :
-           navigator.userAgent.includes('TikTok') ? 'TikTok' : 'Social Media'}
-        </div>
-        
-        <h1 style={{ 
-          margin: '0 0 5px 0',
-          color: '#495057',
-          fontSize: '20px'
-        }}>
-          Rate this story
-        </h1>
-        <p style={{ 
-          margin: '0',
-          color: '#6c757d',
-          fontSize: '14px'
-        }}>
-          by {affiliateData?.name || 'a friend'}
-        </p>
-      </div>
 
       <div style={{ 
         padding: '30px 20px',
-        textAlign: 'center'
+        textAlign: 'center',
+        width: '100%',
+        maxWidth: '500px'
       }}>
+
         <div style={{ 
-          backgroundColor: 'white',
+          backgroundColor: '#1A2245',
           borderRadius: '12px',
           padding: '30px',
           marginBottom: '30px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
           position: 'relative'
         }}>
-          <div style={{
-            position: 'absolute',
-            top: '-10px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: '#007bff',
-            color: 'white',
-            padding: '4px 12px',
-            borderRadius: '20px',
-            fontSize: '12px'
-          }}>
-            Rating Link
-          </div>
-          
-          <h2 style={{ 
-            color: '#495057',
-            marginBottom: '15px',
-            fontSize: '22px'
-          }}>
-            "{linkData.title}"
-          </h2>
-          
-          {linkData.description && (
-            <p style={{ 
-              color: '#6c757d',
-              marginBottom: '20px',
-              lineHeight: '1.5'
-            }}>
-              {linkData.description}
-            </p>
-          )}
-
-          <div style={{ 
-            backgroundColor: '#f8f9fa',
-            borderRadius: '8px',
-            padding: '40px',
-            border: '2px dashed #dee2e6',
-            marginBottom: '30px'
-          }}>
-            <p style={{ 
-              color: '#adb5bd',
-              margin: '0',
-              fontSize: '14px'
-            }}>
-              📸 Story content preview
-            </p>
-          </div>
 
           <div style={{ marginBottom: '30px' }}>
-            <p style={{ 
-              color: '#495057',
+            <p style={{
+              color: '#fff',
               marginBottom: '20px',
-              fontSize: '16px',
-              fontWeight: 'bold'
-            }}>
-              How would you rate this story?
+              fontSize: '20px',
+              fontWeight: 'bold',
+              lineHeight: '28px'
+              }}>
+              What would you rate {affiliateData?.name ? `${affiliateData.name}'s` : 'this'} story?
             </p>
             
             <div style={{ 
@@ -936,14 +975,20 @@ const RatingPage = () => {
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
-                  onClick={() => setRating(star)}
+                  onClick={() => {
+                    setRating(star);
+                    setTimeout(() => {
+                      submitRating(star);
+                    }, 100);
+                  }}
                   onMouseEnter={() => setHoveredStar(star)}
                   onMouseLeave={() => setHoveredStar(0)}
+                  disabled={submitting}
                   style={{
                     backgroundColor: 'transparent',
                     border: 'none',
                     fontSize: '36px',
-                    cursor: 'pointer',
+                    cursor: submitting ? 'not-allowed' : 'pointer',
                     color: (hoveredStar >= star || rating >= star) ? '#ffc107' : '#dee2e6',
                     transition: 'color 0.2s',
                     padding: '5px'
@@ -953,45 +998,8 @@ const RatingPage = () => {
                 </button>
               ))}
             </div>
-
-            {rating > 0 && (
-              <p style={{ 
-                color: '#28a745',
-                fontSize: '14px',
-                margin: '0 0 20px 0'
-              }}>
-                You selected {rating} star{rating !== 1 ? 's' : ''}!
-              </p>
-            )}
           </div>
-
-          <button
-            onClick={submitRating}
-            disabled={rating === 0 || submitting}
-            style={{
-              backgroundColor: rating === 0 ? '#6c757d' : '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '25px',
-              padding: '15px 40px',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              cursor: rating === 0 || submitting ? 'not-allowed' : 'pointer',
-              transition: 'all 0.3s',
-              minWidth: '160px'
-            }}
-          >
-            {submitting ? 'Submitting...' : 'Submit Rating'}
-          </button>
         </div>
-
-        <p style={{ 
-          color: '#adb5bd',
-          fontSize: '12px',
-          textAlign: 'center'
-        }}>
-          Powered by SocialStar • Rate friends and win prizes!
-        </p>
       </div>
 
       <style jsx>{`

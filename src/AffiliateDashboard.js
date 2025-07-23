@@ -205,7 +205,7 @@ const Dashboard = ({ user, onLogout }) => {
         linkId: linkId,
         title: newLink.title,
         description: newLink.description,
-        url: `rate.socialstar.com/rate/${user.uid}/${linkId}`,
+        url: `partners.socialstarapp.com/rate/${user.uid}/${linkId}`,
         createdAt: new Date(),
         expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000), // 48 hours
         totalRatings: 0,
