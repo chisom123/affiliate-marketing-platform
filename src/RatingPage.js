@@ -785,21 +785,12 @@ if (submitted) {
 
           <h2 style={{ 
             color: '#fff',
-            marginBottom: '15px',
+            marginBottom: '20px',
             fontSize: '24px',
             fontWeight: 'bold'
           }}>
             Thanks for rating!
           </h2>
-
-          <p style={{ 
-            color: '#B8C5D1',
-            marginBottom: '20px',          // ← Changed from 30px to 20px
-            lineHeight: '1.5',
-            fontSize: '18px'
-          }}>
-            You gave {affiliateData?.name || 'this story'} {rating} star{rating !== 1 ? 's' : ''}!
-          </p>
 
           {/* NEW: Average Rating Display */}
           {averageRating && (
@@ -809,6 +800,13 @@ if (submitted) {
               padding: '20px',
               marginBottom: '20px'
             }}>
+              <p style={{ 
+                color: '#B8C5D1',
+                fontSize: '15px',
+                margin: '0 0 10px 0'
+              }}>
+                Average Rating
+              </p>
               <div style={{ 
                 display: 'flex',
                 alignItems: 'center',
@@ -842,86 +840,47 @@ if (submitted) {
               </div>
               <p style={{ 
                 color: '#B8C5D1',
-                fontSize: '14px',
+                fontSize: '15px',
                 margin: '0'
               }}>
-                Average from {totalRatingsCount} rating{totalRatingsCount !== 1 ? 's' : ''}
+                {totalRatingsCount} rater{totalRatingsCount !== 1 ? 's' : ''}
               </p>
             </div>
           )}
 
-          <div style={{ 
-            backgroundColor: '#243055',
-            borderRadius: '12px',
-            padding: '20px',
-            marginBottom: '30px'
-          }}>
-            <h3 style={{ 
-              color: '#fff',
-              marginBottom: '15px',
-              fontSize: '18px'
-            }}>
-              Want to rate more friends?
-            </h3>
-            <p style={{ 
-              color: '#B8C5D1',
-              fontSize: '14px',
-              marginBottom: '0'
-            }}>
-              Join SocialStar to create your own rating competitions and discover amazing content!
-            </p>
-          </div>
+          <hr style={{
+            border: 'none',           /* Remove default border */
+            height: '2px',            /* Set thickness */
+            backgroundColor: '#243055',  /* Set color */
+            margin: '20px 0',         /* Add spacing */
+            borderRadius: '200px'       /* Round the edges */
+          }} />
 
-          <div style={{ marginBottom: '20px' }}>
-            <a 
-              href="https://apps.apple.com/app/socialstar" 
-              style={{ 
-                display: 'inline-block',
-                margin: '0 10px 10px 0',
-                textDecoration: 'none'
+          <p style={{ 
+            color: '#fff',
+            fontSize: '16px',
+            marginTop: '30px',
+            fontWeight: 'bold'
+          }}>
+            Want the full competition experience?
+          </p>
+
+          <div style={{ marginTop: '30px' }}>
+            <button
+              onClick={() => window.open('https://apps.apple.com/gb/app/socialstar-app/id6473705189', '_blank')}
+              style={{
+                padding: '15px 30px',
+                backgroundColor: '#4169E1',
+                color: 'white',
+                border: 'none',
+                borderRadius: '30px',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                cursor: 'pointer'
               }}
             >
-              <div style={{
-                backgroundColor: '#000',
-                color: '#fff',
-                borderRadius: '8px',
-                padding: '10px 20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}>
-                <div style={{fontSize: '24px'}}></div>
-                <div>
-                  <div style={{fontSize: '10px'}}>Download on the</div>
-                  <div style={{fontSize: '18px', fontWeight: 'bold'}}>App Store</div>
-                </div>
-              </div>
-            </a>
-            
-            <a 
-              href="https://play.google.com/store/apps/details?id=com.socialstar" 
-              style={{ 
-                display: 'inline-block',
-                margin: '0 0 10px 10px',
-                textDecoration: 'none'
-              }}
-            >
-              <div style={{
-                backgroundColor: '#000',
-                color: '#fff',
-                borderRadius: '8px',
-                padding: '10px 20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}>
-                <div style={{fontSize: '24px'}}>▶</div>
-                <div>
-                  <div style={{fontSize: '10px'}}>GET IT ON</div>
-                  <div style={{fontSize: '18px', fontWeight: 'bold'}}>Google Play</div>
-                </div>
-              </div>
-            </a>
+              Open SocialStar
+            </button>
           </div>
         </div>
       </div>
