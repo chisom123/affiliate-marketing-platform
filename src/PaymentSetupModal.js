@@ -1,4 +1,4 @@
-// PAYMENT SETUP MODAL COMPONENT
+// PAYMENT SETUP MODAL COMPONENT - UPDATED WITH DARK THEME
 // Purpose: Collect affiliate payment information for manual payouts
 // Features: PayPal email, bank details, validation, secure storage
 
@@ -107,41 +107,79 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
     setLoading(false);
   };
 
+  // Handle click on the overlay background
+  const handleOverlayClick = (e) => {
+    // Check if the click is directly on the overlay (not a child element)
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  // Prevent click inside the modal from closing it
+  const handleModalClick = (e) => {
+    e.stopPropagation();
+  };
+
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.7)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      padding: '20px'
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        padding: '30px',
-        maxWidth: '500px',
-        width: '100%',
-        maxHeight: '90vh',
-        overflowY: 'auto'
-      }}>
-        <div style={{ marginBottom: '20px' }}>
-          <h2 style={{ margin: '0 0 10px 0', color: '#2c3e50' }}>
+    <div 
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: '20px'
+      }}
+      onClick={handleOverlayClick}
+    >
+      <div 
+        style={{
+          backgroundColor: '#323862',
+          borderRadius: '20px',
+          padding: '40px 30px',
+          maxWidth: '550px',
+          width: '100%',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          border: '1px solid rgba(255,255,255,0.1)',
+          boxShadow: '0 25px 80px rgba(0,0,0,0.6)'
+        }}
+        onClick={handleModalClick}
+      >
+        {/* Header */}
+        <div style={{ marginBottom: '30px', textAlign: 'center' }}>
+          <h2 style={{ 
+            margin: '0 0 15px 0', 
+            color: 'white',
+            fontSize: '28px',
+            fontWeight: 'bold'
+          }}>
             💰 Setup Payment Information
           </h2>
-          <p style={{ margin: '0', color: '#6c757d', fontSize: '14px' }}>
+          <p style={{ 
+            margin: '0', 
+            color: 'rgba(255,255,255,0.7)', 
+            fontSize: '16px',
+            lineHeight: '1.4'
+          }}>
             We need your payment details to send you earnings. All information is stored securely.
           </p>
         </div>
 
         {/* Payment Method Selection */}
-        <div style={{ marginBottom: '25px' }}>
-          <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold' }}>
+        <div style={{ marginBottom: '35px' }}>
+          <label style={{ 
+            display: 'block', 
+            marginBottom: '15px', 
+            fontWeight: '600',
+            color: 'white',
+            fontSize: '16px'
+          }}>
             Payment Method:
           </label>
           <div style={{ display: 'flex', gap: '15px' }}>
@@ -149,50 +187,109 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
               onClick={() => setPaymentMethod('paypal')}
               style={{
                 flex: 1,
-                padding: '15px',
-                border: `2px solid ${paymentMethod === 'paypal' ? '#007bff' : '#dee2e6'}`,
-                borderRadius: '8px',
-                backgroundColor: paymentMethod === 'paypal' ? '#e3f2fd' : 'white',
-                cursor: 'pointer'
+                padding: '20px 15px',
+                border: `2px solid ${paymentMethod === 'paypal' ? '#4169E1' : 'rgba(255,255,255,0.2)'}`,
+                borderRadius: '12px',
+                backgroundColor: paymentMethod === 'paypal' ? 'rgba(65, 105, 225, 0.1)' : 'rgba(255,255,255,0.05)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                textAlign: 'center'
+              }}
+              onMouseEnter={(e) => {
+                if (paymentMethod !== 'paypal') {
+                  e.target.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (paymentMethod !== 'paypal') {
+                  e.target.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                }
               }}
             >
-              <div style={{ fontWeight: 'bold' }}>PayPal</div>
-              <div style={{ fontSize: '12px', color: '#6c757d' }}>Fastest & easiest</div>
+              <div style={{ 
+                fontWeight: 'bold', 
+                color: paymentMethod === 'paypal' ? '#4169E1' : 'white',
+                fontSize: '16px',
+                marginBottom: '5px'
+              }}>
+                PayPal
+              </div>
+              <div style={{ 
+                fontSize: '12px', 
+                color: paymentMethod === 'paypal' ? 'rgba(65, 105, 225, 0.8)' : 'rgba(255,255,255,0.6)'
+              }}>
+                Fastest & easiest
+              </div>
             </button>
             <button
               onClick={() => setPaymentMethod('bank')}
               style={{
                 flex: 1,
-                padding: '15px',
-                border: `2px solid ${paymentMethod === 'bank' ? '#007bff' : '#dee2e6'}`,
-                borderRadius: '8px',
-                backgroundColor: paymentMethod === 'bank' ? '#e3f2fd' : 'white',
-                cursor: 'pointer'
+                padding: '20px 15px',
+                border: `2px solid ${paymentMethod === 'bank' ? '#4169E1' : 'rgba(255,255,255,0.2)'}`,
+                borderRadius: '12px',
+                backgroundColor: paymentMethod === 'bank' ? 'rgba(65, 105, 225, 0.1)' : 'rgba(255,255,255,0.05)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                textAlign: 'center'
+              }}
+              onMouseEnter={(e) => {
+                if (paymentMethod !== 'bank') {
+                  e.target.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (paymentMethod !== 'bank') {
+                  e.target.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                }
               }}
             >
-              <div style={{ fontWeight: 'bold' }}>Bank Transfer</div>
-              <div style={{ fontSize: '12px', color: '#6c757d' }}>Direct to account</div>
+              <div style={{ 
+                fontWeight: 'bold', 
+                color: paymentMethod === 'bank' ? '#4169E1' : 'white',
+                fontSize: '16px',
+                marginBottom: '5px'
+              }}>
+                Bank Transfer
+              </div>
+              <div style={{ 
+                fontSize: '12px', 
+                color: paymentMethod === 'bank' ? 'rgba(65, 105, 225, 0.8)' : 'rgba(255,255,255,0.6)'
+              }}>
+                Direct to account
+              </div>
             </button>
           </div>
         </div>
 
         {/* PayPal Form */}
         {paymentMethod === 'paypal' && (
-          <div style={{ marginBottom: '25px' }}>
+          <div style={{ marginBottom: '35px' }}>
             <div style={{
-              backgroundColor: '#e3f2fd',
-              padding: '15px',
-              borderRadius: '8px',
-              marginBottom: '15px',
-              border: '1px solid #2196f3'
+              backgroundColor: 'rgba(65, 105, 225, 0.1)',
+              padding: '20px',
+              borderRadius: '12px',
+              marginBottom: '20px',
+              border: '1px solid rgba(65, 105, 225, 0.3)'
             }}>
-              <p style={{ margin: '0', fontSize: '14px', color: '#1976d2' }}>
+              <p style={{ 
+                margin: '0', 
+                fontSize: '14px', 
+                color: '#6B8AFF',
+                lineHeight: '1.5'
+              }}>
                 💡 <strong>We pay via PayPal for fast, secure international transfers.</strong> Don't have PayPal? 
                 Create a free account at <strong>paypal.com</strong> - it takes 2 minutes and works with any US bank account or debit card.
               </p>
             </div>
             
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '10px', 
+              fontWeight: '600',
+              color: 'white',
+              fontSize: '14px'
+            }}>
               PayPal Email Address:
             </label>
             <input
@@ -202,13 +299,25 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
               placeholder="your-paypal@email.com"
               style={{
                 width: '100%',
-                padding: '12px',
-                border: '1px solid #dee2e6',
-                borderRadius: '6px',
-                fontSize: '14px'
+                padding: '14px',
+                backgroundColor: '#1A2245',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '10px',
+                fontSize: '16px',
+                color: 'white',
+                outline: 'none',
+                boxSizing: 'border-box',
+                transition: 'border-color 0.2s ease'
               }}
+              onFocus={(e) => e.target.style.borderColor = '#4169E1'}
+              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
+              }
             />
-            <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#6c757d' }}>
+            <p style={{ 
+              margin: '8px 0 0 0', 
+              fontSize: '12px', 
+              color: 'rgba(255,255,255,0.6)'
+            }}>
               This must be the email address associated with your PayPal account
             </p>
           </div>
@@ -216,10 +325,16 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
 
         {/* Bank Transfer Form */}
         {paymentMethod === 'bank' && (
-          <div style={{ marginBottom: '25px' }}>
-            <div style={{ display: 'grid', gap: '15px' }}>
+          <div style={{ marginBottom: '35px' }}>
+            <div style={{ display: 'grid', gap: '20px' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '8px', 
+                  fontWeight: '600',
+                  color: 'white',
+                  fontSize: '14px'
+                }}>
                   Account Holder Name:
                 </label>
                 <input
@@ -229,15 +344,30 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
                   placeholder="Full name on account"
                   style={{
                     width: '100%',
-                    padding: '12px',
-                    border: '1px solid #dee2e6',
-                    borderRadius: '6px'
+                    padding: '14px',
+                    backgroundColor: '#1A2245',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '10px',
+                    color: 'white',
+                    fontSize: '16px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    transition: 'border-color 0.2s ease'
                   }}
+                  onFocus={(e) => e.target.style.borderColor = '#4169E1'}
+                  onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
+                  }
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '8px', 
+                  fontWeight: '600',
+                  color: 'white',
+                  fontSize: '14px'
+                }}>
                   Bank Name:
                 </label>
                 <input
@@ -247,16 +377,31 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
                   placeholder="e.g. Barclays, HSBC, Chase"
                   style={{
                     width: '100%',
-                    padding: '12px',
-                    border: '1px solid #dee2e6',
-                    borderRadius: '6px'
+                    padding: '14px',
+                    backgroundColor: '#1A2245',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '10px',
+                    color: 'white',
+                    fontSize: '16px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    transition: 'border-color 0.2s ease'
                   }}
+                  onFocus={(e) => e.target.style.borderColor = '#4169E1'}
+                  onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
+                  }
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '15px' }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '8px', 
+                    fontWeight: '600',
+                    color: 'white',
+                    fontSize: '14px'
+                  }}>
                     Account Number:
                   </label>
                   <input
@@ -266,15 +411,30 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
                     placeholder="12345678"
                     style={{
                       width: '100%',
-                      padding: '12px',
-                      border: '1px solid #dee2e6',
-                      borderRadius: '6px'
+                      padding: '14px',
+                      backgroundColor: '#1A2245',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '10px',
+                      color: 'white',
+                      fontSize: '16px',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      transition: 'border-color 0.2s ease'
                     }}
+                    onFocus={(e) => e.target.style.borderColor = '#4169E1'}
+                    onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
+                    }
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '8px', 
+                    fontWeight: '600',
+                    color: 'white',
+                    fontSize: '14px'
+                  }}>
                     {formData.country === 'UK' ? 'Sort Code:' : 'Routing Number:'}
                   </label>
                   <input
@@ -287,10 +447,19 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
                     placeholder={formData.country === 'UK' ? '12-34-56' : '123456789'}
                     style={{
                       width: '100%',
-                      padding: '12px',
-                      border: '1px solid #dee2e6',
-                      borderRadius: '6px'
+                      padding: '14px',
+                      backgroundColor: '#1A2245',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '10px',
+                      color: 'white',
+                      fontSize: '16px',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      transition: 'border-color 0.2s ease'
                     }}
+                    onFocus={(e) => e.target.style.borderColor = '#4169E1'}
+                    onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
+                    }
                   />
                 </div>
               </div>
@@ -299,13 +468,24 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
         )}
 
         {/* Address Information */}
-        <div style={{ marginBottom: '25px' }}>
-          <h4 style={{ margin: '0 0 15px 0', color: '#495057' }}>Address Information</h4>
-          <p style={{ margin: '0 0 15px 0', fontSize: '12px', color: '#6c757d' }}>
+        <div style={{ marginBottom: '35px' }}>
+          <h4 style={{ 
+            margin: '0 0 10px 0', 
+            color: 'white',
+            fontSize: '18px',
+            fontWeight: '600'
+          }}>
+            Address Information
+          </h4>
+          <p style={{ 
+            margin: '0 0 20px 0', 
+            fontSize: '13px', 
+            color: 'rgba(255,255,255,0.6)'
+          }}>
             Required for tax reporting and payment verification
           </p>
           
-          <div style={{ display: 'grid', gap: '15px' }}>
+          <div style={{ display: 'grid', gap: '20px' }}>
             <input
               type="text"
               value={formData.fullName}
@@ -313,10 +493,19 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
               placeholder="Full Legal Name"
               style={{
                 width: '100%',
-                padding: '12px',
-                border: '1px solid #dee2e6',
-                borderRadius: '6px'
+                padding: '14px',
+                backgroundColor: '#1A2245',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '10px',
+                color: 'white',
+                fontSize: '16px',
+                outline: 'none',
+                boxSizing: 'border-box',
+                transition: 'border-color 0.2s ease'
               }}
+              onFocus={(e) => e.target.style.borderColor = '#4169E1'}
+              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
+              }
             />
             
             <input
@@ -326,13 +515,22 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
               placeholder="Street Address"
               style={{
                 width: '100%',
-                padding: '12px',
-                border: '1px solid #dee2e6',
-                borderRadius: '6px'
+                padding: '14px',
+                backgroundColor: '#1A2245',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '10px',
+                color: 'white',
+                fontSize: '16px',
+                outline: 'none',
+                boxSizing: 'border-box',
+                transition: 'border-color 0.2s ease'
               }}
+              onFocus={(e) => e.target.style.borderColor = '#4169E1'}
+              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
+              }
             />
             
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '15px' }}>
               <input
                 type="text"
                 value={formData.city}
@@ -340,10 +538,19 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
                 placeholder="City"
                 style={{
                   width: '100%',
-                  padding: '12px',
-                  border: '1px solid #dee2e6',
-                  borderRadius: '6px'
+                  padding: '14px',
+                  backgroundColor: '#1A2245',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '10px',
+                  color: 'white',
+                  fontSize: '16px',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s ease'
                 }}
+                onFocus={(e) => e.target.style.borderColor = '#4169E1'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
+                }
               />
               
               <input
@@ -353,10 +560,19 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
                 placeholder="Postcode"
                 style={{
                   width: '100%',
-                  padding: '12px',
-                  border: '1px solid #dee2e6',
-                  borderRadius: '6px'
+                  padding: '14px',
+                  backgroundColor: '#1A2245',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '10px',
+                  color: 'white',
+                  fontSize: '16px',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s ease'
                 }}
+                onFocus={(e) => e.target.style.borderColor = '#4169E1'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
+                }
               />
             </div>
 
@@ -365,16 +581,25 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
               onChange={(e) => handleInputChange('country', e.target.value)}
               style={{
                 width: '100%',
-                padding: '12px',
-                border: '1px solid #dee2e6',
-                borderRadius: '6px'
+                padding: '14px',
+                backgroundColor: '#1A2245',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '10px',
+                color: 'white',
+                fontSize: '16px',
+                outline: 'none',
+                boxSizing: 'border-box',
+                transition: 'border-color 0.2s ease'
               }}
+              onFocus={(e) => e.target.style.borderColor = '#4169E1'}
+              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
+              }
             >
-              <option value="UK">United Kingdom</option>
-              <option value="US">United States</option>
-              <option value="CA">Canada</option>
-              <option value="AU">Australia</option>
-              <option value="other">Other (contact support)</option>
+              <option value="UK" style={{ backgroundColor: '#1A2245', color: 'white' }}>United Kingdom</option>
+              <option value="US" style={{ backgroundColor: '#1A2245', color: 'white' }}>United States</option>
+              <option value="CA" style={{ backgroundColor: '#1A2245', color: 'white' }}>Canada</option>
+              <option value="AU" style={{ backgroundColor: '#1A2245', color: 'white' }}>Australia</option>
+              <option value="other" style={{ backgroundColor: '#1A2245', color: 'white' }}>Other (contact support)</option>
             </select>
           </div>
         </div>
@@ -382,35 +607,64 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
         {/* Error Message */}
         {error && (
           <div style={{
-            backgroundColor: '#f8d7da',
-            color: '#721c24',
-            padding: '10px',
-            borderRadius: '6px',
-            marginBottom: '20px',
-            fontSize: '14px'
+            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+            color: '#ff6b7a',
+            padding: '15px',
+            borderRadius: '10px',
+            marginBottom: '25px',
+            fontSize: '14px',
+            border: '1px solid rgba(220, 53, 69, 0.3)',
+            textAlign: 'center'
           }}>
             {error}
           </div>
         )}
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: '15px' }}>
+        <div style={{ display: 'flex', gap: '15px', marginBottom: '25px' }}>
           <button
             onClick={savePaymentInfo}
             disabled={loading}
             style={{
               flex: 1,
-              padding: '15px',
-              backgroundColor: loading ? '#6c757d' : '#28a745',
+              padding: '16px 20px',
+              backgroundColor: loading ? '#666' : '#4169E1',
               color: 'white',
               border: 'none',
-              borderRadius: '6px',
+              borderRadius: '12px',
               fontSize: '16px',
-              fontWeight: 'bold',
-              cursor: loading ? 'not-allowed' : 'pointer'
+              fontWeight: '600',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.target.style.backgroundColor = '#3557C7';
+                e.target.style.transform = 'translateY(-1px)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!loading) {
+                e.target.style.backgroundColor = '#4169E1';
+                e.target.style.transform = 'translateY(0px)';
+              }
             }}
           >
-            {loading ? 'Saving...' : 'Save Payment Info'}
+            {loading ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <div style={{
+                  width: '16px',
+                  height: '16px',
+                  border: '2px solid rgba(255,255,255,0.3)',
+                  borderTop: '2px solid white',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }}></div>
+                Saving...
+              </div>
+            ) : (
+              'Save Payment Info'
+            )}
           </button>
           
           <button
@@ -418,30 +672,56 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
             disabled={loading}
             style={{
               flex: 1,
-              padding: '15px',
-              backgroundColor: '#6c757d',
+              padding: '16px 20px',
+              backgroundColor: 'rgba(255,255,255,0.1)',
               color: 'white',
-              border: 'none',
-              borderRadius: '6px',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: '12px',
               fontSize: '16px',
-              cursor: loading ? 'not-allowed' : 'pointer'
+              fontWeight: '600',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.target.style.backgroundColor = 'rgba(255,255,255,0.15)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!loading) {
+                e.target.style.backgroundColor = 'rgba(255,255,255,0.1)';
+              }
             }}
           >
             Cancel
           </button>
         </div>
 
+        {/* Security Notice */}
         <div style={{
-          marginTop: '20px',
-          padding: '15px',
-          backgroundColor: '#d4edda',
-          borderRadius: '6px',
-          fontSize: '12px',
-          color: '#155724'
+          padding: '20px',
+          backgroundColor: 'rgba(40, 167, 69, 0.1)',
+          borderRadius: '12px',
+          fontSize: '13px',
+          color: '#28a745',
+          border: '1px solid rgba(40, 167, 69, 0.3)',
+          textAlign: 'center',
+          lineHeight: '1.5'
         }}>
-          🔒 <strong>Your information is secure:</strong> All payment details are encrypted and stored securely. 
-          We only use this information to send you earnings.
+          🔒 <strong>Your information is stored securely</strong>
         </div>
+
+        {/* Add CSS for loading animation */}
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          
+          input::placeholder, textarea::placeholder {
+            color: rgba(255,255,255,0.5);
+          }
+        `}</style>
       </div>
     </div>
   );
