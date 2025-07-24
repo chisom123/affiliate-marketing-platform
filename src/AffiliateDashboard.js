@@ -762,7 +762,7 @@ const Dashboard = ({ user, onLogout }) => {
               fontWeight: 'bold', 
               color: '#4169E1'
             }}>
-              £{totalEarnings.toFixed(2)}
+              ${totalEarnings.toFixed(2)}
             </p>
             <p style={{ 
               margin: '8px 0 0 0', 
@@ -794,7 +794,7 @@ const Dashboard = ({ user, onLogout }) => {
               fontWeight: 'bold', 
               color: '#6B8AFF'
             }}>
-              £{lifetimeEarnings.toFixed(2)}
+              ${lifetimeEarnings.toFixed(2)}
             </p>
             <p style={{ 
               margin: '8px 0 0 0', 
@@ -826,7 +826,7 @@ const Dashboard = ({ user, onLogout }) => {
               fontWeight: 'bold', 
               color: '#28a745'
             }}>
-              £{totalPaidOut.toFixed(2)}
+              ${totalPaidOut.toFixed(2)}
             </p>
             <p style={{ 
               margin: '8px 0 0 0', 
@@ -1029,7 +1029,7 @@ const Dashboard = ({ user, onLogout }) => {
                           color: '#4169E1',
                           fontSize: '18px'
                         }}>
-                          £{payout.amount.toFixed(2)}
+                          ${payout.amount.toFixed(2)}
                         </p>
                         <p style={{ 
                           margin: '0 0 5px 0', 
@@ -1714,7 +1714,7 @@ const Dashboard = ({ user, onLogout }) => {
                         fontWeight: 'bold', 
                         color: '#4169E1'
                       }}>
-                        £{(link.earnings || 0).toFixed(2)}
+                        ${(link.earnings || 0).toFixed(2)}
                       </p>
                       <p style={{ 
                         margin: '0', 
