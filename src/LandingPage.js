@@ -565,10 +565,10 @@ const LandingPage = () => {
             marginBottom: '50px'
           }}>
             {[
-              { name: 'Sarah M.', earnings: '$840', stories: '3 months - 40k ratings', profilePicUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/ab303d043a6752eb7cd84e876d8473df.jpg?alt=media&token=f04af6a3-5810-43d9-94a5-c9e23f2936cc' },
-              { name: 'Adam R.', earnings: '$120', stories: '1 month - 6k ratings', profilePicUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/2cd7110ecfc67073dedd2df843d51e4a.jpg?alt=media&token=2ec56d63-e822-463b-8bbf-55add7a05353' },
-              { name: 'Emma L.', earnings: '$530', stories: '2 months - 26k ratings', profilePicUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/f60206a67b75c9bdac4f5f7640d4ebde.jpg?alt=media&token=68a37d63-9049-492d-9d55-53d51c20c950' },
-              { name: 'Toni W.', earnings: '$95', stories: '3 weeks - 5k ratings', profilePicUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/760021cb5694f81ebcc6755ab82458ed.jpg?alt=media&token=080fe6f7-2182-493d-befc-31fac793e627' } 
+              { name: 'Sarah M.', earnings: '$840', stories: '84 stories', profilePicUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/ab303d043a6752eb7cd84e876d8473df.jpg?alt=media&token=f04af6a3-5810-43d9-94a5-c9e23f2936cc' },
+              { name: 'Adam R.', earnings: '$120', stories: '30 stories', profilePicUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/2cd7110ecfc67073dedd2df843d51e4a.jpg?alt=media&token=2ec56d63-e822-463b-8bbf-55add7a05353' },
+              { name: 'Toni W.', earnings: '$95', stories: '24 stories', profilePicUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/760021cb5694f81ebcc6755ab82458ed.jpg?alt=media&token=080fe6f7-2182-493d-befc-31fac793e627' },
+              { name: 'Emma L.', earnings: '$530', stories: '67 stories', profilePicUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/f60206a67b75c9bdac4f5f7640d4ebde.jpg?alt=media&token=68a37d63-9049-492d-9d55-53d51c20c950' }
             ].map((creator, index) => (
               <div key={index} style={{
                 backgroundColor: '#323862',
