@@ -93,7 +93,7 @@ const LandingPage = () => {
             marginBottom: '40px',
             opacity: 0.9
           }}>
-            Get paid everytime your friends rate your story
+            Get paid every time your friends rate your story
           </p>
 
           <button
@@ -243,7 +243,7 @@ const LandingPage = () => {
               {
                 step: '3',
                 title: 'Get Paid',
-                description: 'Earn money everytime you recieve a rating. Money is tracked in real-time',
+                description: 'Earn money every time you receive a rating. Money is tracked in real-time',
                 icon: CircleDollarSign
               }
             ].map((item, index) => {
