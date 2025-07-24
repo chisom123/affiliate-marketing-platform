@@ -337,20 +337,161 @@ const LandingPage = () => {
               <label style={{ display: 'block', marginBottom: '15px', fontSize: '18px' }}>
                 How many ratings do you think you'll get per story?
               </label>
-              <input
-                type="range"
-                min="10"
-                max="1000"
-                step="10"
-                value={estimatedRatings}
-                onChange={(e) => setEstimatedRatings(e.target.value)}
+              
+              {/* Custom Slider Container */}
+              <div 
                 style={{ 
-                  width: '100%', 
+                  position: 'relative', 
                   marginBottom: '15px',
-                  height: '8px',
-                  borderRadius: '4px'
+                  padding: '15px 0',
+                  cursor: 'pointer',
+                  touchAction: 'none'
                 }}
-              />
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const thumb = e.currentTarget.querySelector('[data-thumb]');
+                  const track = e.currentTarget.querySelector('[data-track]');
+                  
+                  // Disable transitions during drag
+                  thumb.style.transition = 'none';
+                  track.style.transition = 'none';
+                  
+                  let animationId;
+                  const updateValue = (clientX) => {
+                    if (animationId) cancelAnimationFrame(animationId);
+                    animationId = requestAnimationFrame(() => {
+                      const x = clientX - rect.left;
+                      const percentage = Math.max(0, Math.min(1, x / rect.width));
+                      const newValue = Math.round((percentage * (1000 - 10) + 10) / 10) * 10;
+                      setEstimatedRatings(newValue);
+                    });
+                  };
+                  
+                  updateValue(e.clientX);
+                  
+                  const handleMouseMove = (e) => updateValue(e.clientX);
+                  const handleMouseUp = () => {
+                    // Re-enable transitions
+                    thumb.style.transition = 'left 0.1s ease';
+                    track.style.transition = 'width 0.1s ease';
+                    
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                    if (animationId) cancelAnimationFrame(animationId);
+                  };
+                  
+                  document.addEventListener('mousemove', handleMouseMove);
+                  document.addEventListener('mouseup', handleMouseUp);
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const thumb = e.currentTarget.querySelector('[data-thumb]');
+                  const track = e.currentTarget.querySelector('[data-track]');
+                  
+                  // Disable transitions during drag
+                  thumb.style.transition = 'none';
+                  track.style.transition = 'none';
+                  
+                  let animationId;
+                  const updateValue = (clientX) => {
+                    if (animationId) cancelAnimationFrame(animationId);
+                    animationId = requestAnimationFrame(() => {
+                      const x = clientX - rect.left;
+                      const percentage = Math.max(0, Math.min(1, x / rect.width));
+                      const newValue = Math.round((percentage * (1000 - 10) + 10) / 10) * 10;
+                      setEstimatedRatings(newValue);
+                    });
+                  };
+                  
+                  const touch = e.touches[0];
+                  updateValue(touch.clientX);
+                  
+                  const handleTouchMove = (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    updateValue(touch.clientX);
+                  };
+                  
+                  const handleTouchEnd = () => {
+                    // Re-enable transitions
+                    thumb.style.transition = 'left 0.1s ease';
+                    track.style.transition = 'width 0.1s ease';
+                    
+                    document.removeEventListener('touchmove', handleTouchMove);
+                    document.removeEventListener('touchend', handleTouchEnd);
+                    if (animationId) cancelAnimationFrame(animationId);
+                  };
+                  
+                  document.addEventListener('touchmove', handleTouchMove, { passive: false });
+                  document.addEventListener('touchend', handleTouchEnd);
+                }}
+              >
+                {/* Slider Track */}
+                <div style={{
+                  position: 'relative',
+                  width: '100%',
+                  height: '8px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '4px',
+                  overflow: 'hidden'
+                }}>
+                  {/* Filled Track */}
+                  <div 
+                    data-track
+                    style={{
+                      position: 'absolute',
+                      left: '0',
+                      top: '0',
+                      height: '100%',
+                      width: `${((estimatedRatings - 10) / (1000 - 10)) * 100}%`,
+                      background: 'linear-gradient(90deg, #4169E1 0%, #6B8AFF 100%)',
+                      borderRadius: '4px',
+                      transition: 'width 0.1s ease'
+                    }} 
+                  />
+                </div>
+                
+                {/* Custom Thumb */}
+                <div 
+                  data-thumb
+                  style={{
+                    position: 'absolute',
+                    top: '7px',
+                    left: `calc(${((estimatedRatings - 10) / (1000 - 10)) * 100}% - 10px)`,
+                    width: '20px',
+                    height: '20px',
+                    backgroundColor: '#4169E1',
+                    border: '3px solid white',
+                    borderRadius: '50%',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                    transition: 'left 0.1s ease',
+                    cursor: 'grab',
+                    pointerEvents: 'none'
+                  }}
+                />
+                
+                {/* Hidden input for accessibility */}
+                <input
+                  type="range"
+                  min="10"
+                  max="1000"
+                  step="10"
+                  value={estimatedRatings}
+                  onChange={(e) => setEstimatedRatings(e.target.value)}
+                  style={{
+                    position: 'absolute',
+                    top: '0',
+                    left: '0',
+                    width: '100%',
+                    height: '100%',
+                    opacity: 0,
+                    pointerEvents: 'none'
+                  }}
+                  tabIndex="0"
+                />
+              </div>
               <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px' }}>
                 {estimatedRatings} ratings
               </div>
