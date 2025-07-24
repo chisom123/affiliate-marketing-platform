@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'lucide-react';
+import { CircleDollarSign } from 'lucide-react';
+import { CircleFadingPlus } from 'lucide-react';
 
 const LandingPage = () => {
   const [estimatedRatings, setEstimatedRatings] = useState(100);
@@ -116,7 +119,7 @@ const LandingPage = () => {
         padding: '80px 20px',
         backgroundColor: '#1A2245'
       }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
+        <div style={{ maxWidth: '750px', margin: '0 auto', textAlign: 'center' }}>
           <h2 style={{ 
             fontSize: '36px',
             marginBottom: '20px',
@@ -142,10 +145,7 @@ const LandingPage = () => {
             marginBottom: '80px'
           }}>
             <div style={{
-              backgroundColor: '#323862',
-              padding: '30px',
-              borderRadius: '15px',
-              textAlign: 'center'
+
             }}>
               <h3 style={{ 
                 fontSize: '24px',
@@ -161,7 +161,7 @@ const LandingPage = () => {
                   src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/IMG_4128%202.PNG?alt=media&token=89ecbb80-8e3d-4c0a-9ed8-35552ccf70d0"
                   alt="Instagram story with rating link"
                   style={{
-                    maxWidth: '200px',
+                    maxWidth: '250px',
                     height: 'auto',
                     borderRadius: '8px'
                   }}
@@ -170,10 +170,7 @@ const LandingPage = () => {
             </div>
 
             <div style={{
-              backgroundColor: '#323862',
-              padding: '30px',
-              borderRadius: '15px',
-              textAlign: 'center'
+
             }}>
               <h3 style={{ 
                 fontSize: '24px',
@@ -189,7 +186,7 @@ const LandingPage = () => {
                   src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/unnamed.png?alt=media&token=bb05e516-c903-4143-8ee4-035f6d0a0b15"
                   alt="Rating interface on mobile"
                   style={{
-                    maxWidth: '200px',
+                    maxWidth: '250px',
                     height: 'auto',
                     borderRadius: '8px'
                   }}
@@ -213,7 +210,7 @@ const LandingPage = () => {
           }}>
             How It Works
           </h2>
-          
+
           <p style={{ 
             fontSize: '18px',
             color: 'rgba(255,255,255,0.8)',
@@ -235,63 +232,71 @@ const LandingPage = () => {
                 step: '1',
                 title: 'Create Rating Link',
                 description: 'Sign up and generate a unique rating link for your Instagram or Snapchat story',
-                icon: '🔗'
+                icon: Link
               },
               {
                 step: '2', 
                 title: 'Add Link to Your Story',
                 description: 'Share your content and add the rating link. Friends can rate it 1-5 stars',
-                icon: '📱'
+                icon: CircleFadingPlus
               },
               {
                 step: '3',
                 title: 'Get Paid',
                 description: 'Earn money everytime you recieve a rating. Money is tracked in real-time',
-                icon: '💰'
+                icon: CircleDollarSign
               }
-            ].map((item, index) => (
-              <div key={index} style={{
-                backgroundColor: '#323862',
-                padding: '40px 30px',
-                borderRadius: '15px',
-                textAlign: 'center'
-              }}>
-                <div style={{
-                  fontSize: '48px',
-                  marginBottom: '20px'
+            ].map((item, index) => {
+              const IconComponent = item.icon;
+              return (
+                <div key={index} style={{
+                  backgroundColor: '#323862',
+                  padding: '40px 30px',
+                  borderRadius: '15px',
+                  textAlign: 'center'
                 }}>
-                  {item.icon}
+                  <div style={{
+                    marginBottom: '20px',
+                    display: 'flex',
+                    justifyContent: 'center'
+                  }}>
+                    <IconComponent 
+                      size={48} 
+                      color="#4169E1" 
+                      strokeWidth={1.5}
+                    />
+                  </div>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    backgroundColor: '#4169E1',
+                    color: 'white',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 20px',
+                    fontSize: '18px',
+                    fontWeight: 'bold'
+                  }}>
+                    {item.step}
+                  </div>
+                  <h3 style={{ 
+                    fontSize: '20px',
+                    marginBottom: '15px',
+                    color: 'white'
+                  }}>
+                    {item.title}
+                  </h3>
+                  <p style={{ 
+                    color: 'rgba(255,255,255,0.8)',
+                    lineHeight: '1.6'
+                  }}>
+                    {item.description}
+                  </p>
                 </div>
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  backgroundColor: '#4169E1',
-                  color: 'white',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 20px',
-                  fontSize: '18px',
-                  fontWeight: 'bold'
-                }}>
-                  {item.step}
-                </div>
-                <h3 style={{ 
-                  fontSize: '20px',
-                  marginBottom: '15px',
-                  color: 'white'
-                }}>
-                  {item.title}
-                </h3>
-                <p style={{ 
-                  color: 'rgba(255,255,255,0.8)',
-                  lineHeight: '1.6'
-                }}>
-                  {item.description}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
