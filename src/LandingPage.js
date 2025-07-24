@@ -152,7 +152,7 @@ const LandingPage = () => {
                 marginBottom: '20px',
                 color: 'white'
               }}>
-                Your Instagram Story
+                Add Rating Link
               </h3>
               <div style={{
 
@@ -167,12 +167,6 @@ const LandingPage = () => {
                   }}
                 />
               </div>
-              <p style={{ 
-                color: 'rgba(255,255,255,0.8)',
-                lineHeight: '1.6'
-              }}>
-                Add your rating link to any Instagram story. Friends see your content with an easy "Rate this" button.
-              </p>
             </div>
 
             <div style={{
@@ -186,13 +180,13 @@ const LandingPage = () => {
                 marginBottom: '20px',
                 color: 'white'
               }}>
-                They Rate Your Story
+                Get Ratings
               </h3>
               <div style={{
   
               }}>
                 <img 
-                  src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/IMG_4145.PNG?alt=media&token=5ab1a099-0799-4b89-9b95-ffcafd9467ea"
+                  src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/unnamed.png?alt=media&token=bb05e516-c903-4143-8ee4-035f6d0a0b15"
                   alt="Rating interface on mobile"
                   style={{
                     maxWidth: '200px',
@@ -201,12 +195,6 @@ const LandingPage = () => {
                   }}
                 />
               </div>
-              <p style={{ 
-                color: 'rgba(255,255,255,0.8)',
-                lineHeight: '1.6'
-              }}>
-                When they tap the link, they see this simple rating screen. One tap = $0.02 in your pocket!
-              </p>
             </div>
           </div>
         </div>
@@ -233,7 +221,7 @@ const LandingPage = () => {
             maxWidth: '600px',
             margin: '0 auto 50px'
           }}>
-            Turn your social content into income with 3 simple steps
+            Turn your story posts into income with 3 simple steps
           </p>
 
           <div style={{ 
@@ -245,7 +233,7 @@ const LandingPage = () => {
             {[
               {
                 step: '1',
-                title: 'Create Your Rating Link',
+                title: 'Create Rating Link',
                 description: 'Sign up and generate a unique rating link for your Instagram or Snapchat story',
                 icon: '🔗'
               },
@@ -257,8 +245,8 @@ const LandingPage = () => {
               },
               {
                 step: '3',
-                title: 'Get Paid Instantly',
-                description: 'Earn with for every rating you receive. Money is tracked in real-time',
+                title: 'Get Paid',
+                description: 'Earn money everytime you recieve a rating. Money is tracked in real-time',
                 icon: '💰'
               }
             ].map((item, index) => (
@@ -409,7 +397,7 @@ const LandingPage = () => {
           </button>
         </div>
       </section>
-
+      
       {/* Social Proof */}
       <section style={{ 
         padding: '80px 20px',
@@ -431,10 +419,10 @@ const LandingPage = () => {
             marginBottom: '50px'
           }}>
             {[
-              { name: 'Sarah M.', earnings: '$47.23', stories: '156 stories rated' },
-              { name: 'Jake R.', earnings: '$32.10', stories: '89 stories rated' },
-              { name: 'Emma L.', earnings: '$71.45', stories: '203 stories rated' },
-              { name: 'Toni W.', earnings: '$32.45', stories: '203 stories rated' }
+              { name: 'Sarah M.', earnings: '$840', stories: '3 months - 40k ratings', profilePicUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/ab303d043a6752eb7cd84e876d8473df.jpg?alt=media&token=f04af6a3-5810-43d9-94a5-c9e23f2936cc' },
+              { name: 'Adam R.', earnings: '$120', stories: '1 month - 6k ratings', profilePicUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/2cd7110ecfc67073dedd2df843d51e4a.jpg?alt=media&token=2ec56d63-e822-463b-8bbf-55add7a05353' },
+              { name: 'Emma L.', earnings: '$530', stories: '2 months - 26k ratings', profilePicUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/f60206a67b75c9bdac4f5f7640d4ebde.jpg?alt=media&token=68a37d63-9049-492d-9d55-53d51c20c950' },
+              { name: 'Toni W.', earnings: '$95', stories: '3 weeks - 5k ratings', profilePicUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/760021cb5694f81ebcc6755ab82458ed.jpg?alt=media&token=080fe6f7-2182-493d-befc-31fac793e627' } 
             ].map((creator, index) => (
               <div key={index} style={{
                 backgroundColor: '#323862',
@@ -442,21 +430,35 @@ const LandingPage = () => {
                 borderRadius: '12px',
                 textAlign: 'center',
               }}>
-                <div style={{
-                  width: '60px',
-                  height: '60px',
-                  backgroundColor: '#4169E1',
-                  color: 'white',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 15px',
-                  fontSize: '24px',
-                  fontWeight: 'bold'
-                }}>
-                  {creator.name.split(' ').map(n => n[0]).join('')}
-                </div>
+                {creator.profilePicUrl ? (
+                  <img 
+                    src={creator.profilePicUrl} 
+                    alt={creator.name} 
+                    style={{
+                      width: '60px',
+                      height: '60px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      margin: '0 auto 15px'
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: '60px',
+                    height: '60px',
+                    backgroundColor: '#4169E1',
+                    color: 'white',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 15px',
+                    fontSize: '24px',
+                    fontWeight: 'bold'
+                  }}>
+                    {creator.name.split(' ').map(n => n[0]).join('')}
+                  </div>
+                )}
                 <h4 style={{ margin: '0 0 10px 0', color: 'white' }}>
                   {creator.name}
                 </h4>
@@ -464,13 +466,13 @@ const LandingPage = () => {
                   margin: '0 0 5px 0',
                   fontSize: '20px',
                   fontWeight: 'bold',
-                  color: '#4169E1'
+                  color: '#fff'
                 }}>
                   {creator.earnings}
                 </p>
                 <p style={{ 
                   margin: '0',
-                  fontSize: '14px',
+                  fontSize: '15px',
                   color: 'rgba(255,255,255,0.7)'
                 }}>
                   {creator.stories}
@@ -480,6 +482,7 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+
 
       {/* FAQ */}
       <section style={{ 
@@ -499,20 +502,16 @@ const LandingPage = () => {
           <div style={{ display: 'grid', gap: '20px' }}>
             {[
               {
-                q: 'How much can I realistically earn?',
-                a: 'Most creators earn $10-50 per month depending on their engagement. Active creators with engaged followers can earn $100+ monthly. You earn $0.02 per rating regardless of follower count.'
-              },
-              {
                 q: 'When do I get paid?',
-                a: 'Earnings are tracked in real-time. We process payouts weekly via PayPal for amounts over $5. No hidden fees or charges.'
+                a: 'Earnings are tracked in real-time. We process payouts weekly via direct bank transfer or PayPal.'
               },
               {
-                q: 'Is this legit? How do you make money?',
-                a: 'Yes, completely legitimate. We make money when people download our main SocialStar app after rating. You get paid for driving high-quality user acquisition.'
+                q: 'How does SocialStar make money?',
+                a: 'SocialStar makes money when people download our main SocialStar app after rating. You get paid for driving high-quality user acquisition.'
               },
               {
                 q: 'What platforms does this work on?',
-                a: 'Instagram Stories, Snapchat Stories, and any platform where you can share links. The rating page works perfectly in all mobile browsers.'
+                a: 'Instagram Stories and Snapchat Stories.'
               }
             ].map((faq, index) => (
               <div key={index} style={{
@@ -561,7 +560,7 @@ const LandingPage = () => {
             marginBottom: '40px',
             opacity: '0.9'
           }}>
-            Join hundreds of partners already monetizing their social content. 
+            Join hundreds of partners already monetizing their story posts. 
             Free to start, no commitment required.
           </p>
 
