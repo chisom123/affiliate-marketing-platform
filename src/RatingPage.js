@@ -618,131 +618,42 @@ const RatingPage = () => {
     );
   }
 
-  // Error state
-  if (error) {
-    return (
+// Error state
+if (error) {
+  return (
+    <div style={{ 
+      minHeight: '100vh',
+      backgroundColor: '#10183C',
+      fontFamily: 'Arial, sans-serif',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px'
+    }}>
       <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        backgroundColor: '#f8f9fa',
-        fontFamily: 'Arial, sans-serif',
-        padding: '20px'
+        backgroundColor: '#1A2245',
+        borderRadius: '20px',
+        padding: '40px 30px',
+        maxWidth: '500px',
+        width: '100%',
+        textAlign: 'center'
       }}>
-        <div style={{ 
-          textAlign: 'center',
-          backgroundColor: 'white',
-          padding: '40px',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-          maxWidth: '500px'
+        
+        {/* Error Message */}
+        <p style={{ 
+          color: 'rgba(255,255,255,0.8)',
+          marginBottom: '30px',
+          fontWeight: 'normal',
+          fontSize: '18px',
+          lineHeight: '1.5'
         }}>
-          <div style={{
-            backgroundColor: '#ff6b6b',
-            color: 'white',
-            width: '60px',
-            height: '60px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 20px',
-            fontSize: '28px'
-          }}>
-            !
-          </div>
-          
-          <h2 style={{ color: '#495057', marginBottom: '15px' }}>
-            Browser Not Supported
-          </h2>
-          
-          <p style={{ color: '#6c757d', marginBottom: '20px' }}>
-            {error}
-          </p>
-          
-          <div style={{ 
-            backgroundColor: '#f8f9fa',
-            padding: '15px',
-            borderRadius: '8px',
-            marginBottom: '25px',
-            textAlign: 'left'
-          }}>
-            <p style={{ margin: '0 0 10px 0', fontWeight: 'bold' }}>
-              To rate this story:
-            </p>
-            <ol style={{ 
-              paddingLeft: '20px',
-              margin: '0',
-              color: '#495057'
-            }}>
-              <li>Open Instagram or Snapchat</li>
-              <li>Find the story with this rating link</li>
-              <li>Tap the link in the story</li>
-            </ol>
-          </div>
-          
-          <p style={{ 
-            color: '#6c757d', 
-            fontSize: '14px',
-            marginBottom: '25px'
-          }}>
-            If you think this is a mistake, contact support@socialstar.app
-          </p>
-          
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '15px'
-          }}>
-            <a 
-              href="instagram://user?username=socialstar" 
-              style={{
-                backgroundColor: '#e1306c',
-                color: 'white',
-                padding: '10px 15px',
-                borderRadius: '6px',
-                textDecoration: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              <div style={{
-                width: '20px',
-                height: '20px',
-                backgroundImage: 'url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xMiAyaDMiLz48cmVjdCB4PSIyIiB5PSIyIiB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHJ4PSI1IiByeT0iNSI+PC9yZWN0PjxwYXRoIGQ9Ik0xNiAxMS4zN0ExNCAxNCAwIDEgMSA4IDExLjM3Ij48L3BhdGg+PC9zdmc+")',
-                backgroundSize: 'cover'
-              }}></div>
-              Open Instagram
-            </a>
-            
-            <a 
-              href="snapchat://add/socialstar" 
-              style={{
-                backgroundColor: '#fffc00',
-                color: 'black',
-                padding: '10px 15px',
-                borderRadius: '6px',
-                textDecoration: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              <div style={{
-                width: '20px',
-                height: '20px',
-                backgroundImage: 'url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xMiAxM2MtMS44IDAtMy40IDEuNi0zLjQgMy40czEuNiAzLjQgMy40IDMuNCAzLjQtMS42IDMuNC0zLjQtMS42LTMuNC0zLjQtMy40eiI+PC9wYXRoPjxwYXRoIGQ9Ik0xOCA2Yy0uNiAwLTEuMS40LTEuNS44LS40LjQtLjggMS0uOCAxLjYgMCAuNi40IDEuMS44IDEuNS40LjQgMSAuOCAxLjYuOC42IDAgMS4xLS40IDEuNS0uOC40LS40LjgtMSAuOC0xLjYgMC0uNi0uNC0xLjEtLjgtMS41QzE5LjEgNi40IDE4LjYgNiAxOCA2eiI+PC9wYXRoPjxwYXRoIGQ9Ik02IDE4Yy0uNiAwLTEuMS40LTEuNS44LS40LjQtLjggMS0uOCAxLjYgMCAuNi40IDEuMS44IDEuNS40LjQgMSAuOCAxLjYuOC42IDAgMS4xLS40IDEuNS0uOC40LS40LjgtMSAuOC0xLjYgMC0uNi0uNC0xLjEtLjgtMS41LS40LS40LTEtLjgtMS42LS44eiI+PC9wYXRoPjwvc3ZnPg==")',
-                backgroundSize: 'cover'
-              }}></div>
-              Open Snapchat
-            </a>
-          </div>
-        </div>
+          {error}
+        </p>
+
       </div>
-    );
-  }
+    </div>
+  );
+}
 
 // Success state
 if (submitted) {
@@ -844,7 +755,7 @@ if (submitted) {
 
           <p style={{ 
             color: '#fff',
-            fontSize: '16px',
+            fontSize: '18px',
             marginTop: '30px',
             fontWeight: 'bold'
           }}>

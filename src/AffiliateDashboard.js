@@ -23,12 +23,13 @@ import {
 } from 'firebase/firestore';
 import PaymentSetupModal from './PaymentSetupModal';
 
-// LOGIN/SIGNUP COMPONENT
+// LOGIN/SIGNUP COMPONENT - Updated with dark theme and mobile optimization
 const AuthForm = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -47,14 +48,15 @@ const AuthForm = ({ onLogin }) => {
         
         // Create affiliate profile in Firestore
         await setDoc(doc(db, 'affiliates', userCredential.user.uid), {
-          name: name,
+          firstName: firstName,
+          lastName: lastName,
           email: email,
           totalEarnings: 0,
           totalRatings: 0,
           createdAt: new Date(),
           status: 'active',
-          paymentInfo: null, // Will be set up later
-          payoutHistory: [] // Initialize empty payout history
+          paymentInfo: null,
+          payoutHistory: []
         });
       }
     } catch (error) {
@@ -65,73 +67,371 @@ const AuthForm = ({ onLogin }) => {
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ddd', borderRadius: '8px' }}>
-      <h2>{isLogin ? 'Login' : 'Sign Up'} - SocialStar Affiliates</h2>
-      
-      <form onSubmit={handleSubmit}>
-        {!isLogin && (
-          <div style={{ marginBottom: '15px' }}>
-            <label>Name:</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-            />
+    <div style={{ 
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #10183C 0%, #1A2245 100%)',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      {/* Top Navigation Bar */}
+      <header style={{ 
+        backgroundColor: '#1A2245',
+        borderBottom: '1px solid rgba(255,255,255,0.1)'
+      }}>
+        <div style={{ 
+          maxWidth: '1200px',
+          margin: '0 auto',
+          padding: '15px 20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div 
+            onClick={() => window.location.href = '/'}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '15px',
+              cursor: 'pointer',
+              transition: 'opacity 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+          >
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <img 
+                src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a"
+                alt="Star icon"
+                style={{
+                  width: '30px',
+                  height: '30px'
+                }}
+              />
+            </div>
+            <h1 style={{ margin: '2px 0px 0px 0px', fontSize: '20px', color: 'white' }}>
+              SocialStar Partners
+            </h1>
           </div>
-        )}
-        
-        <div style={{ marginBottom: '15px' }}>
-          <label>Email:</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-          />
+          
+          <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>
+            Partner Dashboard
+          </div>
         </div>
-        
-        <div style={{ marginBottom: '15px' }}>
-          <label>Password:</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-          />
+      </header>
+
+      {/* Auth Form Container */}
+      <div style={{ 
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px 20px'
+      }}>
+        <div style={{ 
+          width: '100%',
+          maxWidth: '420px',
+          backgroundColor: '#323862',
+          borderRadius: '20px',
+          padding: '40px',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+          border: '1px solid rgba(255,255,255,0.1)'
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <h2 style={{ 
+              color: 'white',
+              fontSize: '28px',
+              fontWeight: 'bold',
+              margin: '0 0 10px 0'
+            }}>
+              {isLogin ? 'Welcome Back' : 'Join SocialStar'}
+            </h2>
+            <p style={{ 
+              color: 'rgba(255,255,255,0.7)',
+              margin: '0',
+              fontSize: '16px'
+            }}>
+              {isLogin ? 'Sign in to your affiliate dashboard' : 'Start earning from your stories today'}
+            </p>
+          </div>
+          
+          <div onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {!isLogin && (
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ 
+                    display: 'block',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    marginBottom: '8px'
+                  }}>
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                    placeholder="First name"
+                    style={{ 
+                      width: '100%',
+                      padding: '16px',
+                      backgroundColor: '#1A2245',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '12px',
+                      color: 'white',
+                      fontSize: '16px',
+                      outline: 'none',
+                      transition: 'border-color 0.2s ease',
+                      boxSizing: 'border-box'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#4169E1'}
+                    onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'}
+                  />
+                </div>
+                
+                <div style={{ flex: 1 }}>
+                  <label style={{ 
+                    display: 'block',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    marginBottom: '8px'
+                  }}>
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
+                    placeholder="Last name"
+                    style={{ 
+                      width: '100%',
+                      padding: '16px',
+                      backgroundColor: '#1A2245',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '12px',
+                      color: 'white',
+                      fontSize: '16px',
+                      outline: 'none',
+                      transition: 'border-color 0.2s ease',
+                      boxSizing: 'border-box'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#4169E1'}
+                    onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'}
+                  />
+                </div>
+              </div>
+            )}
+            
+            <div>
+              <label style={{ 
+                display: 'block',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: '500',
+                marginBottom: '8px'
+              }}>
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="Enter your email"
+                style={{ 
+                  width: '100%',
+                  padding: '16px',
+                  backgroundColor: '#1A2245',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '12px',
+                  color: 'white',
+                  fontSize: '16px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s ease',
+                  boxSizing: 'border-box'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#4169E1'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'}
+              />
+            </div>
+            
+            <div>
+              <label style={{ 
+                display: 'block',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: '500',
+                marginBottom: '8px'
+              }}>
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="Enter your password"
+                style={{ 
+                  width: '100%',
+                  padding: '16px',
+                  backgroundColor: '#1A2245',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '12px',
+                  color: 'white',
+                  fontSize: '16px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s ease',
+                  boxSizing: 'border-box'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#4169E1'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'}
+              />
+            </div>
+            
+            <button 
+              type="submit" 
+              disabled={loading}
+              onClick={handleSubmit}
+              style={{ 
+                width: '100%',
+                padding: '16px',
+                backgroundColor: loading ? '#666' : '#4169E1',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                marginTop: '8px'
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.target.style.backgroundColor = '#3557C7';
+                  e.target.style.transform = 'translateY(-1px)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) {
+                  e.target.style.backgroundColor = '#4169E1';
+                  e.target.style.transform = 'translateY(0px)';
+                }
+              }}
+            >
+              {loading ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <div style={{
+                    width: '16px',
+                    height: '16px',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    borderTop: '2px solid white',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }}></div>
+                  Processing...
+                </div>
+              ) : (
+                isLogin ? 'Sign In' : 'Create Account'
+              )}
+            </button>
+          </div>
+          
+          {error && (
+            <div style={{ 
+              marginTop: '20px',
+              padding: '12px 16px',
+              backgroundColor: 'rgba(220, 53, 69, 0.1)',
+              border: '1px solid rgba(220, 53, 69, 0.3)',
+              borderRadius: '8px',
+              color: '#ff6b7a',
+              fontSize: '14px',
+              textAlign: 'center'
+            }}>
+              {error}
+            </div>
+          )}
+          
+          <div style={{ 
+            textAlign: 'center',
+            marginTop: '32px',
+            paddingTop: '24px',
+            borderTop: '1px solid rgba(255,255,255,0.1)'
+          }}>
+            <p style={{ 
+              color: 'rgba(255,255,255,0.7)',
+              margin: '0 0 16px 0',
+              fontSize: '14px'
+            }}>
+              {isLogin ? "Don't have an account?" : "Already have an account?"}
+            </p>
+            <button 
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError('');
+              }}
+              style={{ 
+                background: 'none',
+                border: 'none',
+                color: '#4169E1',
+                cursor: 'pointer',
+                fontSize: '16px',
+                fontWeight: '600',
+                textDecoration: 'underline',
+                padding: '8px 0'
+              }}
+              onMouseEnter={(e) => e.target.style.color = '#3557C7'}
+              onMouseLeave={(e) => e.target.style.color = '#4169E1'}
+            >
+              {isLogin ? 'Create New Account' : 'Sign In Instead'}
+            </button>
+          </div>
+
+          {!isLogin && (
+            <div style={{
+              marginTop: '24px',
+              padding: '16px',
+              backgroundColor: 'rgba(65, 105, 225, 0.1)',
+              border: '1px solid rgba(65, 105, 225, 0.3)',
+              borderRadius: '12px',
+              textAlign: 'center'
+            }}>
+              <p style={{ 
+                color: 'rgba(255,255,255,0.8)',
+                margin: '0',
+                fontSize: '13px',
+                lineHeight: '1.5'
+              }}>
+                🎉 <strong>Free to join!</strong> Start earning money from your Instagram stories immediately after signup.
+              </p>
+            </div>
+          )}
         </div>
-        
-        <button 
-          type="submit" 
-          disabled={loading}
-          style={{ 
-            width: '100%', 
-            padding: '10px', 
-            backgroundColor: '#007bff', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer'
-          }}
-        >
-          {loading ? 'Loading...' : (isLogin ? 'Login' : 'Sign Up')}
-        </button>
-      </form>
-      
-      {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
-      
-      <p style={{ textAlign: 'center', marginTop: '15px' }}>
-        {isLogin ? "Don't have an account? " : "Already have an account? "}
-        <button 
-          onClick={() => setIsLogin(!isLogin)}
-          style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer' }}
-        >
-          {isLogin ? 'Sign Up' : 'Login'}
-        </button>
-      </p>
+      </div>
+
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        input::placeholder {
+          color: rgba(255,255,255,0.5);
+        }
+
+        @media (max-width: 480px) {
+          .auth-container {
+            margin: 20px;
+            padding: 32px 24px;
+          }
+        }
+      `}</style>
     </div>
   );
 };
