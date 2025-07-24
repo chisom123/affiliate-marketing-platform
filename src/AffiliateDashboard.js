@@ -300,7 +300,7 @@ const AuthForm = ({ onLogin }) => {
                 backgroundColor: loading ? '#666' : '#4169E1',
                 color: 'white',
                 border: 'none',
-                borderRadius: '12px',
+                borderRadius: '200px',
                 fontSize: '16px',
                 fontWeight: '600',
                 cursor: loading ? 'not-allowed' : 'pointer',
