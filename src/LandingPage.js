@@ -6,8 +6,8 @@ const LandingPage = () => {
 
   const navigate = useNavigate();
 
-  const handleDashboard = () => {
-    navigate('/dashboard');
+  const handleDashboard = (mode = 'signup') => {
+    navigate('/dashboard', { state: { authMode: mode } });
   };
   
   const handleGetStarted = (e) => {
@@ -53,7 +53,7 @@ const LandingPage = () => {
           </div>
           
           <button
-            onClick={handleDashboard}
+            onClick={() => handleDashboard('login')}
             style={{
               fontSize: '16px',
               backgroundColor: 'transparent',
@@ -63,7 +63,7 @@ const LandingPage = () => {
               fontWeight: 'bold'
             }}
           >
-            Login
+            Sign In
           </button>
         </div>
       </header>
@@ -94,7 +94,7 @@ const LandingPage = () => {
           </p>
 
           <button
-            onClick={handleGetStarted}
+            onClick={() => handleDashboard('signup')}
             style={{
               padding: '20px 40px',
               backgroundColor: '#4169E1',
@@ -347,7 +347,8 @@ const LandingPage = () => {
               <input
                 type="range"
                 min="10"
-                max="500"
+                max="1000"
+                step="10"
                 value={estimatedRatings}
                 onChange={(e) => setEstimatedRatings(e.target.value)}
                 style={{ 
@@ -358,7 +359,7 @@ const LandingPage = () => {
                 }}
               />
               <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px' }}>
-                {estimatedRatings} ratings = ${(estimatedRatings * 0.02).toFixed(2)} per story
+                {estimatedRatings} ratings
               </div>
             </div>
             
@@ -371,6 +372,12 @@ const LandingPage = () => {
               padding: '25px'
             }}>
               <div>
+                <div style={{ fontSize: '18px', opacity: '0.9' }}>Per Story</div>
+                <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
+                  ${(estimatedRatings * 0.02).toFixed(2)}
+                </div>
+              </div>
+              <div>
                 <div style={{ fontSize: '18px', opacity: '0.9' }}>Per Week (7 stories)</div>
                 <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
                   ${(estimatedRatings * 0.02 * 7).toFixed(2)}
@@ -382,17 +389,11 @@ const LandingPage = () => {
                   ${(estimatedRatings * 0.02 * 7 * 4).toFixed(2)}
                 </div>
               </div>
-              <div>
-                <div style={{ fontSize: '18px', opacity: '0.9' }}>Per Year</div>
-                <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
-                  ${(estimatedRatings * 0.02 * 7 * 52).toFixed(2)}
-                </div>
-              </div>
             </div>
           </div>
 
           <button
-            onClick={handleDashboard}
+            onClick={() => handleDashboard('signup')}
             style={{
               padding: '18px 40px',
               background: '#4169E1',
@@ -565,7 +566,7 @@ const LandingPage = () => {
           </p>
 
           <button
-            onClick={handleDashboard}
+            onClick={() => handleDashboard('signup')}
             style={{
               padding: '20px 40px',
               backgroundColor: 'white',

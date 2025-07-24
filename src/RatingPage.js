@@ -553,7 +553,7 @@ const RatingPage = () => {
         fraudScore: fraudCheck.confidence,
         referrer: document.referrer,
         validated: true,
-        earnings: 0.01,
+        earnings: 0.02,
         protectionVersion: isLocalDevelopment() ? '2.0-dev' : '2.0',
         developmentMode: isLocalDevelopment()
       };
@@ -563,13 +563,13 @@ const RatingPage = () => {
       // Update stats
       await updateDoc(doc(db, 'rating_links', linkData.id), {
         totalRatings: increment(1),
-        earnings: increment(0.01),
+        earnings: increment(0.02),
         lastRatedAt: serverTimestamp()
       });
       
       await updateDoc(doc(db, 'affiliates', affiliateId), {
         totalRatings: increment(1),
-        totalEarnings: increment(0.01)
+        totalEarnings: increment(0.02)
       });
       
       // Mark as rated (skip in development to allow multiple ratings)
@@ -819,7 +819,7 @@ if (submitted) {
               fontWeight: 'bold',
               lineHeight: '28px'
               }}>
-              What would you rate {affiliateData?.name ? `${affiliateData.name}'s` : 'this'} story?
+              What would you rate {affiliateData?.firstName ? `${affiliateData.firstName}'s` : 'this'} story?
             </p>
             
             <div style={{ 

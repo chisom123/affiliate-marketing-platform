@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { auth, db } from './firebase';
+import { useLocation } from 'react-router-dom';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
@@ -25,7 +26,8 @@ import PaymentSetupModal from './PaymentSetupModal';
 
 // LOGIN/SIGNUP COMPONENT - Updated with dark theme and mobile optimization
 const AuthForm = ({ onLogin }) => {
-  const [isLogin, setIsLogin] = useState(true);
+  const location = useLocation();
+  const [isLogin, setIsLogin] = useState(location.state?.authMode === 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -75,13 +77,12 @@ const AuthForm = ({ onLogin }) => {
     }}>
       {/* Top Navigation Bar */}
       <header style={{ 
-        backgroundColor: '#1A2245',
-        borderBottom: '1px solid rgba(255,255,255,0.1)'
+        backgroundColor: '#1A2245'
       }}>
         <div style={{ 
           maxWidth: '1200px',
           margin: '0 auto',
-          padding: '15px 20px',
+          padding: '17px 20px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center'
@@ -116,10 +117,6 @@ const AuthForm = ({ onLogin }) => {
               SocialStar Partners
             </h1>
           </div>
-          
-          <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>
-            Partner Dashboard
-          </div>
         </div>
       </header>
 
@@ -134,11 +131,9 @@ const AuthForm = ({ onLogin }) => {
         <div style={{ 
           width: '100%',
           maxWidth: '420px',
-          backgroundColor: '#323862',
+          backgroundColor: '#1A2245',
           borderRadius: '20px',
-          padding: '40px',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-          border: '1px solid rgba(255,255,255,0.1)'
+          padding: '40px'
         }}>
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
             <h2 style={{ 
@@ -154,7 +149,7 @@ const AuthForm = ({ onLogin }) => {
               margin: '0',
               fontSize: '16px'
             }}>
-              {isLogin ? 'Sign in to your affiliate dashboard' : 'Start earning from your stories today'}
+              {isLogin ? 'Sign in to your partner dashboard' : 'Start earning from your stories today'}
             </p>
           </div>
           
@@ -180,7 +175,7 @@ const AuthForm = ({ onLogin }) => {
                     style={{ 
                       width: '100%',
                       padding: '16px',
-                      backgroundColor: '#1A2245',
+                      backgroundColor: '#323862',
                       border: '1px solid rgba(255,255,255,0.2)',
                       borderRadius: '12px',
                       color: 'white',
@@ -213,7 +208,7 @@ const AuthForm = ({ onLogin }) => {
                     style={{ 
                       width: '100%',
                       padding: '16px',
-                      backgroundColor: '#1A2245',
+                      backgroundColor: '#323862',
                       border: '1px solid rgba(255,255,255,0.2)',
                       borderRadius: '12px',
                       color: 'white',
@@ -248,7 +243,7 @@ const AuthForm = ({ onLogin }) => {
                 style={{ 
                   width: '100%',
                   padding: '16px',
-                  backgroundColor: '#1A2245',
+                  backgroundColor: '#323862',
                   border: '1px solid rgba(255,255,255,0.2)',
                   borderRadius: '12px',
                   color: 'white',
@@ -281,7 +276,7 @@ const AuthForm = ({ onLogin }) => {
                 style={{ 
                   width: '100%',
                   padding: '16px',
-                  backgroundColor: '#1A2245',
+                  backgroundColor: '#323862',
                   border: '1px solid rgba(255,255,255,0.2)',
                   borderRadius: '12px',
                   color: 'white',
@@ -379,39 +374,17 @@ const AuthForm = ({ onLogin }) => {
               style={{ 
                 background: 'none',
                 border: 'none',
-                color: '#4169E1',
+                color: '#fff',
                 cursor: 'pointer',
                 fontSize: '16px',
                 fontWeight: '600',
-                textDecoration: 'underline',
+                textDecoration: 'none',
                 padding: '8px 0'
               }}
-              onMouseEnter={(e) => e.target.style.color = '#3557C7'}
-              onMouseLeave={(e) => e.target.style.color = '#4169E1'}
             >
               {isLogin ? 'Create New Account' : 'Sign In Instead'}
             </button>
           </div>
-
-          {!isLogin && (
-            <div style={{
-              marginTop: '24px',
-              padding: '16px',
-              backgroundColor: 'rgba(65, 105, 225, 0.1)',
-              border: '1px solid rgba(65, 105, 225, 0.3)',
-              borderRadius: '12px',
-              textAlign: 'center'
-            }}>
-              <p style={{ 
-                color: 'rgba(255,255,255,0.8)',
-                margin: '0',
-                fontSize: '13px',
-                lineHeight: '1.5'
-              }}>
-                🎉 <strong>Free to join!</strong> Start earning money from your Instagram stories immediately after signup.
-              </p>
-            </div>
-          )}
         </div>
       </div>
 
