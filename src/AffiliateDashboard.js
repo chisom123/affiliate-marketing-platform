@@ -21,7 +21,8 @@ import {
   doc,
   setDoc,
   getDoc,
-  updateDoc
+  updateDoc,
+  getDocs
 } from 'firebase/firestore';
 import PaymentSetupModal from './PaymentSetupModal';
 
@@ -422,6 +423,55 @@ const Dashboard = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [hasShownFirstEarningsPrompt, setHasShownFirstEarningsPrompt] = useState(false);
   const [selectedLinkForInstructions, setSelectedLinkForInstructions] = useState(null);
+  const [linkAverageRatings, setLinkAverageRatings] = useState({});
+
+  // Add this function to calculate average ratings for all links
+  const calculateAllLinkAverages = async () => {
+    if (ratingLinks.length === 0) return;
+    
+    const averages = {};
+    
+    for (const link of ratingLinks) {
+      try {
+        const ratingsQuery = query(
+          collection(db, 'ratings'),
+          where('linkIdString', '==', link.linkId)
+        );
+        const ratingsSnapshot = await getDocs(ratingsQuery);
+        
+        if (!ratingsSnapshot.empty) {
+          const ratings = ratingsSnapshot.docs.map(doc => doc.data().rating);
+          const total = ratings.reduce((sum, rating) => sum + rating, 0);
+          const average = total / ratings.length;
+          
+          averages[link.linkId] = {
+            average: average,
+            count: ratings.length
+          };
+        } else {
+          averages[link.linkId] = {
+            average: 0,
+            count: 0
+          };
+        }
+      } catch (error) {
+        console.error(`Error calculating average for link ${link.linkId}:`, error);
+        averages[link.linkId] = {
+          average: 0,
+          count: 0
+        };
+      }
+    }
+    
+    setLinkAverageRatings(averages);
+  };
+
+  // Add this useEffect to calculate averages when ratingLinks change
+  useEffect(() => {
+    if (ratingLinks.length > 0) {
+      calculateAllLinkAverages();
+    }
+  }, [ratingLinks]);
 
   // ADD THIS MISSING useEffect AND FUNCTIONS:
   useEffect(() => {
@@ -1515,6 +1565,10 @@ const Dashboard = ({ user, onLogout }) => {
           const isActive = link.expiresAt?.toDate?.() > new Date();
           const linkStatus = isActive ? 'active' : 'expired';
           
+          // Get average rating data for this link
+          const averageData = linkAverageRatings[link.linkId] || { average: 0, count: 0 };
+          const hasRatings = averageData.count > 0;
+          
           return (
           <div key={link.id} style={{ 
             padding: '16px 20px', 
@@ -1597,6 +1651,57 @@ const Dashboard = ({ user, onLogout }) => {
                 </div>
               )}
             </div>
+            
+            {/* Average Rating Display - NEW */}
+            {hasRatings && (
+              <div style={{ 
+                marginBottom: '12px',
+                padding: '12px',
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                borderRadius: '8px',
+                border: '1px solid rgba(255,255,255,0.08)'
+              }}>
+                <div style={{ 
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  marginBottom: '8px'
+                }}>
+                  <div style={{ 
+                    fontSize: '18px',
+                    fontWeight: 'bold',
+                    color: '#ffc107'
+                  }}>
+                    {averageData.average.toFixed(1)}
+                  </div>
+                  <div style={{ 
+                    display: 'flex',
+                    gap: '1px'
+                  }}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <span
+                        key={star}
+                        style={{
+                          fontSize: '14px',
+                          color: star <= Math.round(averageData.average) ? '#ffc107' : '#dee2e6'
+                        }}
+                      >
+                        ★
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <p style={{ 
+                  color: 'rgba(255,255,255,0.6)',
+                  fontSize: '11px',
+                  margin: '0',
+                  textAlign: 'center'
+                }}>
+                  Average from {averageData.count} rating{averageData.count !== 1 ? 's' : ''}
+                </p>
+              </div>
+            )}
             
             {/* Compact Stats Row */}
             <div style={{ 
@@ -1897,7 +2002,7 @@ const Dashboard = ({ user, onLogout }) => {
           fontSize: '14px',
           lineHeight: '1.5'
         }}>
-          Paste the link in your Instagram story, TikTok bio, YouTube description, or anywhere your audience can access it. The more visibility, the more ratings you'll get!
+          Paste the link in your Instagram or Snapchat story, for your friends and followers to access. The more visibility, the more ratings you'll get!
         </p>
       </div>
       
@@ -1945,7 +2050,7 @@ const Dashboard = ({ user, onLogout }) => {
           fontSize: '14px',
           lineHeight: '1.5'
         }}>
-          Every time someone clicks your link and rates stories, you earn <strong style={{ color: '#4169E1' }}>$0.02 per rating</strong>. Your earnings will appear in real-time on your dashboard!
+          Every time someone clicks your link and rates your story, you earn <strong style={{ color: '#4169E1' }}>$0.02 per rating</strong>. Your earnings will appear in real-time on your dashboard!
         </p>
         
         <div style={{

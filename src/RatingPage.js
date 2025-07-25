@@ -767,20 +767,21 @@ if (submitted) {
             color: '#fff',
             fontSize: '18px',
             marginTop: '30px',
-            fontWeight: 'bold'
+            fontWeight: 'bold',
+            lineHeight: '25px'
           }}>
             Want your photos rated by friends?
           </p>
 
-          <div style={{ marginTop: '30px' }}>
+          <div style={{ marginTop: '10px' }}>
             <button
               onClick={() => window.open('https://apps.apple.com/gb/app/socialstar-app/id6473705189', '_blank')}
               style={{
-                padding: '15px 30px',
+                padding: '13px 30px',
                 backgroundColor: '#4169E1',
                 color: 'white',
                 border: 'none',
-                borderRadius: '30px',
+                borderRadius: '200px',
                 fontSize: '18px',
                 fontWeight: 'bold',
                 cursor: 'pointer'
