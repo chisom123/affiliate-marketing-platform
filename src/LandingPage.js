@@ -91,7 +91,7 @@ const LandingPage = () => {
           <p style={{ 
             fontSize: '22px',
             marginBottom: '20px',
-            opacity: 0.9
+            opacity: 0.8
           }}>
             Get paid every time your friends rate your story
           </p>

@@ -1,22 +1,19 @@
-// PAYMENT SETUP MODAL COMPONENT - UPDATED WITH DARK THEME
-// Purpose: Collect affiliate payment information for manual payouts
-// Features: PayPal email, bank details, validation, secure storage
+// PAYMENT SETUP MODAL COMPONENT - BANK TRANSFER ONLY
+// Purpose: Collect affiliate bank transfer information for manual payouts
+// Features: Bank details, validation, secure storage
 
 import React, { useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
 const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
-  const [paymentMethod, setPaymentMethod] = useState('paypal');
   const [formData, setFormData] = useState({
-    // PayPal
-    paypalEmail: '',
-    
     // Bank Transfer
     bankName: '',
     accountNumber: '',
     sortCode: '', // UK
     routingNumber: '', // US
+    accountType: 'checking', // US - checking or savings
     accountHolderName: '',
     
     // Address for tax purposes
@@ -24,11 +21,26 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
     address: '',
     city: '',
     postcode: '',
-    country: 'UK'
+    country: 'US'
   });
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
+  const [accountTypeDropdownOpen, setAccountTypeDropdownOpen] = useState(false);
+
+  const countryOptions = [
+    { value: 'US', label: 'United States' },
+    { value: 'UK', label: 'United Kingdom' },
+    { value: 'CA', label: 'Canada' },
+    { value: 'AU', label: 'Australia' },
+    { value: 'other', label: 'Other (contact support)' }
+  ];
+
+  const accountTypeOptions = [
+    { value: 'checking', label: 'Checking Account' },
+    { value: 'savings', label: 'Savings Account' }
+  ];
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -37,25 +49,139 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
     }));
   };
 
+  // Custom dropdown component
+  const CustomDropdown = ({ value, options, onChange, placeholder, isOpen, setIsOpen }) => {
+    const selectedOption = options.find(option => option.value === value);
+    
+    return (
+      <div style={{ position: 'relative' }} data-dropdown>
+        <div
+          onClick={() => setIsOpen(!isOpen)}
+          style={{
+            width: '100%',
+            padding: '14px',
+            backgroundColor: '#1A2245',
+            border: `1px solid ${isOpen ? '#4169E1' : 'rgba(255,255,255,0.2)'}`,
+            borderRadius: '10px',
+            color: 'white',
+            fontSize: '16px',
+            cursor: 'pointer',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            boxSizing: 'border-box',
+            transition: 'border-color 0.2s ease',
+            userSelect: 'none'
+          }}
+          onMouseEnter={(e) => {
+            if (!isOpen) {
+              e.target.style.borderColor = '#4169E1';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isOpen) {
+              e.target.style.borderColor = 'rgba(255,255,255,0.2)';
+            }
+          }}
+        >
+          <span style={{ color: selectedOption ? 'white' : 'rgba(255,255,255,0.5)' }}>
+            {selectedOption ? selectedOption.label : placeholder}
+          </span>
+          <svg 
+            width="16" 
+            height="16" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            style={{ 
+              transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease'
+            }}
+          >
+            <path d="M6 9L12 15L18 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+        
+        {isOpen && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            backgroundColor: '#1A2245',
+            border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: '10px',
+            marginTop: '4px',
+            zIndex: 1000,
+            boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+            overflow: 'hidden'
+          }}>
+            {options.map((option, index) => (
+              <div
+                key={option.value}
+                onClick={() => {
+                  onChange(option.value);
+                  setIsOpen(false);
+                }}
+                style={{
+                  padding: '14px',
+                  cursor: 'pointer',
+                  borderBottom: index < options.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                  backgroundColor: value === option.value ? 'rgba(65, 105, 225, 0.1)' : 'transparent',
+                  color: value === option.value ? '#4169E1' : 'white',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  if (value !== option.value) {
+                    e.target.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (value !== option.value) {
+                    e.target.style.backgroundColor = 'transparent';
+                  }
+                }}
+              >
+                {option.label}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const validateForm = () => {
-    if (paymentMethod === 'paypal') {
-      if (!formData.paypalEmail || !formData.paypalEmail.includes('@')) {
-        return 'Please enter a valid PayPal email address';
-      }
-    } else if (paymentMethod === 'bank') {
-      if (!formData.bankName || !formData.accountNumber || !formData.accountHolderName) {
-        return 'Please fill in all required bank details';
-      }
-      if (formData.country === 'UK' && !formData.sortCode) {
-        return 'Sort code is required for UK bank accounts';
-      }
-      if (formData.country === 'US' && !formData.routingNumber) {
+    // Bank details validation
+    if (!formData.bankName || !formData.accountNumber || !formData.accountHolderName) {
+      return 'Please fill in all required bank details';
+    }
+    
+    // Country-specific banking requirements
+    if (!formData.country) {
+      return 'Please select your country';
+    }
+    
+    if (formData.country === 'UK' && !formData.sortCode) {
+      return 'Sort code is required for UK bank accounts';
+    }
+    
+    if (formData.country === 'US') {
+      if (!formData.routingNumber) {
         return 'Routing number is required for US bank accounts';
+      }
+      if (!formData.accountType) {
+        return 'Please select your account type';
       }
     }
     
-    if (!formData.fullName || !formData.address || !formData.city) {
-      return 'Please complete your address information for tax purposes';
+    // Address validation - all fields should be required for tax/legal purposes
+    if (!formData.fullName || !formData.address || !formData.city || !formData.postcode) {
+      return 'Please complete all address fields for tax reporting and payment verification';
+    }
+    
+    // Additional validation for specific countries if needed
+    if (formData.country === 'other') {
+      return 'Please contact support to set up payments for your country';
     }
     
     return null;
@@ -75,14 +201,13 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
       // Save payment information to affiliate document
       await updateDoc(doc(db, 'affiliates', user.uid), {
         paymentInfo: {
-          method: paymentMethod,
-          details: paymentMethod === 'paypal' ? {
-            email: formData.paypalEmail
-          } : {
+          method: 'bank',
+          details: {
             bankName: formData.bankName,
             accountNumber: formData.accountNumber,
             sortCode: formData.sortCode,
             routingNumber: formData.routingNumber,
+            accountType: formData.accountType,
             accountHolderName: formData.accountHolderName
           },
           address: {
@@ -111,6 +236,9 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
   const handleOverlayClick = (e) => {
     // Check if the click is directly on the overlay (not a child element)
     if (e.target === e.currentTarget) {
+      // Close any open dropdowns first
+      setCountryDropdownOpen(false);
+      setAccountTypeDropdownOpen(false);
       onClose();
     }
   };
@@ -118,6 +246,11 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
   // Prevent click inside the modal from closing it
   const handleModalClick = (e) => {
     e.stopPropagation();
+    // Close dropdowns when clicking elsewhere in the modal
+    if (!e.target.closest('[data-dropdown]')) {
+      setCountryDropdownOpen(false);
+      setAccountTypeDropdownOpen(false);
+    }
   };
 
   return (
@@ -133,7 +266,7 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1000,
-        padding: '20px'
+        padding: '60px 20px'
       }}
       onClick={handleOverlayClick}
     >
@@ -141,10 +274,10 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
         style={{
           backgroundColor: '#323862',
           borderRadius: '20px',
-          padding: '40px 30px',
+          padding: '40px 15px',
           maxWidth: '550px',
           width: '100%',
-          maxHeight: '90vh',
+          maxHeight: 'calc(100vh - 120px)',
           overflowY: 'auto',
           border: '1px solid rgba(255,255,255,0.1)',
           boxShadow: '0 25px 80px rgba(0,0,0,0.6)'
@@ -152,14 +285,52 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
         onClick={handleModalClick}
       >
         {/* Header */}
-        <div style={{ marginBottom: '30px', textAlign: 'center' }}>
+        <div style={{ marginBottom: '30px', textAlign: 'center', position: 'relative' }}>
+          {/* Close Button */}
+          <button
+            onClick={onClose}
+            disabled={loading}
+            style={{
+              position: 'absolute',
+              top: '-10px',
+              right: '0px',
+              width: '32px',
+              height: '32px',
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease',
+              padding: '0'
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.target.style.backgroundColor = 'rgba(255,255,255,0.2)';
+                e.target.style.transform = 'scale(1.1)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!loading) {
+                e.target.style.backgroundColor = 'rgba(255,255,255,0.1)';
+                e.target.style.transform = 'scale(1)';
+              }
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M18 6L6 18M6 6L18 18" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <br></br>
           <h2 style={{ 
-            margin: '0 0 15px 0', 
+            margin: '10px 0 15px 0', 
             color: 'white',
             fontSize: '28px',
             fontWeight: 'bold'
           }}>
-            💰 Setup Payment Information
+          Setup Bank Transfer
           </h2>
           <p style={{ 
             margin: '0', 
@@ -167,305 +338,175 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
             fontSize: '16px',
             lineHeight: '1.4'
           }}>
-            We need your payment details to send you earnings. All information is stored securely.
+            We need your bank details to send you earnings. All information is stored securely.
           </p>
         </div>
 
-        {/* Payment Method Selection */}
+        {/* Bank Transfer Form */}
         <div style={{ marginBottom: '35px' }}>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: '15px', 
-            fontWeight: '600',
-            color: 'white',
-            fontSize: '16px'
-          }}>
-            Payment Method:
-          </label>
-          <div style={{ display: 'flex', gap: '15px' }}>
-            <button
-              onClick={() => setPaymentMethod('paypal')}
-              style={{
-                flex: 1,
-                padding: '20px 15px',
-                border: `2px solid ${paymentMethod === 'paypal' ? '#4169E1' : 'rgba(255,255,255,0.2)'}`,
-                borderRadius: '12px',
-                backgroundColor: paymentMethod === 'paypal' ? 'rgba(65, 105, 225, 0.1)' : 'rgba(255,255,255,0.05)',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                textAlign: 'center'
-              }}
-              onMouseEnter={(e) => {
-                if (paymentMethod !== 'paypal') {
-                  e.target.style.backgroundColor = 'rgba(255,255,255,0.08)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (paymentMethod !== 'paypal') {
-                  e.target.style.backgroundColor = 'rgba(255,255,255,0.05)';
-                }
-              }}
-            >
-              <div style={{ 
-                fontWeight: 'bold', 
-                color: paymentMethod === 'paypal' ? '#4169E1' : 'white',
-                fontSize: '16px',
-                marginBottom: '5px'
+          <div style={{ display: 'grid', gap: '20px' }}>
+            <div>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '8px', 
+                fontWeight: '600',
+                color: 'white',
+                fontSize: '14px'
               }}>
-                PayPal
-              </div>
-              <div style={{ 
-                fontSize: '12px', 
-                color: paymentMethod === 'paypal' ? 'rgba(65, 105, 225, 0.8)' : 'rgba(255,255,255,0.6)'
-              }}>
-                Fastest & easiest
-              </div>
-            </button>
-            <button
-              onClick={() => setPaymentMethod('bank')}
-              style={{
-                flex: 1,
-                padding: '20px 15px',
-                border: `2px solid ${paymentMethod === 'bank' ? '#4169E1' : 'rgba(255,255,255,0.2)'}`,
-                borderRadius: '12px',
-                backgroundColor: paymentMethod === 'bank' ? 'rgba(65, 105, 225, 0.1)' : 'rgba(255,255,255,0.05)',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                textAlign: 'center'
-              }}
-              onMouseEnter={(e) => {
-                if (paymentMethod !== 'bank') {
-                  e.target.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                Account Holder Name
+              </label>
+              <input
+                type="text"
+                value={formData.accountHolderName}
+                onChange={(e) => handleInputChange('accountHolderName', e.target.value)}
+                placeholder="Full name on account"
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  backgroundColor: '#1A2245',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '10px',
+                  color: 'white',
+                  fontSize: '16px',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s ease'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#4169E1'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
                 }
-              }}
-              onMouseLeave={(e) => {
-                if (paymentMethod !== 'bank') {
-                  e.target.style.backgroundColor = 'rgba(255,255,255,0.05)';
+              />
+            </div>
+
+            <div>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '8px', 
+                fontWeight: '600',
+                color: 'white',
+                fontSize: '14px'
+              }}>
+                Bank Name
+              </label>
+              <input
+                type="text"
+                value={formData.bankName}
+                onChange={(e) => handleInputChange('bankName', e.target.value)}
+                placeholder="e.g. Chase, Barclays, HSBC"
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  backgroundColor: '#1A2245',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '10px',
+                  color: 'white',
+                  fontSize: '16px',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s ease'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#4169E1'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
                 }
-              }}
-            >
-              <div style={{ 
-                fontWeight: 'bold', 
-                color: paymentMethod === 'bank' ? '#4169E1' : 'white',
-                fontSize: '16px',
-                marginBottom: '5px'
-              }}>
-                Bank Transfer
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '15px' }}>
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '8px', 
+                  fontWeight: '600',
+                  color: 'white',
+                  fontSize: '14px'
+                }}>
+                  Account Number
+                </label>
+                <input
+                  type="text"
+                  value={formData.accountNumber}
+                  onChange={(e) => handleInputChange('accountNumber', e.target.value)}
+                  placeholder="12345678"
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    backgroundColor: '#1A2245',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '10px',
+                    color: 'white',
+                    fontSize: '16px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    transition: 'border-color 0.2s ease'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#4169E1'}
+                  onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
+                  }
+                />
               </div>
-              <div style={{ 
-                fontSize: '12px', 
-                color: paymentMethod === 'bank' ? 'rgba(65, 105, 225, 0.8)' : 'rgba(255,255,255,0.6)'
-              }}>
-                Direct to account
+
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '8px', 
+                  fontWeight: '600',
+                  color: 'white',
+                  fontSize: '14px',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {formData.country === 'UK' ? 'Sort Code' : 'Routing No'}
+                </label>
+                <input
+                  type="text"
+                  value={formData.country === 'UK' ? formData.sortCode : formData.routingNumber}
+                  onChange={(e) => handleInputChange(
+                    formData.country === 'UK' ? 'sortCode' : 'routingNumber', 
+                    e.target.value
+                  )}
+                  placeholder={formData.country === 'UK' ? '12-34-56' : '123456789'}
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    backgroundColor: '#1A2245',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '10px',
+                    color: 'white',
+                    fontSize: '16px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    transition: 'border-color 0.2s ease'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#4169E1'}
+                  onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
+                  }
+                />
               </div>
-            </button>
+            </div>
+
+            {/* Account Type - US only */}
+            {formData.country === 'US' && (
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '8px', 
+                  fontWeight: '600',
+                  color: 'white',
+                  fontSize: '14px'
+                }}>
+                  Account Type
+                </label>
+                <CustomDropdown
+                  value={formData.accountType}
+                  options={accountTypeOptions}
+                  onChange={(value) => handleInputChange('accountType', value)}
+                  placeholder="Select account type"
+                  isOpen={accountTypeDropdownOpen}
+                  setIsOpen={setAccountTypeDropdownOpen}
+                />
+              </div>
+            )}
           </div>
         </div>
-
-        {/* PayPal Form */}
-        {paymentMethod === 'paypal' && (
-          <div style={{ marginBottom: '35px' }}>
-            <div style={{
-              backgroundColor: 'rgba(65, 105, 225, 0.1)',
-              padding: '20px',
-              borderRadius: '12px',
-              marginBottom: '20px',
-              border: '1px solid rgba(65, 105, 225, 0.3)'
-            }}>
-              <p style={{ 
-                margin: '0', 
-                fontSize: '14px', 
-                color: '#6B8AFF',
-                lineHeight: '1.5'
-              }}>
-                💡 <strong>We pay via PayPal for fast, secure international transfers.</strong> Don't have PayPal? 
-                Create a free account at <strong>paypal.com</strong> - it takes 2 minutes and works with any US bank account or debit card.
-              </p>
-            </div>
-            
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '10px', 
-              fontWeight: '600',
-              color: 'white',
-              fontSize: '14px'
-            }}>
-              PayPal Email Address:
-            </label>
-            <input
-              type="email"
-              value={formData.paypalEmail}
-              onChange={(e) => handleInputChange('paypalEmail', e.target.value)}
-              placeholder="your-paypal@email.com"
-              style={{
-                width: '100%',
-                padding: '14px',
-                backgroundColor: '#1A2245',
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: '10px',
-                fontSize: '16px',
-                color: 'white',
-                outline: 'none',
-                boxSizing: 'border-box',
-                transition: 'border-color 0.2s ease'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#4169E1'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
-              }
-            />
-            <p style={{ 
-              margin: '8px 0 0 0', 
-              fontSize: '12px', 
-              color: 'rgba(255,255,255,0.6)'
-            }}>
-              This must be the email address associated with your PayPal account
-            </p>
-          </div>
-        )}
-
-        {/* Bank Transfer Form */}
-        {paymentMethod === 'bank' && (
-          <div style={{ marginBottom: '35px' }}>
-            <div style={{ display: 'grid', gap: '20px' }}>
-              <div>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '8px', 
-                  fontWeight: '600',
-                  color: 'white',
-                  fontSize: '14px'
-                }}>
-                  Account Holder Name:
-                </label>
-                <input
-                  type="text"
-                  value={formData.accountHolderName}
-                  onChange={(e) => handleInputChange('accountHolderName', e.target.value)}
-                  placeholder="Full name on account"
-                  style={{
-                    width: '100%',
-                    padding: '14px',
-                    backgroundColor: '#1A2245',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: '10px',
-                    color: 'white',
-                    fontSize: '16px',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    transition: 'border-color 0.2s ease'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#4169E1'}
-                  onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
-                  }
-                />
-              </div>
-
-              <div>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '8px', 
-                  fontWeight: '600',
-                  color: 'white',
-                  fontSize: '14px'
-                }}>
-                  Bank Name:
-                </label>
-                <input
-                  type="text"
-                  value={formData.bankName}
-                  onChange={(e) => handleInputChange('bankName', e.target.value)}
-                  placeholder="e.g. Barclays, HSBC, Chase"
-                  style={{
-                    width: '100%',
-                    padding: '14px',
-                    backgroundColor: '#1A2245',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: '10px',
-                    color: 'white',
-                    fontSize: '16px',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    transition: 'border-color 0.2s ease'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#4169E1'}
-                  onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
-                  }
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '15px' }}>
-                <div>
-                  <label style={{ 
-                    display: 'block', 
-                    marginBottom: '8px', 
-                    fontWeight: '600',
-                    color: 'white',
-                    fontSize: '14px'
-                  }}>
-                    Account Number:
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.accountNumber}
-                    onChange={(e) => handleInputChange('accountNumber', e.target.value)}
-                    placeholder="12345678"
-                    style={{
-                      width: '100%',
-                      padding: '14px',
-                      backgroundColor: '#1A2245',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      borderRadius: '10px',
-                      color: 'white',
-                      fontSize: '16px',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                      transition: 'border-color 0.2s ease'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = '#4169E1'}
-                    onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label style={{ 
-                    display: 'block', 
-                    marginBottom: '8px', 
-                    fontWeight: '600',
-                    color: 'white',
-                    fontSize: '14px'
-                  }}>
-                    {formData.country === 'UK' ? 'Sort Code:' : 'Routing Number:'}
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.country === 'UK' ? formData.sortCode : formData.routingNumber}
-                    onChange={(e) => handleInputChange(
-                      formData.country === 'UK' ? 'sortCode' : 'routingNumber', 
-                      e.target.value
-                    )}
-                    placeholder={formData.country === 'UK' ? '12-34-56' : '123456789'}
-                    style={{
-                      width: '100%',
-                      padding: '14px',
-                      backgroundColor: '#1A2245',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      borderRadius: '10px',
-                      color: 'white',
-                      fontSize: '16px',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                      transition: 'border-color 0.2s ease'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = '#4169E1'}
-                    onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Address Information */}
         <div style={{ marginBottom: '35px' }}>
@@ -557,7 +598,7 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
                 type="text"
                 value={formData.postcode}
                 onChange={(e) => handleInputChange('postcode', e.target.value)}
-                placeholder="Postcode"
+                placeholder={formData.country === 'UK' ? 'Postcode' : 'Zip Code'}
                 style={{
                   width: '100%',
                   padding: '14px',
@@ -576,31 +617,14 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
               />
             </div>
 
-            <select
+            <CustomDropdown
               value={formData.country}
-              onChange={(e) => handleInputChange('country', e.target.value)}
-              style={{
-                width: '100%',
-                padding: '14px',
-                backgroundColor: '#1A2245',
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: '10px',
-                color: 'white',
-                fontSize: '16px',
-                outline: 'none',
-                boxSizing: 'border-box',
-                transition: 'border-color 0.2s ease'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#4169E1'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
-              }
-            >
-              <option value="UK" style={{ backgroundColor: '#1A2245', color: 'white' }}>United Kingdom</option>
-              <option value="US" style={{ backgroundColor: '#1A2245', color: 'white' }}>United States</option>
-              <option value="CA" style={{ backgroundColor: '#1A2245', color: 'white' }}>Canada</option>
-              <option value="AU" style={{ backgroundColor: '#1A2245', color: 'white' }}>Australia</option>
-              <option value="other" style={{ backgroundColor: '#1A2245', color: 'white' }}>Other (contact support)</option>
-            </select>
+              options={countryOptions}
+              onChange={(value) => handleInputChange('country', value)}
+              placeholder="Select country"
+              isOpen={countryDropdownOpen}
+              setIsOpen={setCountryDropdownOpen}
+            />
           </div>
         </div>
 
@@ -620,13 +644,13 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: '15px', marginBottom: '25px' }}>
+        {/* Action Button */}
+        <div style={{ marginBottom: '25px' }}>
           <button
             onClick={savePaymentInfo}
             disabled={loading}
             style={{
-              flex: 1,
+              width: '100%',
               padding: '16px 20px',
               backgroundColor: loading ? '#666' : '#4169E1',
               color: 'white',
@@ -663,37 +687,8 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
                 Saving...
               </div>
             ) : (
-              'Save Payment Info'
+              'Save Bank Details'
             )}
-          </button>
-          
-          <button
-            onClick={onClose}
-            disabled={loading}
-            style={{
-              flex: 1,
-              padding: '16px 20px',
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              color: 'white',
-              border: '1px solid rgba(255,255,255,0.2)',
-              borderRadius: '12px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.target.style.backgroundColor = 'rgba(255,255,255,0.15)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!loading) {
-                e.target.style.backgroundColor = 'rgba(255,255,255,0.1)';
-              }
-            }}
-          >
-            Cancel
           </button>
         </div>
 
@@ -708,7 +703,7 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
           textAlign: 'center',
           lineHeight: '1.5'
         }}>
-          🔒 <strong>Your information is stored securely</strong>
+        <strong>Your information is stored securely</strong>
         </div>
 
         {/* Add CSS for loading animation */}
