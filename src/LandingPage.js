@@ -90,11 +90,31 @@ const LandingPage = () => {
           
           <p style={{ 
             fontSize: '22px',
-            marginBottom: '40px',
+            marginBottom: '20px',
             opacity: 0.9
           }}>
             Get paid every time your friends rate your story
           </p>
+
+          <a
+            href="#earnings-calculator"
+            style={{
+              display: 'inline-block',
+              color: 'rgba(255,255,255,0.9)',
+              textDecoration: 'underline',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              marginBottom: '20px',
+              cursor: 'pointer',
+              transition: 'color 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.target.style.color = 'white'}
+            onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.9)'}
+          >
+            How Much Can I Make?
+          </a>
+
+          <br></br>
 
           <button
             onClick={() => handleDashboard('signup')}
@@ -302,7 +322,7 @@ const LandingPage = () => {
       </section>
 
       {/* Earnings Calculator */}
-      <section style={{ 
+      <section id="earnings-calculator" style={{ 
         padding: '80px 20px',
         backgroundColor: '#1A2245'
       }}>
