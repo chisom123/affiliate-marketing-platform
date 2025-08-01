@@ -1,369 +1,126 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Link } from 'lucide-react';
-import { CircleDollarSign } from 'lucide-react';
-import { CircleFadingPlus } from 'lucide-react';
 
 const LandingPage = () => {
+  const [currentStep, setCurrentStep] = useState(0);
   const [estimatedRatings, setEstimatedRatings] = useState(100);
-
   const navigate = useNavigate();
-
   const handleDashboard = (mode = 'signup') => {
     navigate('/dashboard', { state: { authMode: mode } });
   };
-  
-  const handleGetStarted = (e) => {
-    e.preventDefault();
-    navigate('/dashboard');
+
+  const nextStep = () => {
+    if (currentStep < 3) {
+      setCurrentStep(currentStep + 1);
+      // Multiple scroll methods to ensure it works
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Fallback method
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }, 50);
+    }
   };
-  return (
-    <div style={{ fontFamily: 'Arial, sans-serif', lineHeight: '1.6' }}>
-      
-      {/* Header */}
-      <header style={{ 
-        backgroundColor: '#1A2245',
-        position: 'sticky',
-        top: '0',
-        zIndex: 100
-      }}>
-        <div style={{ 
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '15px 20px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <div style={{
+
+  const prevStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const steps = [
+    {
+      title: "Turn your stories into income",
+      subtitle: "Get paid every time your friends rate your story",
+      content: "welcome"
+    },
+    {
+      title: "Add Rating Link",
+      subtitle: "Simply add our link to your Instagram or Snapchat story",
+      content: "addLink"
+    },
+    {
+      title: "Get Ratings",
+      subtitle: "Your friends tap the link and rate your story",
+      content: "getRatings"
+    },
+    {
+      title: "Estimate Earnings",
+      subtitle: "How many ratings do you think you'll get per story?",
+      content: "getPaid"
+    }
+  ];
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 0: // Welcome
+        return (
+          <div style={{ textAlign: 'center' }}>
+          </div>
+        );
+
+      case 1: // Add Link
+        return (
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ 
+              maxWidth: '300px', 
+              margin: '0 auto',
               display: 'flex',
-              alignItems: 'center',
               justifyContent: 'center'
             }}>
               <img 
-                src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a"
-                alt="Star icon"
+                src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/IMG_4128%202.PNG?alt=media&token=89ecbb80-8e3d-4c0a-9ed8-35552ccf70d0"
+                alt="Instagram story with rating link"
                 style={{
-                  width: '30px',
-                  height: '30px'
+                  width: '100%',
+                  maxWidth: '250px',
+                  height: 'auto',
+                  borderRadius: '8px',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
                 }}
               />
             </div>
-            <h1 style={{ margin: '2px 0px 0px 0px', fontSize: '20px', color: 'white' }}>
-              SocialStar Partners
-            </h1>
           </div>
-          
-          <button
-            onClick={() => handleDashboard('login')}
-            style={{
-              fontSize: '16px',
-              backgroundColor: 'transparent',
-              color: 'white',
-              border: 'none',
-              cursor: 'pointer',
-              fontWeight: 'bold'
-            }}
-          >
-            Sign In
-          </button>
-        </div>
-      </header>
+        );
 
-      {/* Hero Section */}
-      <section style={{ 
-        background: 'linear-gradient(135deg, #10183C 0%, #1A2245 100%)',
-        color: 'white',
-        padding: '80px 20px',
-        textAlign: 'center'
-      }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h1 style={{ 
-            fontSize: '48px',
-            fontWeight: 'bold',
-            marginBottom: '20px',
-            lineHeight: '1.2'
-          }}>
-            Turn Your Instagram Stories Into Cash
-          </h1>
-          
-          <p style={{ 
-            fontSize: '22px',
-            marginBottom: '20px',
-            opacity: 0.8
-          }}>
-            Get paid every time your friends rate your story
-          </p>
-
-          <a
-            href="#earnings-calculator"
-            style={{
-              display: 'inline-block',
-              color: 'rgba(255,255,255,0.9)',
-              textDecoration: 'underline',
-              fontSize: '18px',
-              fontWeight: 'bold',
-              marginBottom: '20px',
-              cursor: 'pointer',
-              transition: 'color 0.2s ease'
-            }}
-            onMouseEnter={(e) => e.target.style.color = 'white'}
-            onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.9)'}
-          >
-            How Much Can I Make?
-          </a>
-
-          <br></br>
-
-          <button
-            onClick={() => handleDashboard('signup')}
-            style={{
-              padding: '20px 40px',
-              backgroundColor: '#4169E1',
-              color: 'white',
-              border: 'none',
-              borderRadius: '30px',
-              fontSize: '18px',
-              fontWeight: 'bold',
-              cursor: 'pointer'
-            }}
-          >
-            Start Earning Now
-          </button>
-        </div>
-      </section>
-
-      {/* See It In Action */}
-      <section style={{ 
-        padding: '80px 20px',
-        backgroundColor: '#1A2245'
-      }}>
-        <div style={{ maxWidth: '750px', margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ 
-            fontSize: '36px',
-            marginBottom: '20px',
-            color: 'white'
-          }}>
-            See It In Action
-          </h2>
-          
-          <p style={{ 
-            fontSize: '18px',
-            color: 'rgba(255,255,255,0.8)',
-            marginBottom: '50px',
-            maxWidth: '600px',
-            margin: '0 auto 50px'
-          }}>
-            Here's exactly how it looks when you add a rating link to your story
-          </p>
-
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '40px',
-            marginBottom: '80px'
-          }}>
-            <div style={{
-
+      case 2: // Get Ratings
+        return (
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ 
+              maxWidth: '300px', 
+              margin: '0 auto',
+              display: 'flex',
+              justifyContent: 'center'
             }}>
-              <h3 style={{ 
-                fontSize: '24px',
-                marginBottom: '20px',
-                color: 'white'
-              }}>
-                Add Rating Link
-              </h3>
-              <div style={{
-
-              }}>
-                <img 
-                  src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/IMG_4128%202.PNG?alt=media&token=89ecbb80-8e3d-4c0a-9ed8-35552ccf70d0"
-                  alt="Instagram story with rating link"
-                  style={{
-                    maxWidth: '250px',
-                    height: 'auto',
-                    borderRadius: '8px'
-                  }}
-                />
-              </div>
-            </div>
-
-            <div style={{
-
-            }}>
-              <h3 style={{ 
-                fontSize: '24px',
-                marginBottom: '20px',
-                color: 'white'
-              }}>
-                Get Ratings
-              </h3>
-              <div style={{
-  
-              }}>
-                <img 
-                  src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/unnamed.png?alt=media&token=bb05e516-c903-4143-8ee4-035f6d0a0b15"
-                  alt="Rating interface on mobile"
-                  style={{
-                    maxWidth: '250px',
-                    height: 'auto',
-                    borderRadius: '8px'
-                  }}
-                />
-              </div>
+              <img 
+                src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/IMG_4200.PNG?alt=media&token=b6d48305-034f-40f5-8c10-69fc52c56a6e"
+                alt="Rating interface on mobile"
+                style={{
+                  width: '100%',
+                  maxWidth: '250px',
+                  height: 'auto',
+                  borderRadius: '8px',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
+                }}
+              />
             </div>
           </div>
-        </div>
-      </section>
+        );
 
-      {/* How It Works */}
-      <section style={{ 
-        padding: '80px 20px',
-        backgroundColor: '#10183C'
-      }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ 
-            fontSize: '36px',
-            marginBottom: '20px',
-            color: 'white'
-          }}>
-            How It Works
-          </h2>
-
-          <p style={{ 
-            fontSize: '18px',
-            color: 'rgba(255,255,255,0.8)',
-            marginBottom: '50px',
-            maxWidth: '600px',
-            margin: '0 auto 50px'
-          }}>
-            Turn your story posts into income with 3 simple steps
-          </p>
-
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '40px',
-            marginBottom: '50px'
-          }}>
-            {[
-              {
-                step: '1',
-                title: 'Create Rating Link',
-                description: 'Sign up and generate a unique rating link for your Instagram or Snapchat story',
-                icon: Link
-              },
-              {
-                step: '2', 
-                title: 'Add Link to Your Story',
-                description: 'Share your content and add the rating link. Friends can rate it 1-5 stars',
-                icon: CircleFadingPlus
-              },
-              {
-                step: '3',
-                title: 'Get Paid',
-                description: 'Earn money every time you receive a rating. Money is tracked in real-time',
-                icon: CircleDollarSign
-              }
-            ].map((item, index) => {
-              const IconComponent = item.icon;
-              return (
-                <div key={index} style={{
-                  backgroundColor: '#323862',
-                  padding: '40px 30px',
-                  borderRadius: '15px',
-                  textAlign: 'center'
-                }}>
-                  <div style={{
-                    marginBottom: '20px',
-                    display: 'flex',
-                    justifyContent: 'center'
-                  }}>
-                    <IconComponent 
-                      size={48} 
-                      color="#4169E1" 
-                      strokeWidth={1.5}
-                    />
-                  </div>
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    backgroundColor: '#4169E1',
-                    color: 'white',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 20px',
-                    fontSize: '18px',
-                    fontWeight: 'bold'
-                  }}>
-                    {item.step}
-                  </div>
-                  <h3 style={{ 
-                    fontSize: '20px',
-                    marginBottom: '15px',
-                    color: 'white'
-                  }}>
-                    {item.title}
-                  </h3>
-                  <p style={{ 
-                    color: 'rgba(255,255,255,0.8)',
-                    lineHeight: '1.6'
-                  }}>
-                    {item.description}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Earnings Calculator */}
-      <section id="earnings-calculator" style={{ 
-        padding: '80px 20px',
-        backgroundColor: '#1A2245'
-      }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ 
-            fontSize: '36px',
-            marginBottom: '20px',
-            color: 'white'
-          }}>
-            Calculate Your Potential Earnings
-          </h2>
-          
-          <p style={{ 
-            fontSize: '18px',
-            color: 'rgba(255,255,255,0.8)',
-            marginBottom: '50px'
-          }}>
-            Now that you understand how it works, see how much you could earn based on your typical story engagement
-          </p>
-
-          <div style={{ 
-            background: 'linear-gradient(135deg, #323862 0%, #3B4374 100%)',
-            color: 'white',
-            borderRadius: '20px',
-            padding: '40px',
-            marginBottom: '40px'
-          }}>
-            <h3 style={{ marginBottom: '25px', fontSize: '24px' }}>
-              Earnings Calculator
-            </h3>
-            <div style={{ marginBottom: '30px' }}>
-              <label style={{ display: 'block', marginBottom: '15px', fontSize: '18px' }}>
-                How many ratings do you think you'll get per story?
-              </label>
-              
-              {/* Custom Slider Container */}
+      case 3: // Get Paid
+        return (
+          <div>
+            {/* Custom Slider */}
+            <div style={{
+              background: 'rgba(255,255,255,0.1)',
+              borderRadius: '8px',
+              padding: '24px'
+            }}>
               <div 
                 style={{ 
                   position: 'relative', 
-                  marginBottom: '15px',
-                  padding: '15px 0',
+                  marginBottom: '16px',
+                  padding: '16px 0',
                   cursor: 'pointer',
                   touchAction: 'none'
                 }}
@@ -373,7 +130,6 @@ const LandingPage = () => {
                   const thumb = e.currentTarget.querySelector('[data-thumb]');
                   const track = e.currentTarget.querySelector('[data-track]');
                   
-                  // Disable transitions during drag
                   thumb.style.transition = 'none';
                   track.style.transition = 'none';
                   
@@ -392,7 +148,6 @@ const LandingPage = () => {
                   
                   const handleMouseMove = (e) => updateValue(e.clientX);
                   const handleMouseUp = () => {
-                    // Re-enable transitions
                     thumb.style.transition = 'left 0.1s ease';
                     track.style.transition = 'width 0.1s ease';
                     
@@ -410,7 +165,6 @@ const LandingPage = () => {
                   const thumb = e.currentTarget.querySelector('[data-thumb]');
                   const track = e.currentTarget.querySelector('[data-track]');
                   
-                  // Disable transitions during drag
                   thumb.style.transition = 'none';
                   track.style.transition = 'none';
                   
@@ -435,7 +189,6 @@ const LandingPage = () => {
                   };
                   
                   const handleTouchEnd = () => {
-                    // Re-enable transitions
                     thumb.style.transition = 'left 0.1s ease';
                     track.style.transition = 'width 0.1s ease';
                     
@@ -512,288 +265,261 @@ const LandingPage = () => {
                   tabIndex="0"
                 />
               </div>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px' }}>
-                {estimatedRatings} ratings
-              </div>
-            </div>
-            
-            <div style={{ 
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '20px',
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              borderRadius: '15px',
-              padding: '25px'
-            }}>
-              <div>
-                <div style={{ fontSize: '18px', opacity: '0.9' }}>Per Story</div>
-                <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
-                  ${(estimatedRatings * 0.02).toFixed(2)}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: '18px', opacity: '0.9' }}>Per Week (7 stories)</div>
-                <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
-                  ${(estimatedRatings * 0.02 * 7).toFixed(2)}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: '18px', opacity: '0.9' }}>Per Month</div>
-                <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
-                  ${(estimatedRatings * 0.02 * 7 * 4).toFixed(2)}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={() => handleDashboard('signup')}
-            style={{
-              padding: '18px 40px',
-              background: '#4169E1',
-              color: 'white',
-              border: 'none',
-              borderRadius: '30px',
-              fontSize: '18px',
-              fontWeight: 'bold',
-              cursor: 'pointer'
-            }}
-          >
-            Start Earning ${(estimatedRatings * 0.02).toFixed(2)} Per Story
-          </button>
-        </div>
-      </section>
-      
-      {/* Social Proof */}
-      <section style={{ 
-        padding: '80px 20px',
-        backgroundColor: '#10183C'
-      }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ 
-            fontSize: '36px',
-            marginBottom: '50px',
-            color: 'white'
-          }}>
-            Join Partners Already Earning
-          </h2>
-
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '30px',
-            marginBottom: '50px'
-          }}>
-            {[
-              { name: 'Sarah M.', earnings: '$840', stories: '84 stories', profilePicUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/ab303d043a6752eb7cd84e876d8473df.jpg?alt=media&token=f04af6a3-5810-43d9-94a5-c9e23f2936cc' },
-              { name: 'Adam R.', earnings: '$120', stories: '30 stories', profilePicUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/2cd7110ecfc67073dedd2df843d51e4a.jpg?alt=media&token=2ec56d63-e822-463b-8bbf-55add7a05353' },
-              { name: 'Toni W.', earnings: '$95', stories: '24 stories', profilePicUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/760021cb5694f81ebcc6755ab82458ed.jpg?alt=media&token=080fe6f7-2182-493d-befc-31fac793e627' },
-              { name: 'Emma L.', earnings: '$530', stories: '67 stories', profilePicUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/f60206a67b75c9bdac4f5f7640d4ebde.jpg?alt=media&token=68a37d63-9049-492d-9d55-53d51c20c950' }
-            ].map((creator, index) => (
-              <div key={index} style={{
-                backgroundColor: '#323862',
-                padding: '30px',
-                borderRadius: '12px',
-                textAlign: 'center',
-              }}>
-                {creator.profilePicUrl ? (
-                  <img 
-                    src={creator.profilePicUrl} 
-                    alt={creator.name} 
-                    style={{
-                      width: '60px',
-                      height: '60px',
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      margin: '0 auto 15px'
-                    }}
-                  />
-                ) : (
-                  <div style={{
-                    width: '60px',
-                    height: '60px',
-                    backgroundColor: '#4169E1',
-                    color: 'white',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 15px',
-                    fontSize: '24px',
-                    fontWeight: 'bold'
-                  }}>
-                    {creator.name.split(' ').map(n => n[0]).join('')}
-                  </div>
-                )}
-                <h4 style={{ margin: '0 0 10px 0', color: 'white' }}>
-                  {creator.name}
-                </h4>
-                <p style={{ 
-                  margin: '0 0 5px 0',
-                  fontSize: '20px',
-                  fontWeight: 'bold',
-                  color: '#fff'
-                }}>
-                  {creator.earnings}
-                </p>
-                <p style={{ 
-                  margin: '0',
-                  fontSize: '15px',
-                  color: 'rgba(255,255,255,0.7)'
-                }}>
-                  {creator.stories}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-
-      {/* FAQ */}
-      <section style={{ 
-        padding: '80px 20px',
-        backgroundColor: '#1A2245'
-      }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h2 style={{ 
-            fontSize: '36px',
-            textAlign: 'center',
-            marginBottom: '50px',
-            color: 'white'
-          }}>
-            Frequently Asked Questions
-          </h2>
-
-          <div style={{ display: 'grid', gap: '20px' }}>
-            {[
-              {
-                q: 'When do I get paid?',
-                a: 'Earnings are tracked in real-time. We process payouts weekly via direct bank transfer or PayPal.'
-              },
-              {
-                q: 'How does SocialStar make money?',
-                a: 'SocialStar makes money when people download our main SocialStar app after rating. You get paid for driving high-quality user acquisition.'
-              },
-              {
-                q: 'What platforms does this work on?',
-                a: 'Instagram Stories and Snapchat Stories.'
-              }
-            ].map((faq, index) => (
-              <div key={index} style={{
-                backgroundColor: '#323862',
-                padding: '25px',
-                borderRadius: '12px',
-                border: '1px solid #3B4374'
-              }}>
-                <h4 style={{ 
+              
+              <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                <div style={{ 
+                  fontSize: '24px', 
+                  fontWeight: 'bold', 
                   color: 'white',
-                  margin: '0 0 10px 0',
-                  fontSize: '18px'
+                  marginBottom: '8px'
                 }}>
-                  {faq.q}
-                </h4>
-                <p style={{ 
-                  color: 'rgba(255,255,255,0.8)',
-                  margin: '0',
-                  lineHeight: '1.6'
-                }}>
-                  {faq.a}
-                </p>
+                  {estimatedRatings} ratings <span style={{ fontSize: '16px', fontWeight: 'normal', color: 'rgba(255,255,255,0.8)' }}>per story</span>
+                </div>
               </div>
-            ))}
+              
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                gap: '16px',
+                background: 'rgba(255,255,255,0.1)',
+                borderRadius: '8px',
+                padding: '16px'
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ 
+                    fontSize: '16px', 
+                    color: 'rgba(255,255,255,0.8)',
+                    marginBottom: '5px'
+                  }}>
+                    Per Story
+                  </div>
+                  <div style={{ 
+                    fontSize: '24px', 
+                    fontWeight: 'bold', 
+                    color: 'white'
+                  }}>
+                    ${(estimatedRatings * 0.1).toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        );
 
-      {/* Final CTA */}
-      <section style={{ 
-        padding: '80px 20px',
-        background: '#4169E1',
-        color: 'white',
-        textAlign: 'center'
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div style={{ 
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #1e293b 0%, #1e3a8a 50%, #1e293b 100%)',
+      display: 'flex',
+      flexDirection: 'column',
+      fontFamily: 'Arial, sans-serif'
+    }}>
+      {/* Header */}
+      <header style={{ 
+        backgroundColor: 'rgba(30, 41, 59, 0.8)',
+        backdropFilter: 'blur(10px)',
+        position: 'sticky',
+        top: '0',
+        zIndex: 50,
+        borderBottom: '1px solid rgba(255,255,255,0.1)'
       }}>
-        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-          <h2 style={{ 
-            fontSize: '36px',
-            marginBottom: '20px'
-          }}>
-            Ready to Start Earning?
-          </h2>
-          
-          <p style={{ 
-            fontSize: '18px',
-            marginBottom: '40px',
-            opacity: '0.9'
-          }}>
-            Join hundreds of partners already monetizing their story posts. 
-            Free to start, no commitment required.
-          </p>
-
-          <button
-            onClick={() => handleDashboard('signup')}
-            style={{
-              padding: '20px 40px',
-              backgroundColor: 'white',
-              color: '#4169E1',
-              border: 'none',
-              borderRadius: '30px',
+        <div style={{ 
+          maxWidth: '1200px',
+          margin: '0 auto',
+          padding: '16px 20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <img 
+              src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a"
+              alt="Star icon"
+              style={{ width: '32px', height: '32px' }}
+            />
+            <h1 style={{ 
               fontSize: '18px',
               fontWeight: 'bold',
-              cursor: 'pointer'
-            }}
-          >
-            Create Your First Rating Link
-          </button>
+              color: 'white',
+              marginTop: '6px',
+              margin: '0'
+            }}>
+              
+            </h1>
+          </div>
           
-          <p style={{ 
-            marginTop: '20px',
-            fontSize: '14px',
-            opacity: '0.8'
-          }}>
-            Setup takes less than 2 minutes
-          </p>
+          <button
+            onClick={() => handleDashboard('login')}
+            style={{
+              color: 'white',
+              background: 'transparent',
+              border: 'none',
+              fontWeight: '600',
+              cursor: 'pointer',
+              fontSize: '16px'
+            }}
+            onMouseOver={(e) => e.target.style.color = '#60a5fa'}
+            onMouseOut={(e) => e.target.style.color = 'white'}
+          >
+            Sign In
+          </button>
         </div>
-      </section>
+      </header>
 
-      {/* Footer */}
-      <footer style={{ backgroundColor: '#10183C', color: 'white', padding: '40px 20px', textAlign: 'center' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
-            <div>
-            <img 
-                src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a"
-                alt="Star icon"
+      {/* Main Content */}
+      <main style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>
+        {/* Progress Bar */}
+        <div style={{ 
+          background: 'rgba(30, 41, 59, 0.5)',
+          padding: '12px 20px'
+        }}>
+          <div style={{ maxWidth: '400px', margin: '0 auto' }}>
+            <div style={{ 
+              height: '6px',
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              borderRadius: '3px',
+              overflow: 'hidden'
+            }}>
+              <div 
                 style={{
-                  width: '30px',
-                  height: '30px'
+                  height: '100%',
+                  backgroundColor: '#4169E1',
+                  transition: 'width 0.5s ease',
+                  width: `${((currentStep + 1) / steps.length) * 100}%`
                 }}
               />
             </div>
-            <div>
-              <a 
-                href="mailto:pingbearapp@gmail.com"
-                style={{ 
-                  fontSize: '16px',
-                  backgroundColor: 'transparent',
-                  color: 'white',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                  textDecoration: 'none'
-                }}
-              >
-                Contact
-              </a>
-            </div>
-          </div>
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', marginTop: '30px', paddingTop: '20px', opacity: '0.6' }}>
-            <p style={{ margin: '0' }}>
-              © 2025 SocialStar. All rights reserved.
-            </p>
           </div>
         </div>
-      </footer>
+
+        {/* Step Content */}
+        <div style={{ 
+          flex: '1',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          padding: '32px 20px',
+          marginTop: (currentStep === 0 || currentStep === 3) && window.innerWidth <= 768 ? '-70px' : '0'
+        }}>
+          <div style={{ maxWidth: '500px', margin: '0 auto', width: '100%' }}>
+            {/* Step Header */}
+            <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+              {currentStep === 0 && (
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  gap: '12px',
+                  marginBottom: '32px'
+                }}>
+                  <img 
+                    src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a"
+                    alt="Star icon"
+                    style={{
+                      width: '32px',
+                      height: '32px'
+                    }}
+                  />
+                  <span style={{
+                    fontSize: '20px',
+                    fontWeight: 'bold',
+                    color: 'white',
+                    marginTop: '5px'
+                  }}>
+                    SocialStar Partners
+                  </span>
+                </div>
+              )}
+              <h1 style={{ 
+                fontSize: window.innerWidth > 768 ? '28px' : '24px',
+                fontWeight: 'bold',
+                color: 'white',
+                marginBottom: '12px',
+                margin: '0 0 12px 0'
+              }}>
+                {steps[currentStep].title}
+              </h1>
+              <p style={{ 
+                fontSize: '18px',
+                color: 'rgba(255,255,255,0.8)',
+                margin: '0'
+              }}>
+                {steps[currentStep].subtitle}
+              </p>
+            </div>
+
+            {/* Step Content */}
+            <div style={{ marginBottom: '80px' }}>
+              {renderStepContent()}
+            </div>
+
+            {/* Navigation */}
+            <div style={{ 
+              position: 'fixed',
+              bottom: '0',
+              left: '0',
+              right: '0',
+              padding: '20px',
+              backgroundColor: 'rgba(30, 41, 59, 0.95)',
+              backdropFilter: 'blur(10px)',
+              zIndex: 50
+            }}>
+              <div style={{ maxWidth: '500px', margin: '0 auto' }}>
+                {currentStep < 3 ? (
+                  <button
+                    onClick={nextStep}
+                    style={{
+                      width: '100%',
+                      padding: '16px 32px',
+                      backgroundColor: '#4169E1',
+                      color: 'white',
+                      borderRadius: '200px',
+                      fontWeight: 'bold',
+                      transition: 'all 0.3s ease',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      boxShadow: '0 4px 20px rgba(65, 105, 225, 0.3)'
+                    }}
+                    onMouseOver={(e) => e.target.style.backgroundColor = '#3b5de6'}
+                    onMouseOut={(e) => e.target.style.backgroundColor = '#4169E1'}
+                  >
+                    {currentStep === 0 ? 'Learn More' : 'Next'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleDashboard('signup')}
+                    style={{
+                      width: '100%',
+                      padding: '16px 24px',
+                      backgroundColor: '#4169E1',
+                      color: 'white',
+                      borderRadius: '200px',
+                      fontWeight: 'bold',
+                      transition: 'all 0.3s ease',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '16px',
+                      boxShadow: '0 4px 20px rgba(65, 105, 225, 0.3)'
+                    }}
+                    onMouseOver={(e) => e.target.style.backgroundColor = '#3b5de6'}
+                    onMouseOut={(e) => e.target.style.backgroundColor = '#4169E1'}
+                  >
+                    Get Started
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+
     </div>
   );
 };

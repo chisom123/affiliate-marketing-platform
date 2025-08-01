@@ -553,7 +553,7 @@ const RatingPage = () => {
         fraudScore: fraudCheck.confidence,
         referrer: document.referrer,
         validated: true,
-        earnings: 0.02,
+        earnings: 0.1,
         protectionVersion: isLocalDevelopment() ? '2.0-dev' : '2.0',
         developmentMode: isLocalDevelopment()
       };
@@ -563,13 +563,13 @@ const RatingPage = () => {
       // Update stats
       await updateDoc(doc(db, 'rating_links', linkData.id), {
         totalRatings: increment(1),
-        earnings: increment(0.02),
+        earnings: increment(0.1),
         lastRatedAt: serverTimestamp()
       });
       
       await updateDoc(doc(db, 'affiliates', affiliateId), {
         totalRatings: increment(1),
-        totalEarnings: increment(0.02)
+        totalEarnings: increment(0.1)
       });
       
       // Mark as rated (skip in development to allow multiple ratings)
@@ -686,14 +686,14 @@ if (submitted) {
         <div style={{ 
           backgroundColor: '#1A2245',
           borderRadius: '12px',
-          padding: '40px 30px',
+          padding: '40px 30px 0px 30px', // Remove bottom padding
           marginBottom: '30px'
         }}>
           <h2 style={{ 
             color: '#fff',
             marginTop: '0px',
             marginBottom: '30px',
-            fontSize: '24px',
+            fontSize: '22px',
             fontWeight: 'bold'
           }}>
             Thanks for rating!
@@ -710,7 +710,8 @@ if (submitted) {
               <p style={{ 
                 color: '#B8C5D1',
                 fontSize: '15px',
-                margin: '0 0 10px 0'
+                margin: '0 0 10px 0',
+                fontWeight: '500'
               }}>
                 Average Rating
               </p>
@@ -748,48 +749,42 @@ if (submitted) {
               <p style={{ 
                 color: '#B8C5D1',
                 fontSize: '15px',
-                margin: '0'
+                margin: '0',
+                fontWeight: '500'
               }}>
                 {totalRatingsCount} rater{totalRatingsCount !== 1 ? 's' : ''}
               </p>
             </div>
           )}
 
-          <hr style={{
-            border: 'none',           /* Remove default border */
-            height: '2px',            /* Set thickness */
-            backgroundColor: '#243055',  /* Set color */
-            margin: '20px 0',         /* Add spacing */
-            borderRadius: '200px'       /* Round the edges */
-          }} />
-
           <p style={{ 
-            color: '#fff',
-            fontSize: '18px',
-            marginTop: '30px',
-            fontWeight: 'bold',
-            lineHeight: '25px'
-          }}>
-            Want your photos rated by friends?
-          </p>
+                color: '#FFF',
+                fontSize: '15px',
+                margin: '0 0 0px 0',
+                fontWeight: '600',
+                lineHeight: '22px'
+              }}>
+              Continue playing with {affiliateData.firstName} and others on SocialStar
+              </p>
 
-          <div style={{ marginTop: '10px' }}>
-            <button
+          <button
               onClick={() => window.open('https://apps.apple.com/gb/app/socialstar-app/id6473705189', '_blank')}
               style={{
-                padding: '13px 30px',
+                padding: '23px 30px',
                 backgroundColor: '#4169E1',
                 color: 'white',
                 border: 'none',
-                borderRadius: '200px',
+                borderRadius: '0px 0px 12px 12px', // Only round bottom corners to match container
                 fontSize: '18px',
                 fontWeight: 'bold',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                width: 'calc(100% + 60px)', // Extend beyond padding
+                marginLeft: '-30px',        // Offset to align with container edge
+                marginTop: '20px'
               }}
             >
-              Get Started
+              Get SocialStar
             </button>
-          </div>
         </div>
         <a href="https://apps.apple.com/gb/app/socialstar-app/id6473705189" target="_blank" style={{ textDecoration: 'none', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -838,7 +833,7 @@ if (submitted) {
               fontWeight: 'bold',
               lineHeight: '28px'
               }}>
-              What would you rate {affiliateData?.firstName ? `${affiliateData.firstName}'s` : 'this'} story?
+              Rate {affiliateData?.firstName ? `${affiliateData.firstName}'s` : 'this'} Story
             </p>
             
             <div style={{ 

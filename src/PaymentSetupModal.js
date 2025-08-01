@@ -1,191 +1,102 @@
-// PAYMENT SETUP MODAL COMPONENT - BANK TRANSFER ONLY
-// Purpose: Collect affiliate bank transfer information for manual payouts
-// Features: Bank details, validation, secure storage
-
 import React, { useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
 const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
   const [formData, setFormData] = useState({
-    // Bank Transfer
-    bankName: '',
-    accountNumber: '',
-    sortCode: '', // UK
-    routingNumber: '', // US
-    accountType: 'checking', // US - checking or savings
-    accountHolderName: '',
-    
-    // Address for tax purposes
+    // Personal Info
     fullName: '',
+    email: user?.email || '',
+    // Address
     address: '',
     city: '',
-    postcode: '',
-    country: 'US'
+    state: '',
+    postalCode: '',
+    country: 'US',
+    // Bank Details (US)
+    accountNumber: '',
+    routingNumber: '',
+    accountType: 'checking',
+    // Bank Details (UK)
+    sortCode: ''
   });
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
-  const [accountTypeDropdownOpen, setAccountTypeDropdownOpen] = useState(false);
 
-  const countryOptions = [
-    { value: 'US', label: 'United States' },
-    { value: 'UK', label: 'United Kingdom' },
-    { value: 'CA', label: 'Canada' },
-    { value: 'AU', label: 'Australia' },
-    { value: 'other', label: 'Other (contact support)' }
-  ];
-
-  const accountTypeOptions = [
-    { value: 'checking', label: 'Checking Account' },
-    { value: 'savings', label: 'Savings Account' }
+  // US States with 2-letter codes (required for Wise)
+  const US_STATES = [
+    { code: 'AL', name: 'Alabama' }, { code: 'AK', name: 'Alaska' }, { code: 'AZ', name: 'Arizona' },
+    { code: 'AR', name: 'Arkansas' }, { code: 'CA', name: 'California' }, { code: 'CO', name: 'Colorado' },
+    { code: 'CT', name: 'Connecticut' }, { code: 'DE', name: 'Delaware' }, { code: 'FL', name: 'Florida' },
+    { code: 'GA', name: 'Georgia' }, { code: 'HI', name: 'Hawaii' }, { code: 'ID', name: 'Idaho' },
+    { code: 'IL', name: 'Illinois' }, { code: 'IN', name: 'Indiana' }, { code: 'IA', name: 'Iowa' },
+    { code: 'KS', name: 'Kansas' }, { code: 'KY', name: 'Kentucky' }, { code: 'LA', name: 'Louisiana' },
+    { code: 'ME', name: 'Maine' }, { code: 'MD', name: 'Maryland' }, { code: 'MA', name: 'Massachusetts' },
+    { code: 'MI', name: 'Michigan' }, { code: 'MN', name: 'Minnesota' }, { code: 'MS', name: 'Mississippi' },
+    { code: 'MO', name: 'Missouri' }, { code: 'MT', name: 'Montana' }, { code: 'NE', name: 'Nebraska' },
+    { code: 'NV', name: 'Nevada' }, { code: 'NH', name: 'New Hampshire' }, { code: 'NJ', name: 'New Jersey' },
+    { code: 'NM', name: 'New Mexico' }, { code: 'NY', name: 'New York' }, { code: 'NC', name: 'North Carolina' },
+    { code: 'ND', name: 'North Dakota' }, { code: 'OH', name: 'Ohio' }, { code: 'OK', name: 'Oklahoma' },
+    { code: 'OR', name: 'Oregon' }, { code: 'PA', name: 'Pennsylvania' }, { code: 'RI', name: 'Rhode Island' },
+    { code: 'SC', name: 'South Carolina' }, { code: 'SD', name: 'South Dakota' }, { code: 'TN', name: 'Tennessee' },
+    { code: 'TX', name: 'Texas' }, { code: 'UT', name: 'Utah' }, { code: 'VT', name: 'Vermont' },
+    { code: 'VA', name: 'Virginia' }, { code: 'WA', name: 'Washington' }, { code: 'WV', name: 'West Virginia' },
+    { code: 'WI', name: 'Wisconsin' }, { code: 'WY', name: 'Wyoming' }
   ];
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  // Custom dropdown component
-  const CustomDropdown = ({ value, options, onChange, placeholder, isOpen, setIsOpen }) => {
-    const selectedOption = options.find(option => option.value === value);
-    
-    return (
-      <div style={{ position: 'relative' }} data-dropdown>
-        <div
-          onClick={() => setIsOpen(!isOpen)}
-          style={{
-            width: '100%',
-            padding: '14px',
-            backgroundColor: '#1A2245',
-            border: `1px solid ${isOpen ? '#4169E1' : 'rgba(255,255,255,0.2)'}`,
-            borderRadius: '10px',
-            color: 'white',
-            fontSize: '16px',
-            cursor: 'pointer',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            boxSizing: 'border-box',
-            transition: 'border-color 0.2s ease',
-            userSelect: 'none'
-          }}
-          onMouseEnter={(e) => {
-            if (!isOpen) {
-              e.target.style.borderColor = '#4169E1';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isOpen) {
-              e.target.style.borderColor = 'rgba(255,255,255,0.2)';
-            }
-          }}
-        >
-          <span style={{ color: selectedOption ? 'white' : 'rgba(255,255,255,0.5)' }}>
-            {selectedOption ? selectedOption.label : placeholder}
-          </span>
-          <svg 
-            width="16" 
-            height="16" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            style={{ 
-              transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-              transition: 'transform 0.2s ease'
-            }}
-          >
-            <path d="M6 9L12 15L18 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
-        
-        {isOpen && (
-          <div style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            backgroundColor: '#1A2245',
-            border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: '10px',
-            marginTop: '4px',
-            zIndex: 1000,
-            boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-            overflow: 'hidden'
-          }}>
-            {options.map((option, index) => (
-              <div
-                key={option.value}
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                style={{
-                  padding: '14px',
-                  cursor: 'pointer',
-                  borderBottom: index < options.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none',
-                  backgroundColor: value === option.value ? 'rgba(65, 105, 225, 0.1)' : 'transparent',
-                  color: value === option.value ? '#4169E1' : 'white',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  if (value !== option.value) {
-                    e.target.style.backgroundColor = 'rgba(255,255,255,0.05)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (value !== option.value) {
-                    e.target.style.backgroundColor = 'transparent';
-                  }
-                }}
-              >
-                {option.label}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const validateForm = () => {
-    // Bank details validation
-    if (!formData.bankName || !formData.accountNumber || !formData.accountHolderName) {
-      return 'Please fill in all required bank details';
+    if (!formData.fullName || !formData.address || !formData.city || !formData.postalCode) {
+      return 'Please complete all address fields';
     }
-    
-    // Country-specific banking requirements
-    if (!formData.country) {
-      return 'Please select your country';
+    if (!formData.accountNumber) {
+      return 'Please provide account number';
     }
-    
-    if (formData.country === 'UK' && !formData.sortCode) {
-      return 'Sort code is required for UK bank accounts';
-    }
-    
     if (formData.country === 'US') {
       if (!formData.routingNumber) {
-        return 'Routing number is required for US bank accounts';
+        return 'Please provide routing number';
       }
-      if (!formData.accountType) {
-        return 'Please select your account type';
+      if (formData.routingNumber.length !== 9) {
+        return 'Routing number must be 9 digits';
+      }
+      if (!formData.state) {
+        return 'Please select a state';
       }
     }
-    
-    // Address validation - all fields should be required for tax/legal purposes
-    if (!formData.fullName || !formData.address || !formData.city || !formData.postcode) {
-      return 'Please complete all address fields for tax reporting and payment verification';
+    if (formData.country === 'GB') {
+      if (!formData.sortCode) {
+        return 'Please provide sort code';
+      }
+      if (formData.sortCode.replace(/\D/g, '').length !== 6) {
+        return 'Sort code must be 6 digits';
+      }
     }
-    
-    // Additional validation for specific countries if needed
-    if (formData.country === 'other') {
-      return 'Please contact support to set up payments for your country';
-    }
-    
     return null;
   };
+
+  const isFormValid = () => {
+    if (!formData.fullName || !formData.address || !formData.city || !formData.postalCode) {
+      return false;
+    }
+    if (!formData.accountNumber) {
+      return false;
+    }
+    if (formData.country === 'US') {
+      if (!formData.routingNumber || formData.routingNumber.length !== 9 || !formData.state) {
+        return false;
+      }
+    }
+    if (formData.country === 'GB') {
+      if (!formData.sortCode || formData.sortCode.replace(/\D/g, '').length !== 6) {
+        return false;
+      }
+    }
+    return true;
+  };  
 
   const savePaymentInfo = async () => {
     const validationError = validateForm();
@@ -198,484 +109,685 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
     setError('');
 
     try {
-      // Save payment information to affiliate document
-      await updateDoc(doc(db, 'affiliates', user.uid), {
-        paymentInfo: {
-          method: 'bank',
-          details: {
-            bankName: formData.bankName,
+      console.log('Saving payment info...', { uid: user?.uid, formData });
+      
+      if (!user?.uid) {
+        throw new Error('User not authenticated');
+      }
+
+      const bankAccountData = formData.country === 'GB'
+        ? {
             accountNumber: formData.accountNumber,
-            sortCode: formData.sortCode,
+            sortCode: formData.sortCode.replace(/\D/g, '')
+          }
+        : {
+            accountNumber: formData.accountNumber,
             routingNumber: formData.routingNumber,
-            accountType: formData.accountType,
-            accountHolderName: formData.accountHolderName
-          },
-          address: {
+            accountType: formData.accountType
+          };
+
+      const paymentData = {
+        paymentInfo: {
+          method: 'global_payouts',
+          details: {
             fullName: formData.fullName,
-            address: formData.address,
-            city: formData.city,
-            postcode: formData.postcode,
-            country: formData.country
+            email: formData.email,
+            country: formData.country,
+            address: {
+              line1: formData.address,
+              city: formData.city,
+              ...(formData.country === 'US' && formData.state && { state: formData.state }),
+              postalCode: formData.postalCode,
+              country: formData.country
+            },
+            bankAccount: bankAccountData
           },
           setupAt: new Date(),
-          verified: false // Will be verified by admin
+          verified: false
         }
-      });
+      };
 
+      console.log('Payment data to save:', paymentData);
+      await updateDoc(doc(db, 'affiliates', user.uid), paymentData);
+      console.log('Payment info saved successfully');
       onPaymentInfoSaved();
       onClose();
+
     } catch (error) {
-      console.error('Error saving payment info:', error);
-      setError('Failed to save payment information. Please try again.');
+      console.error('Detailed error saving payment info:', error);
+      setError(`Failed to save: ${error.message || 'Unknown error'}`);
     }
 
     setLoading(false);
   };
 
-  // Handle click on the overlay background
-  const handleOverlayClick = (e) => {
-    // Check if the click is directly on the overlay (not a child element)
-    if (e.target === e.currentTarget) {
-      // Close any open dropdowns first
-      setCountryDropdownOpen(false);
-      setAccountTypeDropdownOpen(false);
-      onClose();
-    }
-  };
-
-  // Prevent click inside the modal from closing it
-  const handleModalClick = (e) => {
-    e.stopPropagation();
-    // Close dropdowns when clicking elsewhere in the modal
-    if (!e.target.closest('[data-dropdown]')) {
-      setCountryDropdownOpen(false);
-      setAccountTypeDropdownOpen(false);
-    }
-  };
-
   return (
-    <div 
+    <div
       style={{
         position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.8)',
+        backgroundColor: 'rgba(16, 24, 60, 0.95)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1000,
-        padding: '60px 20px'
+        padding: '16px',
+        overflowY: 'auto'
       }}
-      onClick={handleOverlayClick}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
     >
-      <div 
+      <div
         style={{
-          backgroundColor: '#323862',
-          borderRadius: '20px',
-          padding: '40px 15px',
-          maxWidth: '550px',
+          backgroundColor: '#1A2245',
+          borderRadius: '5px',
           width: '100%',
-          maxHeight: 'calc(100vh - 120px)',
-          overflowY: 'auto',
-          border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: '0 25px 80px rgba(0,0,0,0.6)'
+          maxWidth: '560px',
+          margin: 'auto',
+          border: '1px solid rgba(255,255,255,0.08)',
+          position: 'relative',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column'
         }}
-        onClick={handleModalClick}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{ marginBottom: '30px', textAlign: 'center', position: 'relative' }}>
-          {/* Close Button */}
+        <div style={{ 
+          padding: '32px 32px 24px 32px',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          position: 'relative'
+        }}>
           <button
             onClick={onClose}
             disabled={loading}
             style={{
               position: 'absolute',
-              top: '-10px',
-              right: '0px',
-              width: '32px',
-              height: '32px',
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              borderRadius: '50%',
+              top: '15px',
+              right: '15px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '12px',
+              width: '40px',
+              height: '40px',
+              color: 'rgba(255,255,255,0.7)',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontSize: '40px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: loading ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s ease',
-              padding: '0'
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.target.style.backgroundColor = 'rgba(255,255,255,0.2)';
-                e.target.style.transform = 'scale(1.1)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!loading) {
-                e.target.style.backgroundColor = 'rgba(255,255,255,0.1)';
-                e.target.style.transform = 'scale(1)';
-              }
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)'
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M18 6L6 18M6 6L18 18" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            ×
           </button>
           <br></br>
-          <h2 style={{ 
-            margin: '10px 0 15px 0', 
-            color: 'white',
-            fontSize: '28px',
-            fontWeight: 'bold'
-          }}>
-          Setup Bank Transfer
-          </h2>
-          <p style={{ 
-            margin: '0', 
-            color: 'rgba(255,255,255,0.7)', 
-            fontSize: '16px',
-            lineHeight: '1.4'
-          }}>
-            We need your bank details to send you earnings. All information is stored securely.
-          </p>
+          
+          <div style={{ textAlign: 'center', paddingRight: '0px' }}>
+            
+            <h2 style={{ 
+              margin: '0 0 8px 0',
+              color: 'white',
+              fontSize: '24px',
+              fontWeight: '700',
+              letterSpacing: '-0.02em'
+            }}>
+              Setup Bank Account
+            </h2>
+
+          </div>
         </div>
 
-        {/* Bank Transfer Form */}
-        <div style={{ marginBottom: '35px' }}>
-          <div style={{ display: 'grid', gap: '20px' }}>
+        {/* Content */}
+        <div style={{ 
+          flex: 1,
+          overflowY: 'auto',
+          padding: '32px'
+        }}>
+          <div style={{ display: 'grid', gap: '24px' }}>
+            {/* Country Selection */}
             <div>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '8px', 
+              <label style={{
+                display: 'block',
+                marginBottom: '8px',
                 fontWeight: '600',
                 color: 'white',
                 fontSize: '14px'
               }}>
-                Account Holder Name
+                Country
               </label>
-              <input
-                type="text"
-                value={formData.accountHolderName}
-                onChange={(e) => handleInputChange('accountHolderName', e.target.value)}
-                placeholder="Full name on account"
-                style={{
-                  width: '100%',
-                  padding: '14px',
-                  backgroundColor: '#1A2245',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '10px',
-                  color: 'white',
-                  fontSize: '16px',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  transition: 'border-color 0.2s ease'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#4169E1'}
-                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
-                }
-              />
-            </div>
-
-            <div>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '8px', 
-                fontWeight: '600',
-                color: 'white',
-                fontSize: '14px'
-              }}>
-                Bank Name
-              </label>
-              <input
-                type="text"
-                value={formData.bankName}
-                onChange={(e) => handleInputChange('bankName', e.target.value)}
-                placeholder="e.g. Chase, Barclays, HSBC"
-                style={{
-                  width: '100%',
-                  padding: '14px',
-                  backgroundColor: '#1A2245',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '10px',
-                  color: 'white',
-                  fontSize: '16px',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  transition: 'border-color 0.2s ease'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#4169E1'}
-                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
-                }
-              />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '15px' }}>
-              <div>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '8px', 
-                  fontWeight: '600',
-                  color: 'white',
-                  fontSize: '14px'
-                }}>
-                  Account Number
-                </label>
-                <input
-                  type="text"
-                  value={formData.accountNumber}
-                  onChange={(e) => handleInputChange('accountNumber', e.target.value)}
-                  placeholder="12345678"
-                  style={{
-                    width: '100%',
-                    padding: '14px',
-                    backgroundColor: '#1A2245',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: '10px',
-                    color: 'white',
-                    fontSize: '16px',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    transition: 'border-color 0.2s ease'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#4169E1'}
-                  onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
+              <select
+                value={formData.country}
+                onChange={(e) => {
+                  handleInputChange('country', e.target.value);
+                  if (e.target.value !== 'US') {
+                    handleInputChange('state', '');
                   }
-                />
-              </div>
-
-              <div>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '8px', 
-                  fontWeight: '600',
+                }}
+                style={{
+                  width: '100%',
+                  padding: '14px 16px',
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: '5px',
                   color: 'white',
-                  fontSize: '14px',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {formData.country === 'UK' ? 'Sort Code' : 'Routing No'}
-                </label>
-                <input
-                  type="text"
-                  value={formData.country === 'UK' ? formData.sortCode : formData.routingNumber}
-                  onChange={(e) => handleInputChange(
-                    formData.country === 'UK' ? 'sortCode' : 'routingNumber', 
-                    e.target.value
+                  fontSize: '15px',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'all 0.2s ease'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#4169E1';
+                  e.target.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(255,255,255,0.12)';
+                  e.target.style.backgroundColor = 'rgba(255,255,255,0.06)';
+                }}
+              >
+                <option value="US">🇺🇸 United States</option>
+              </select>
+            </div>
+
+            {/* Personal Information Section */}
+            <div style={{
+              backgroundColor: 'rgba(255,255,255,0.04)',
+              borderRadius: '5px',
+              padding: '24px',
+              border: '1px solid rgba(255,255,255,0.08)'
+            }}>
+              <h3 style={{
+                margin: '0 0 20px 0',
+                color: 'white',
+                fontSize: '18px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="#4169E1" strokeWidth="2"/>
+                  <circle cx="12" cy="7" r="4" stroke="#4169E1" strokeWidth="2"/>
+                </svg>
+                Personal Information
+              </h3>
+
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {/* Full Name */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '8px',
+                    fontWeight: '600',
+                    color: 'white',
+                    fontSize: '14px'
+                  }}>
+                    Full Name (as on bank account)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.fullName}
+                    onChange={(e) => handleInputChange('fullName', e.target.value)}
+                    placeholder="John Doe"
+                    style={{
+                      width: '100%',
+                      padding: '14px 16px',
+                      backgroundColor: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: '5px',
+                      color: 'white',
+                      fontSize: '15px',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#4169E1';
+                      e.target.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'rgba(255,255,255,0.12)';
+                      e.target.style.backgroundColor = 'rgba(255,255,255,0.06)';
+                    }}
+                  />
+                </div>
+
+                {/* Address */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '8px',
+                    fontWeight: '600',
+                    color: 'white',
+                    fontSize: '14px'
+                  }}>
+                    Address
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    placeholder={formData.country === 'GB' ? '123 High Street' : '123 Main Street'}
+                    style={{
+                      width: '100%',
+                      padding: '14px 16px',
+                      backgroundColor: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: '5px',
+                      color: 'white',
+                      fontSize: '15px',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#4169E1';
+                      e.target.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'rgba(255,255,255,0.12)';
+                      e.target.style.backgroundColor = 'rgba(255,255,255,0.06)';
+                    }}
+                  />
+                </div>
+
+                {/* City, State/County, Postal Code */}
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: formData.country === 'US' ? '2fr 1fr 1fr' : '1fr 1fr', 
+                  gap: '16px' 
+                }} className="payment-grid-address">
+                  <input
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => handleInputChange('city', e.target.value)}
+                    placeholder="City"
+                    style={{
+                      width: '100%',
+                      padding: '14px 16px',
+                      backgroundColor: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: '5px',
+                      color: 'white',
+                      fontSize: '15px',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#4169E1';
+                      e.target.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'rgba(255,255,255,0.12)';
+                      e.target.style.backgroundColor = 'rgba(255,255,255,0.06)';
+                    }}
+                  />
+                  
+                  {formData.country === 'US' && (
+                    <select
+                      value={formData.state}
+                      onChange={(e) => handleInputChange('state', e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '14px 16px',
+                        backgroundColor: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: '5px',
+                        color: 'white',
+                        fontSize: '15px',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#4169E1';
+                        e.target.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'rgba(255,255,255,0.12)';
+                        e.target.style.backgroundColor = 'rgba(255,255,255,0.06)';
+                      }}
+                    >
+                      <option value="">State</option>
+                      {US_STATES.map(state => (
+                        <option key={state.code} value={state.code}>
+                          {state.code} - {state.name}
+                        </option>
+                      ))}
+                    </select>
                   )}
-                  placeholder={formData.country === 'UK' ? '12-34-56' : '123456789'}
-                  style={{
-                    width: '100%',
-                    padding: '14px',
-                    backgroundColor: '#1A2245',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: '10px',
-                    color: 'white',
-                    fontSize: '16px',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    transition: 'border-color 0.2s ease'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#4169E1'}
-                  onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
-                  }
-                />
+                  
+                  <input
+                    type="text"
+                    value={formData.postalCode}
+                    onChange={(e) => handleInputChange('postalCode', e.target.value)}
+                    placeholder={formData.country === 'GB' ? 'SW1A 1AA' : '12345'}
+                    style={{
+                      width: '100%',
+                      padding: '14px 16px',
+                      backgroundColor: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: '5px',
+                      color: 'white',
+                      fontSize: '15px',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#4169E1';
+                      e.target.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'rgba(255,255,255,0.12)';
+                      e.target.style.backgroundColor = 'rgba(255,255,255,0.06)';
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+  
+            {/* Bank Details Section */}
+            <div style={{
+              backgroundColor: 'rgba(255,255,255,0.04)',
+              borderRadius: '5px',
+              padding: '24px',
+              border: '1px solid rgba(255,255,255,0.08)'
+            }}>
+              <h3 style={{
+                margin: '0 0 20px 0',
+                color: 'white',
+                fontSize: '18px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2" stroke="#28a745" strokeWidth="2"/>
+                  <line x1="1" y1="10" x2="23" y2="10" stroke="#28a745" strokeWidth="2"/>
+                </svg>
+                Bank Account Details
+              </h3>
+
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {formData.country === 'US' ? (
+                  // US Bank Fields
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }} className="payment-grid-bank">
+                      <div>
+                        <label style={{
+                          display: 'block',
+                          marginBottom: '8px',
+                          fontWeight: '600',
+                          color: 'white',
+                          fontSize: '14px'
+                        }}>
+                          Account Number
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.accountNumber}
+                          onChange={(e) => handleInputChange('accountNumber', e.target.value)}
+                          placeholder="123456789"
+                          style={{
+                            width: '100%',
+                            padding: '14px 16px',
+                            backgroundColor: 'rgba(255,255,255,0.06)',
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            borderRadius: '5px',
+                            color: 'white',
+                            fontSize: '15px',
+                            outline: 'none',
+                            boxSizing: 'border-box',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = '#4169E1';
+                            e.target.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = 'rgba(255,255,255,0.12)';
+                            e.target.style.backgroundColor = 'rgba(255,255,255,0.06)';
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{
+                          display: 'block',
+                          marginBottom: '8px',
+                          fontWeight: '600',
+                          color: 'white',
+                          fontSize: '14px'
+                        }}>
+                          Routing Number
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.routingNumber}
+                          onChange={(e) => handleInputChange('routingNumber', e.target.value)}
+                          placeholder="123456789"
+                          maxLength="9"
+                          style={{
+                            width: '100%',
+                            padding: '14px 16px',
+                            backgroundColor: 'rgba(255,255,255,0.06)',
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            borderRadius: '5px',
+                            color: 'white',
+                            fontSize: '15px',
+                            outline: 'none',
+                            boxSizing: 'border-box',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = '#4169E1';
+                            e.target.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = 'rgba(255,255,255,0.12)';
+                            e.target.style.backgroundColor = 'rgba(255,255,255,0.06)';
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        marginBottom: '8px',
+                        fontWeight: '600',
+                        color: 'white',
+                        fontSize: '14px'
+                      }}>
+                        Account Type
+                      </label>
+                      <select
+                        value={formData.accountType}
+                        onChange={(e) => handleInputChange('accountType', e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '14px 16px',
+                          backgroundColor: 'rgba(255,255,255,0.06)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: '5px',
+                          color: 'white',
+                          fontSize: '15px',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#4169E1';
+                          e.target.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'rgba(255,255,255,0.12)';
+                          e.target.style.backgroundColor = 'rgba(255,255,255,0.06)';
+                        }}
+                      >
+                        <option value="checking">Checking Account</option>
+                        <option value="savings">Savings Account</option>
+                      </select>
+                    </div>
+                  </>
+                ) : (
+                  // UK Bank Fields
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }} className="payment-grid-bank">
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        marginBottom: '8px',
+                        fontWeight: '600',
+                        color: 'white',
+                        fontSize: '14px'
+                      }}>
+                        Account Number
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.accountNumber}
+                        onChange={(e) => handleInputChange('accountNumber', e.target.value)}
+                        placeholder="12345678"
+                        style={{
+                          width: '100%',
+                          padding: '14px 16px',
+                          backgroundColor: 'rgba(255,255,255,0.06)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: '5px',
+                          color: 'white',
+                          fontSize: '15px',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#4169E1';
+                          e.target.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'rgba(255,255,255,0.12)';
+                          e.target.style.backgroundColor = 'rgba(255,255,255,0.06)';
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        marginBottom: '8px',
+                        fontWeight: '600',
+                        color: 'white',
+                        fontSize: '14px'
+                      }}>
+                        Sort Code
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.sortCode}
+                        onChange={(e) => {
+                          let value = e.target.value.replace(/\D/g, '');
+                          if (value.length >= 2) value = value.slice(0,2) + '-' + value.slice(2);
+                          if (value.length >= 5) value = value.slice(0,5) + '-' + value.slice(5,7);
+                          handleInputChange('sortCode', value);
+                        }}
+                        placeholder="12-34-56"
+                        maxLength="8"
+                        style={{
+                          width: '100%',
+                          padding: '14px 16px',
+                          backgroundColor: 'rgba(255,255,255,0.06)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: '5px',
+                          color: 'white',
+                          fontSize: '15px',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#4169E1';
+                          e.target.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'rgba(255,255,255,0.12)';
+                          e.target.style.backgroundColor = 'rgba(255,255,255,0.06)';
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Account Type - US only */}
-            {formData.country === 'US' && (
-              <div>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '8px', 
-                  fontWeight: '600',
-                  color: 'white',
-                  fontSize: '14px'
-                }}>
-                  Account Type
-                </label>
-                <CustomDropdown
-                  value={formData.accountType}
-                  options={accountTypeOptions}
-                  onChange={(value) => handleInputChange('accountType', value)}
-                  placeholder="Select account type"
-                  isOpen={accountTypeDropdownOpen}
-                  setIsOpen={setAccountTypeDropdownOpen}
-                />
+            {/* Error Message */}
+            {error && (
+              <div style={{
+                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                color: '#ff6b7a',
+                padding: '16px 20px',
+                borderRadius: '5px',
+                fontSize: '14px',
+                border: '1px solid rgba(220, 53, 69, 0.2)',
+                textAlign: 'center',
+                lineHeight: '1.5'
+              }}>
+                {error}
               </div>
             )}
           </div>
         </div>
 
-        {/* Address Information */}
-        <div style={{ marginBottom: '35px' }}>
-          <h4 style={{ 
-            margin: '0 0 10px 0', 
-            color: 'white',
-            fontSize: '18px',
-            fontWeight: '600'
-          }}>
-            Address Information
-          </h4>
-          <p style={{ 
-            margin: '0 0 20px 0', 
-            fontSize: '13px', 
-            color: 'rgba(255,255,255,0.6)'
-          }}>
-            Required for tax reporting and payment verification
-          </p>
-          
-          <div style={{ display: 'grid', gap: '20px' }}>
-            <input
-              type="text"
-              value={formData.fullName}
-              onChange={(e) => handleInputChange('fullName', e.target.value)}
-              placeholder="Full Legal Name"
-              style={{
-                width: '100%',
-                padding: '14px',
-                backgroundColor: '#1A2245',
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: '10px',
-                color: 'white',
-                fontSize: '16px',
-                outline: 'none',
-                boxSizing: 'border-box',
-                transition: 'border-color 0.2s ease'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#4169E1'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
-              }
-            />
-            
-            <input
-              type="text"
-              value={formData.address}
-              onChange={(e) => handleInputChange('address', e.target.value)}
-              placeholder="Street Address"
-              style={{
-                width: '100%',
-                padding: '14px',
-                backgroundColor: '#1A2245',
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: '10px',
-                color: 'white',
-                fontSize: '16px',
-                outline: 'none',
-                boxSizing: 'border-box',
-                transition: 'border-color 0.2s ease'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#4169E1'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
-              }
-            />
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '15px' }}>
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => handleInputChange('city', e.target.value)}
-                placeholder="City"
-                style={{
-                  width: '100%',
-                  padding: '14px',
-                  backgroundColor: '#1A2245',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '10px',
-                  color: 'white',
-                  fontSize: '16px',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  transition: 'border-color 0.2s ease'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#4169E1'}
-                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
-                }
-              />
-              
-              <input
-                type="text"
-                value={formData.postcode}
-                onChange={(e) => handleInputChange('postcode', e.target.value)}
-                placeholder={formData.country === 'UK' ? 'Postcode' : 'Zip Code'}
-                style={{
-                  width: '100%',
-                  padding: '14px',
-                  backgroundColor: '#1A2245',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '10px',
-                  color: 'white',
-                  fontSize: '16px',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  transition: 'border-color 0.2s ease'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#4169E1'}
-                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'
-                }
-              />
-            </div>
-
-            <CustomDropdown
-              value={formData.country}
-              options={countryOptions}
-              onChange={(value) => handleInputChange('country', value)}
-              placeholder="Select country"
-              isOpen={countryDropdownOpen}
-              setIsOpen={setCountryDropdownOpen}
-            />
-          </div>
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div style={{
-            backgroundColor: 'rgba(220, 53, 69, 0.1)',
-            color: '#ff6b7a',
-            padding: '15px',
-            borderRadius: '10px',
-            marginBottom: '25px',
-            fontSize: '14px',
-            border: '1px solid rgba(220, 53, 69, 0.3)',
-            textAlign: 'center'
-          }}>
-            {error}
-          </div>
-        )}
-
-        {/* Action Button */}
-        <div style={{ marginBottom: '25px' }}>
+        {/* Footer */}
+        <div style={{ 
+          padding: '24px 32px 32px 32px',
+          borderTop: '1px solid rgba(255,255,255,0.08)'
+        }}>
           <button
             onClick={savePaymentInfo}
-            disabled={loading}
+            disabled={loading || !isFormValid()}
             style={{
               width: '100%',
-              padding: '16px 20px',
-              backgroundColor: loading ? '#666' : '#4169E1',
-              color: 'white',
+              padding: '16px 24px',
+              backgroundColor: loading ? 'rgba(255,255,255,0.1)' : 
+                            !isFormValid() ? 'rgba(255,255,255,0.1)' : '#28a745',
+              color: loading ? 'rgba(255,255,255,0.5)' : 
+                    !isFormValid() ? 'rgba(255,255,255,0.5)' : 'white',
               border: 'none',
-              borderRadius: '12px',
+              borderRadius: '200px',
               fontSize: '16px',
               fontWeight: '600',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s ease'
+              cursor: loading || !isFormValid() ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
             }}
             onMouseEnter={(e) => {
-              if (!loading) {
-                e.target.style.backgroundColor = '#3557C7';
-                e.target.style.transform = 'translateY(-1px)';
+              if (!loading && isFormValid()) {
+                e.target.style.backgroundColor = '#218838';
+                e.target.style.transform = 'translateY(-2px)';
               }
             }}
             onMouseLeave={(e) => {
-              if (!loading) {
-                e.target.style.backgroundColor = '#4169E1';
-                e.target.style.transform = 'translateY(0px)';
+              if (!loading && isFormValid()) {
+                e.target.style.backgroundColor = '#28a745';
+                e.target.style.transform = 'translateY(0)';
               }
             }}
           >
             {loading ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <>
                 <div style={{
                   width: '16px',
                   height: '16px',
@@ -684,37 +796,45 @@ const PaymentSetupModal = ({ user, onClose, onPaymentInfoSaved }) => {
                   borderRadius: '50%',
                   animation: 'spin 1s linear infinite'
                 }}></div>
-                Saving...
-              </div>
+                Saving Bank Details...
+              </>
             ) : (
               'Save Bank Details'
             )}
           </button>
         </div>
 
-        {/* Security Notice */}
-        <div style={{
-          padding: '20px',
-          backgroundColor: 'rgba(40, 167, 69, 0.1)',
-          borderRadius: '12px',
-          fontSize: '13px',
-          color: '#28a745',
-          border: '1px solid rgba(40, 167, 69, 0.3)',
-          textAlign: 'center',
-          lineHeight: '1.5'
-        }}>
-        <strong>Your information is stored securely</strong>
-        </div>
-
-        {/* Add CSS for loading animation */}
+        {/* Styles */}
         <style>{`
           @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
           }
           
-          input::placeholder, textarea::placeholder {
+          input::placeholder, select option {
             color: rgba(255,255,255,0.5);
+          }
+          
+          @media (max-width: 640px) {
+            .payment-modal-content {
+              margin: 8px;
+              border-radius: 20px;
+            }
+            .payment-modal-header {
+              padding: 24px 24px 20px 24px;
+            }
+            .payment-modal-body {
+              padding: 24px;
+            }
+            .payment-modal-footer {
+              padding: 20px 24px 24px 24px;
+            }
+            .payment-grid-address {
+              grid-template-columns: 1fr !important;
+            }
+            .payment-grid-bank {
+              grid-template-columns: 1fr !important;
+            }
           }
         `}</style>
       </div>

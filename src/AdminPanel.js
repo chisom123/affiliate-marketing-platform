@@ -1,6 +1,7 @@
-// ADMIN PANEL COMPONENT - COMPLETE WITH PAYMENT PROCESSING
+// ADMIN PANEL COMPONENT - UPDATED WITH WISE PAYOUTS (FIXED FLASH ISSUE)
 import React, { useState, useEffect } from 'react';
-import { db } from './firebase';
+import { db, functions } from './firebase';
+import { httpsCallable } from 'firebase/functions';
 import { 
     collection, 
     getDocs, 
@@ -12,7 +13,7 @@ import {
     updateDoc,
     onSnapshot,
     addDoc,
-    arrayUnion  // ADD THIS
+    arrayUnion
   } from 'firebase/firestore';
 
 const AdminPanel = () => {
@@ -31,88 +32,140 @@ const AdminPanel = () => {
   const [selectedTab, setSelectedTab] = useState('overview');
   const [showPayoutModal, setShowPayoutModal] = useState(false);
 
-  // Load admin data
-  useEffect(() => {
-    const loadAdminData = async () => {
-      try {
-        // Get all affiliates
-        const affiliatesQuery = query(collection(db, 'affiliates'), orderBy('createdAt', 'desc'));
-        const affiliatesSnapshot = await getDocs(affiliatesQuery);
-        const affiliatesData = affiliatesSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setAffiliates(affiliatesData);
-  
-        // Get recent ratings
-        const ratingsQuery = query(
-          collection(db, 'ratings'), 
-          orderBy('createdAt', 'desc'), 
-          limit(50)
-        );
-        const ratingsSnapshot = await getDocs(ratingsQuery);
-        const ratingsData = ratingsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setRecentRatings(ratingsData);
-  
-        // ADD THIS: Load suspicious activity from the new collection
-        const suspiciousQuery = query(
-          collection(db, 'suspicious_activity'), 
-          orderBy('timestamp', 'desc'), 
-          limit(50)
-        );
-        const suspiciousSnapshot = await getDocs(suspiciousQuery);
-        const suspiciousData = suspiciousSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setSuspiciousActivity(suspiciousData);
-  
-        // Get rating links
-        const linksSnapshot = await getDocs(collection(db, 'rating_links'));
-        const linksData = linksSnapshot.docs.map(doc => doc.data());
-  
-        // Calculate stats
-        const totalAffiliates = affiliatesData.length;
-        const totalRatings = ratingsData.length;
-        const totalEarnings = affiliatesData.reduce((sum, affiliate) => sum + (affiliate.totalEarnings || 0), 0);
-        const activeLinks = linksData.filter(link => link.status === 'active').length;
-  
-        setStats({
-          totalAffiliates,
-          totalRatings,
-          totalEarnings,
-          totalRevenue: totalEarnings,
-          activeLinks
-        });
-  
-      } catch (error) {
-        console.error('Error loading admin data:', error);
-      }
+  // Firebase Functions
+  const processGlobalPayouts = httpsCallable(functions, 'processGlobalPayouts');
+  const downloadWiseCSV = httpsCallable(functions, 'downloadWiseCSV');
+  const completePayouts = httpsCallable(functions, 'completePayouts');
+
+  // Download CSV after payout processing
+  const downloadCSV = async (batchId) => {
+    try {
+      const result = await downloadWiseCSV({ batchId });
       
-      setLoading(false);
-    };
-  
+      // Create and download CSV file
+      const blob = new Blob([result.data.csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = result.data.filename;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      alert('Error downloading CSV: ' + error.message);
+    }
+  };
+
+  // Mark payouts as completed
+  const markPayoutsCompleted = async (batchId) => {
+    const wiseReference = prompt('Enter Wise transfer reference (optional):');
+    
+    try {
+      const result = await completePayouts({ 
+        batchId, 
+        wiseTransferReference: wiseReference 
+      });
+      
+      alert(result.data.message);
+      // Refresh data
+      loadAdminData();
+      
+    } catch (error) {
+      alert('Error completing payouts: ' + error.message);
+    }
+  };
+
+  // Load admin data
+  const loadAdminData = async () => {
+    try {
+      // Get all affiliates
+      const affiliatesQuery = query(collection(db, 'affiliates'), orderBy('createdAt', 'desc'));
+      const affiliatesSnapshot = await getDocs(affiliatesQuery);
+      const affiliatesData = affiliatesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setAffiliates(affiliatesData);
+
+      // Get recent ratings
+      const ratingsQuery = query(
+        collection(db, 'ratings'), 
+        orderBy('createdAt', 'desc'), 
+        limit(50)
+      );
+      const ratingsSnapshot = await getDocs(ratingsQuery);
+      const ratingsData = ratingsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setRecentRatings(ratingsData);
+
+      // Load suspicious activity
+      const suspiciousQuery = query(
+        collection(db, 'suspicious_activity'), 
+        orderBy('timestamp', 'desc'), 
+        limit(50)
+      );
+      const suspiciousSnapshot = await getDocs(suspiciousQuery);
+      const suspiciousData = suspiciousSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setSuspiciousActivity(suspiciousData);
+
+      // Get rating links for current earnings calculation
+      const linksSnapshot = await getDocs(collection(db, 'rating_links'));
+      const linksData = linksSnapshot.docs.map(doc => doc.data());
+
+      // Calculate stats - use live earnings from rating links
+      const totalAffiliates = affiliatesData.length;
+      const totalRatings = ratingsData.length;
+      
+      // Calculate current unpaid earnings from rating links
+      const affiliateEarnings = {};
+      linksData.forEach(link => {
+        if (!affiliateEarnings[link.affiliateId]) {
+          affiliateEarnings[link.affiliateId] = 0;
+        }
+        affiliateEarnings[link.affiliateId] += (link.earnings || 0);
+      });
+      
+      const totalEarnings = Object.values(affiliateEarnings).reduce((sum, earnings) => sum + earnings, 0);
+      const activeLinks = linksData.filter(link => link.status === 'active').length;
+
+      setStats({
+        totalAffiliates,
+        totalRatings,
+        totalEarnings,
+        totalRevenue: totalEarnings,
+        activeLinks
+      });
+
+      // Update affiliates with current earnings
+      const updatedAffiliates = affiliatesData.map(affiliate => ({
+        ...affiliate,
+        currentEarnings: affiliateEarnings[affiliate.id] || 0
+      }));
+      setAffiliates(updatedAffiliates);
+
+    } catch (error) {
+      console.error('Error loading admin data:', error);
+    }
+    
+    setLoading(false);
+  };
+
+  useEffect(() => {
     loadAdminData();
   }, []);
 
-  // Get eligible affiliates for payout
+  // Get eligible affiliates for payout (Wise Payouts only, $5+ minimum)
   const getEligibleAffiliates = () => {
     return affiliates.filter(affiliate => 
-      affiliate.totalEarnings >= 5 && 
+      (affiliate.currentEarnings || 0) >= 5 && 
       affiliate.status === 'active' &&
-      affiliate.paymentInfo // Must have payment info set up
+      affiliate.paymentInfo?.method === 'global_payouts'
     );
-  };
-
-  // Group affiliates by payment method
-  const groupAffiliatesByPaymentMethod = (eligibleAffiliates) => {
-    const paypalAffiliates = eligibleAffiliates.filter(a => a.paymentInfo?.method === 'paypal');
-    const bankAffiliates = eligibleAffiliates.filter(a => a.paymentInfo?.method === 'bank');
-    
-    return { paypalAffiliates, bankAffiliates };
   };
 
   // Suspend affiliate
@@ -137,119 +190,43 @@ const AdminPanel = () => {
     }
   };
 
-// Payout Modal Component - UPDATED WITH DATABASE OPERATIONS
-const PayoutModal = () => {
+// Wise Payouts Modal Component
+const WisePayoutsModal = () => {
     const [processing, setProcessing] = useState(false);
+    const [payoutResult, setPayoutResult] = useState(null);
     const eligibleAffiliates = getEligibleAffiliates();
-    const { paypalAffiliates, bankAffiliates } = groupAffiliatesByPaymentMethod(eligibleAffiliates);
     
-    const paypalTotal = paypalAffiliates.reduce((sum, a) => sum + a.totalEarnings, 0);
-    const bankTotal = bankAffiliates.reduce((sum, a) => sum + a.totalEarnings, 0);
+    const totalAmount = eligibleAffiliates.reduce((sum, a) => sum + (a.currentEarnings || 0), 0);
+    const estimatedFees = eligibleAffiliates.length * 1.5; // ~$1.50 per payout
 
-    // Process PayPal payments
-    const processPayPalPayments = async () => {
-      if (!window.confirm(`Mark ${paypalAffiliates.length} PayPal payments as processed?`)) return;
+    // Process Wise Payouts - FIXED: Removed immediate loadAdminData() call
+    const processPayouts = async () => {
+      if (!window.confirm(`Process ${eligibleAffiliates.length} Wise Payouts totaling ${totalAmount.toFixed(2)}?`)) {
+        return;
+      }
       
       setProcessing(true);
-      try {
-        // Create payout batch record
-        const payoutBatch = {
-          batchId: `paypal_${Date.now()}`,
-          processedBy: 'admin',
-          processedAt: new Date(),
-          totalAmount: paypalTotal,
-          affiliatesCount: paypalAffiliates.length,
-          paymentMethod: 'paypal',
-          status: 'completed',
-          affiliates: paypalAffiliates.map(a => ({
-            id: a.id,
-            name: a.name,
-            email: a.paymentInfo.details.email,
-            amount: a.totalEarnings
-          }))
-        };
-        
-        await addDoc(collection(db, 'payouts'), payoutBatch);
-
-        // Update each affiliate
-        for (const affiliate of paypalAffiliates) {
-          await updateDoc(doc(db, 'affiliates', affiliate.id), {
-            totalEarnings: 0, // Reset balance
-            lastPayoutAmount: affiliate.totalEarnings,
-            lastPayoutDate: new Date(),
-            payoutHistory: arrayUnion({
-              batchId: payoutBatch.batchId,
-              amount: affiliate.totalEarnings,
-              method: 'paypal',
-              processedAt: new Date(),
-              status: 'completed'
-            })
-          });
-        }
-
-        alert(`✅ ${paypalAffiliates.length} PayPal payments processed successfully!`);
-        setShowPayoutModal(false);
-        
-        // Refresh data
-        window.location.reload();
-        
-      } catch (error) {
-        alert('Error processing PayPal payments: ' + error.message);
-      }
-      setProcessing(false);
-    };
-
-    // Process bank transfers
-    const processBankTransfers = async () => {
-      if (!window.confirm(`Mark ${bankAffiliates.length} bank transfers as processed?`)) return;
+      setPayoutResult(null);
       
-      setProcessing(true);
       try {
-        // Create payout batch record
-        const payoutBatch = {
-          batchId: `wise_${Date.now()}`,
-          processedBy: 'admin',
-          processedAt: new Date(),
-          totalAmount: bankTotal,
-          affiliatesCount: bankAffiliates.length,
-          paymentMethod: 'bank_transfer',
-          status: 'completed',
-          affiliates: bankAffiliates.map(a => ({
-            id: a.id,
-            name: a.name,
-            bankName: a.paymentInfo.details.bankName,
-            accountHolder: a.paymentInfo.details.accountHolderName,
-            amount: a.totalEarnings
-          }))
-        };
+        const result = await processGlobalPayouts();
         
-        await addDoc(collection(db, 'payouts'), payoutBatch);
-
-        // Update each affiliate
-        for (const affiliate of bankAffiliates) {
-          await updateDoc(doc(db, 'affiliates', affiliate.id), {
-            totalEarnings: 0, // Reset balance
-            lastPayoutAmount: affiliate.totalEarnings,
-            lastPayoutDate: new Date(),
-            payoutHistory: arrayUnion({
-              batchId: payoutBatch.batchId,
-              amount: affiliate.totalEarnings,
-              method: 'bank_transfer',
-              processedAt: new Date(),
-              status: 'completed'
-            })
-          });
-        }
-
-        alert(`✅ ${bankAffiliates.length} bank transfers processed successfully!`);
-        setShowPayoutModal(false);
+        setPayoutResult({
+          success: true,
+          ...result.data
+        });
         
-        // Refresh data
-        window.location.reload();
+        // DON'T refresh data here - let the user complete the workflow first
+        // This prevents the success message from flashing and disappearing
         
       } catch (error) {
-        alert('Error processing bank transfers: ' + error.message);
+        console.error('Payout error:', error);
+        setPayoutResult({
+          success: false,
+          error: error.message
+        });
       }
+      
       setProcessing(false);
     };
 
@@ -270,206 +247,280 @@ const PayoutModal = () => {
           backgroundColor: 'white',
           borderRadius: '12px',
           padding: '30px',
-          maxWidth: '600px',
+          maxWidth: '700px',
           width: '90%',
           maxHeight: '80vh',
           overflowY: 'auto'
         }}>
           <h2 style={{ marginBottom: '20px', color: '#2c3e50' }}>
-            💰 Process Payouts
+            💰 Wise Payouts (Seamless)
           </h2>
 
-          {eligibleAffiliates.length === 0 ? (
+          {payoutResult ? (
+            // Show result
+            <div style={{
+              padding: '20px',
+              borderRadius: '8px',
+              backgroundColor: payoutResult.success ? '#d4edda' : '#f8d7da',
+              border: `1px solid ${payoutResult.success ? '#28a745' : '#dc3545'}`,
+              marginBottom: '20px'
+            }}>
+              {payoutResult.success ? (
+                <div>
+                  <h3 style={{ color: '#155724', margin: '0 0 15px 0' }}>
+                    ✅ Payouts Initiated Successfully!
+                  </h3>
+                  <div style={{ fontSize: '14px', color: '#155724' }}>
+                    <p><strong>Affiliates Processing:</strong> {payoutResult.payoutsProcessed}</p>
+                    <p><strong>Total Amount:</strong> ${payoutResult.totalPaidOut.toFixed(2)}</p>
+                    <p><strong>Batch ID:</strong> {payoutResult.csvBatchId}</p>
+                    {payoutResult.errors.length > 0 && (
+                      <p><strong>Errors:</strong> {payoutResult.errors.length} failed</p>
+                    )}
+                  </div>
+                  
+                  <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+                    <button
+                      onClick={() => downloadCSV(payoutResult.csvBatchId)}
+                      style={{
+                        padding: '12px 20px',
+                        backgroundColor: '#007bff',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      📥 Download Wise CSV
+                    </button>
+                    
+                    <button
+                      onClick={() => markPayoutsCompleted(payoutResult.csvBatchId)}
+                      style={{
+                        padding: '12px 20px',
+                        backgroundColor: '#28a745',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      ✅ Mark as Completed
+                    </button>
+                  </div>
+                  
+                  {payoutResult.errors.length > 0 && (
+                    <div style={{ marginTop: '15px' }}>
+                      <h4 style={{ color: '#721c24', fontSize: '14px' }}>Failed Payouts:</h4>
+                      {payoutResult.errors.map((error, index) => (
+                        <div key={index} style={{ 
+                          fontSize: '12px', 
+                          backgroundColor: '#f8d7da',
+                          padding: '8px',
+                          marginBottom: '5px',
+                          borderRadius: '4px'
+                        }}>
+                          {error.email}: {error.error}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div style={{ 
+                    marginTop: '15px',
+                    padding: '15px',
+                    backgroundColor: '#e3f2fd',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    color: '#1976d2'
+                  }}>
+                    <strong>Next steps:</strong>
+                    <ol style={{ margin: '5px 0', paddingLeft: '15px' }}>
+                      <li>Download the CSV file</li>
+                      <li>Upload to Wise batch payments</li>
+                      <li>Process transfers in Wise</li>
+                      <li>Click "Mark as Completed" to notify affiliates</li>
+                    </ol>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h3 style={{ color: '#721c24', margin: '0 0 15px 0' }}>
+                    ❌ Payout Failed
+                  </h3>
+                  <p style={{ color: '#721c24', fontSize: '14px' }}>
+                    {payoutResult.error}
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : eligibleAffiliates.length === 0 ? (
+            // No eligible affiliates
             <div style={{ textAlign: 'center', padding: '40px' }}>
               <p style={{ color: '#6c757d', fontSize: '18px' }}>
                 No affiliates eligible for payout
               </p>
               <p style={{ color: '#6c757d' }}>
-                Minimum £5 earnings required
+                Requirements: $5+ earnings, active status, Wise setup
               </p>
             </div>
           ) : (
+            // Show payout details
             <div>
-              {/* PayPal Payments */}
-              {paypalAffiliates.length > 0 && (
-                <div style={{ 
-                  marginBottom: '30px',
-                  padding: '20px',
-                  backgroundColor: '#e3f2fd',
-                  borderRadius: '8px',
-                  border: '1px solid #2196f3'
-                }}>
-                  <h3 style={{ margin: '0 0 15px 0', color: '#1976d2' }}>
-                    💙 PayPal Payments ({paypalAffiliates.length} affiliates)
-                  </h3>
-                  <p style={{ margin: '0 0 15px 0', color: '#1976d2' }}>
-                    Total: £{paypalTotal.toFixed(2)}
-                  </p>
-                  
-                  <div style={{ marginBottom: '15px' }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14px' }}>Recipients:</h4>
-                    {paypalAffiliates.map(affiliate => (
-                      <div key={affiliate.id} style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between',
-                        padding: '5px 0',
-                        fontSize: '12px'
-                      }}>
-                        <span>{affiliate.paymentInfo.details.email}</span>
-                        <span>£{affiliate.totalEarnings.toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div style={{ 
-                    backgroundColor: 'white',
-                    padding: '15px',
-                    borderRadius: '6px',
-                    marginBottom: '15px'
-                  }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14px' }}>Instructions:</h4>
-                    <ol style={{ margin: '0', paddingLeft: '20px', fontSize: '12px' }}>
-                      <li>Log into your PayPal business account</li>
-                      <li>Go to "Send & Request" → "Send money to friends/family"</li>
-                      <li>Send individual payments to each email above</li>
-                      <li>Use note: "SocialStar affiliate earnings"</li>
-                      <li>Click "Mark as Processed" below when complete</li>
-                    </ol>
-                  </div>
-
-                  <button
-                    onClick={processPayPalPayments}
-                    disabled={processing}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      backgroundColor: processing ? '#6c757d' : '#2196f3',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      fontWeight: 'bold',
-                      cursor: processing ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    {processing ? 'Processing...' : 'Mark PayPal Payments as Processed'}
-                  </button>
-                </div>
-              )}
-
-              {/* Bank Transfers */}
-              {bankAffiliates.length > 0 && (
-                <div style={{ 
-                  marginBottom: '30px',
-                  padding: '20px',
-                  backgroundColor: '#e8f5e8',
-                  borderRadius: '8px',
-                  border: '1px solid #28a745'
-                }}>
-                  <h3 style={{ margin: '0 0 15px 0', color: '#155724' }}>
-                    🏦 Bank Transfers via Wise ({bankAffiliates.length} affiliates)
-                  </h3>
-                  <p style={{ margin: '0 0 15px 0', color: '#155724' }}>
-                    Total: £{bankTotal.toFixed(2)} (~${(bankTotal * 1.27).toFixed(2)} USD)
-                  </p>
-                  
-                  <div style={{ marginBottom: '15px' }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14px' }}>Recipients:</h4>
-                    {bankAffiliates.map(affiliate => (
-                      <div key={affiliate.id} style={{ 
-                        marginBottom: '10px',
-                        padding: '10px',
-                        backgroundColor: 'white',
-                        borderRadius: '4px',
-                        fontSize: '12px'
-                      }}>
-                        <div style={{ fontWeight: 'bold' }}>
-                          {affiliate.paymentInfo.details.accountHolderName}
-                        </div>
-                        <div>
-                          {affiliate.paymentInfo.details.bankName} - 
-                          {affiliate.paymentInfo.details.accountNumber.slice(-4)}
-                        </div>
-                        <div>
-                          Routing: {affiliate.paymentInfo.details.routingNumber} - 
-                          £{affiliate.totalEarnings.toFixed(2)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div style={{ 
-                    backgroundColor: 'white',
-                    padding: '15px',
-                    borderRadius: '6px',
-                    marginBottom: '15px'
-                  }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14px' }}>Instructions:</h4>
-                    <ol style={{ margin: '0', paddingLeft: '20px', fontSize: '12px' }}>
-                      <li>Log into your Wise business account</li>
-                      <li>Create batch payment to USD (United States)</li>
-                      <li>Upload recipient details or enter manually</li>
-                      <li>Review exchange rate (usually ~£1 = $1.27)</li>
-                      <li>Total fee: ~£3-5 per batch (not per recipient)</li>
-                      <li>Click "Mark as Processed" when sent</li>
-                    </ol>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button
-                      onClick={() => window.open('https://wise.com/gb/business/', '_blank')}
-                      style={{
-                        flex: 1,
-                        padding: '10px',
-                        backgroundColor: '#007bff',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Open Wise
-                    </button>
-                    
-                    <button
-                      onClick={processBankTransfers}
-                      disabled={processing}
-                      style={{
-                        flex: 1,
-                        padding: '10px',
-                        backgroundColor: processing ? '#6c757d' : '#28a745',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        fontWeight: 'bold',
-                        cursor: processing ? 'not-allowed' : 'pointer'
-                      }}
-                    >
-                      {processing ? 'Processing...' : 'Mark as Processed'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Summary */}
               <div style={{ 
-                padding: '15px',
-                backgroundColor: '#f8f9fa',
-                borderRadius: '6px',
-                marginBottom: '20px'
+                marginBottom: '25px',
+                padding: '20px',
+                backgroundColor: '#ff6b00',
+                borderRadius: '8px',
+                color: 'white'
               }}>
-                <h4 style={{ margin: '0 0 10px 0' }}>Payout Summary</h4>
-                <p style={{ margin: '0', fontSize: '14px' }}>
-                  <strong>Total Affiliates:</strong> {eligibleAffiliates.length} <br/>
-                  <strong>Total Amount:</strong> £{(paypalTotal + bankTotal).toFixed(2)} <br/>
-                  <strong>Est. Fees:</strong> £{(paypalAffiliates.length * 0.5 + 4).toFixed(2)} <br/>
-                  <strong>Payment Methods:</strong> {paypalAffiliates.length} PayPal, {bankAffiliates.length} Bank
-                </p>
+                <h3 style={{ margin: '0 0 15px 0' }}>
+                  🏦 Wise Bulk Transfers
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px' }}>
+                  <div>
+                    <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
+                      {eligibleAffiliates.length}
+                    </div>
+                    <div style={{ fontSize: '12px', opacity: 0.9 }}>Affiliates</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
+                      ${totalAmount.toFixed(2)}
+                    </div>
+                    <div style={{ fontSize: '12px', opacity: 0.9 }}>Total Amount</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
+                      ~${estimatedFees.toFixed(2)}
+                    </div>
+                    <div style={{ fontSize: '12px', opacity: 0.9 }}>Est. Fees</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
+                      1-3 days
+                    </div>
+                    <div style={{ fontSize: '12px', opacity: 0.9 }}>Delivery Time</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Eligible Affiliates List */}
+              <div style={{ 
+                marginBottom: '25px',
+                maxHeight: '300px',
+                overflowY: 'auto',
+                border: '1px solid #dee2e6',
+                borderRadius: '8px'
+              }}>
+                <div style={{ 
+                  padding: '10px 15px',
+                  backgroundColor: '#f8f9fa',
+                  borderBottom: '1px solid #dee2e6',
+                  fontWeight: 'bold',
+                  fontSize: '14px'
+                }}>
+                  Affiliates Ready for Wise Payout
+                </div>
+                {eligibleAffiliates.map((affiliate, index) => (
+                  <div key={affiliate.id} style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '12px 15px',
+                    borderBottom: index < eligibleAffiliates.length - 1 ? '1px solid #eee' : 'none',
+                    fontSize: '13px'
+                  }}>
+                    <div>
+                      <div style={{ fontWeight: 'bold' }}>
+                        {affiliate.firstName} {affiliate.lastName}
+                      </div>
+                      <div style={{ color: '#6c757d', fontSize: '11px' }}>
+                        {affiliate.email}
+                      </div>
+                      <div style={{ color: '#6c757d', fontSize: '10px' }}>
+                        {affiliate.paymentInfo?.details?.country || 'US'} • 
+                        {affiliate.paymentInfo?.details?.bankAccount?.accountNumber?.slice(-4) || 'Bank'}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontWeight: 'bold', color: '#28a745' }}>
+                        ${(affiliate.currentEarnings || 0).toFixed(2)}
+                      </div>
+                      <div style={{ fontSize: '10px', color: '#6c757d' }}>
+                        Wise Transfer
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Process Button */}
+              <button
+                onClick={processPayouts}
+                disabled={processing}
+                style={{
+                  width: '100%',
+                  padding: '15px',
+                  backgroundColor: processing ? '#6c757d' : '#ff6b00',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  cursor: processing ? 'not-allowed' : 'pointer',
+                  marginBottom: '15px'
+                }}
+              >
+                {processing ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid rgba(255,255,255,0.3)',
+                      borderTop: '2px solid white',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}></div>
+                    Processing Payouts...
+                  </div>
+                ) : (
+                  `💰 Process ${eligibleAffiliates.length} Wise Payouts`
+                )}
+              </button>
+
+              {/* Info Box */}
+              <div style={{ 
+                backgroundColor: '#e3f2fd',
+                border: '1px solid #2196f3',
+                borderRadius: '6px',
+                padding: '15px',
+                fontSize: '12px',
+                color: '#1976d2'
+              }}>
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '13px' }}>How it works:</h4>
+                <ul style={{ margin: '0', paddingLeft: '15px' }}>
+                  <li>Affiliates immediately see "Processing" status and earnings reset to $0</li>
+                  <li>You download a CSV file formatted for Wise batch uploads</li>
+                  <li>Upload CSV to Wise and process transfers manually</li>
+                  <li>Mark as completed to notify affiliates automatically</li>
+                  <li>Much cheaper than automated solutions (~$1.50 vs $5+ per transfer)</li>
+                </ul>
               </div>
             </div>
           )}
 
+          {/* FIXED: Close button now refreshes data when modal closes after successful payout */}
           <button
-            onClick={() => setShowPayoutModal(false)}
+            onClick={() => {
+              setShowPayoutModal(false);
+              // Refresh data when modal closes (especially if payouts were processed)
+              if (payoutResult?.success) {
+                loadAdminData();
+              }
+            }}
             disabled={processing}
             style={{
               width: '100%',
@@ -478,11 +529,19 @@ const PayoutModal = () => {
               color: 'white',
               border: 'none',
               borderRadius: '6px',
-              cursor: processing ? 'not-allowed' : 'pointer'
+              cursor: processing ? 'not-allowed' : 'pointer',
+              marginTop: '15px'
             }}
           >
             Close
           </button>
+
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
         </div>
       </div>
     );
@@ -538,7 +597,7 @@ const PayoutModal = () => {
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <h1 style={{ margin: '0' }}>SocialStar Admin Panel</h1>
           <p style={{ margin: '5px 0 0 0', opacity: '0.8' }}>
-            System monitoring and payment processing
+            Seamless payouts powered by Wise bulk transfers
           </p>
         </div>
       </header>
@@ -557,7 +616,6 @@ const PayoutModal = () => {
           {[
             { id: 'overview', label: 'Overview' },
             { id: 'affiliates', label: 'Affiliates' },
-            { id: 'payouts', label: 'Payout History' },
             { id: 'ratings', label: 'Recent Ratings' },
             { id: 'fraud', label: 'Fraud Detection' }
           ].map(tab => (
@@ -567,10 +625,10 @@ const PayoutModal = () => {
               style={{
                 padding: '15px 25px',
                 border: 'none',
-                backgroundColor: selectedTab === tab.id ? '#007bff' : 'transparent',
+                backgroundColor: selectedTab === tab.id ? '#ff6b00' : 'transparent',
                 color: selectedTab === tab.id ? 'white' : '#495057',
                 cursor: 'pointer',
-                borderBottom: selectedTab === tab.id ? '3px solid #007bff' : 'none'
+                borderBottom: selectedTab === tab.id ? '3px solid #ff6b00' : 'none'
               }}
             >
               {tab.label}
@@ -599,7 +657,7 @@ const PayoutModal = () => {
                 textAlign: 'center'
               }}>
                 <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>Total Affiliates</h3>
-                <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', color: '#007bff' }}>
+                <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', color: '#ff6b00' }}>
                   {stats.totalAffiliates}
                 </p>
               </div>
@@ -624,9 +682,9 @@ const PayoutModal = () => {
                 boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
                 textAlign: 'center'
               }}>
-                <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>Total Earnings Owed</h3>
+                <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>Unpaid Earnings</h3>
                 <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', color: '#dc3545' }}>
-                  £{stats.totalEarnings.toFixed(2)}
+                  ${stats.totalEarnings.toFixed(2)}
                 </p>
               </div>
 
@@ -637,14 +695,14 @@ const PayoutModal = () => {
                 boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
                 textAlign: 'center'
               }}>
-                <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>Eligible for Payout</h3>
-                <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', color: '#ffc107' }}>
+                <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>Ready for Payout</h3>
+                <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', color: '#ff6b00' }}>
                   {getEligibleAffiliates().length}
                 </p>
               </div>
             </div>
 
-            {/* Payment Processing Section */}
+            {/* Wise Payout Section */}
             <div style={{ 
               backgroundColor: 'white',
               padding: '25px',
@@ -652,12 +710,24 @@ const PayoutModal = () => {
               boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
               marginBottom: '30px'
             }}>
-              <h3 style={{ marginBottom: '20px', color: '#495057' }}>Payment Processing</h3>
+              <h3 style={{ marginBottom: '20px', color: '#495057' }}>
+                💰 Wise Bulk Payouts
+              </h3>
               
               {getEligibleAffiliates().length === 0 ? (
-                <p style={{ color: '#6c757d', margin: '0' }}>
-                  No affiliates ready for payout (minimum £5 required)
-                </p>
+                <div style={{
+                  textAlign: 'center',
+                  padding: '40px',
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: '8px'
+                }}>
+                  <p style={{ color: '#6c757d', margin: '0 0 10px 0', fontSize: '18px' }}>
+                    No affiliates ready for payout
+                  </p>
+                  <p style={{ color: '#6c757d', margin: '0', fontSize: '14px' }}>
+                    Weekly payouts require $5+ earnings and Wise setup
+                  </p>
+                </div>
               ) : (
                 <div>
                   <div style={{ 
@@ -668,26 +738,54 @@ const PayoutModal = () => {
                   }}>
                     <div style={{ 
                       padding: '15px',
-                      backgroundColor: '#e3f2fd',
+                      backgroundColor: '#ff6b00',
                       borderRadius: '6px',
-                      textAlign: 'center'
+                      textAlign: 'center',
+                      color: 'white'
                     }}>
-                      <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1976d2' }}>
-                        {groupAffiliatesByPaymentMethod(getEligibleAffiliates()).paypalAffiliates.length}
+                      <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
+                        {getEligibleAffiliates().length}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#1976d2' }}>PayPal Payments</div>
+                      <div style={{ fontSize: '12px', opacity: 0.9 }}>Wise Transfers</div>
                     </div>
                     
                     <div style={{ 
                       padding: '15px',
-                      backgroundColor: '#e8f5e8',
+                      backgroundColor: '#28a745',
                       borderRadius: '6px',
-                      textAlign: 'center'
+                      textAlign: 'center',
+                      color: 'white'
                     }}>
-                      <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#155724' }}>
-                        {groupAffiliatesByPaymentMethod(getEligibleAffiliates()).bankAffiliates.length}
+                      <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
+                        ${getEligibleAffiliates().reduce((sum, a) => sum + (a.currentEarnings || 0), 0).toFixed(2)}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#155724' }}>Bank Transfers</div>
+                      <div style={{ fontSize: '12px', opacity: 0.9 }}>Total Amount</div>
+                    </div>
+
+                    <div style={{ 
+                      padding: '15px',
+                      backgroundColor: '#17a2b8',
+                      borderRadius: '6px',
+                      textAlign: 'center',
+                      color: 'white'
+                    }}>
+                      <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
+                        ~${(getEligibleAffiliates().length * 1.5).toFixed(2)}
+                      </div>
+                      <div style={{ fontSize: '12px', opacity: 0.9 }}>Est. Fees</div>
+                    </div>
+
+                    <div style={{ 
+                      padding: '15px',
+                      backgroundColor: '#6f42c1',
+                      borderRadius: '6px',
+                      textAlign: 'center',
+                      color: 'white'
+                    }}>
+                      <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
+                        1-3 days
+                      </div>
+                      <div style={{ fontSize: '12px', opacity: 0.9 }}>Delivery</div>
                     </div>
                   </div>
 
@@ -696,7 +794,7 @@ const PayoutModal = () => {
                     style={{
                       width: '100%',
                       padding: '15px',
-                      backgroundColor: '#28a745',
+                      backgroundColor: '#ff6b00',
                       color: 'white',
                       border: 'none',
                       borderRadius: '6px',
@@ -705,7 +803,7 @@ const PayoutModal = () => {
                       cursor: 'pointer'
                     }}
                   >
-                    Process All Payouts ({getEligibleAffiliates().length} affiliates)
+                    🏦 Process {getEligibleAffiliates().length} Wise Payouts
                   </button>
                 </div>
               )}
@@ -738,10 +836,25 @@ const PayoutModal = () => {
                 </button>
 
                 <button
+                  onClick={() => window.open('https://wise.com', '_blank')}
+                  style={{
+                    padding: '12px 25px',
+                    backgroundColor: '#ff6b00',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Wise Dashboard
+                </button>
+
+                <button
                   onClick={() => window.open('https://console.firebase.google.com', '_blank')}
                   style={{
                     padding: '12px 25px',
-                    backgroundColor: '#007bff',
+                    backgroundColor: '#ff9800',
                     color: 'white',
                     border: 'none',
                     borderRadius: '6px',
@@ -750,21 +863,6 @@ const PayoutModal = () => {
                   }}
                 >
                   Firebase Console
-                </button>
-
-                <button
-                  onClick={() => window.open('https://wise.com/gb/business/', '_blank')}
-                  style={{
-                    padding: '12px 25px',
-                    backgroundColor: '#00b9ff',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Open Wise
                 </button>
               </div>
             </div>
@@ -792,7 +890,7 @@ const PayoutModal = () => {
                     </p>
                     <p style={{ margin: '0', fontSize: '14px', color: '#6c757d' }}>
                       Affiliate: {rating.affiliateId?.substring(0, 8)}... • 
-                      Earnings: £{(rating.earnings || 0).toFixed(2)}
+                      Earnings: ${(rating.earnings || 0).toFixed(2)}
                     </p>
                   </div>
                   
@@ -818,7 +916,7 @@ const PayoutModal = () => {
             }}>
             <h2 style={{ margin: '0', color: '#495057' }}>All Affiliates</h2>
             <p style={{ margin: '0', color: '#6c757d' }}>
-                {affiliates.length} total • {getEligibleAffiliates().length} ready for payout
+                {affiliates.length} total • {getEligibleAffiliates().length} ready for Wise Payouts ($5+ minimum)
             </p>
             </div>
 
@@ -835,13 +933,13 @@ const PayoutModal = () => {
                     Affiliate
                     </th>
                     <th style={{ padding: '15px', textAlign: 'center', borderBottom: '1px solid #dee2e6' }}>
-                    Ratings
-                    </th>
-                    <th style={{ padding: '15px', textAlign: 'center', borderBottom: '1px solid #dee2e6' }}>
                     Current Balance
                     </th>
                     <th style={{ padding: '15px', textAlign: 'center', borderBottom: '1px solid #dee2e6' }}>
                     Payment Method
+                    </th>
+                    <th style={{ padding: '15px', textAlign: 'center', borderBottom: '1px solid #dee2e6' }}>
+                    Wise Status
                     </th>
                     <th style={{ padding: '15px', textAlign: 'center', borderBottom: '1px solid #dee2e6' }}>
                     Last Payout
@@ -860,7 +958,7 @@ const PayoutModal = () => {
                     <td style={{ padding: '15px' }}>
                         <div>
                         <p style={{ margin: '0 0 5px 0', fontWeight: 'bold' }}>
-                            {affiliate.name || 'Unknown'}
+                            {(affiliate.firstName && affiliate.lastName) ? `${affiliate.firstName} ${affiliate.lastName}` : 'Unknown'}
                         </p>
                         <p style={{ margin: '0', fontSize: '12px', color: '#6c757d' }}>
                             {affiliate.email}
@@ -871,17 +969,14 @@ const PayoutModal = () => {
                         </div>
                     </td>
                     <td style={{ padding: '15px', textAlign: 'center' }}>
-                        <strong>{affiliate.totalRatings || 0}</strong>
-                    </td>
-                    <td style={{ padding: '15px', textAlign: 'center' }}>
                         <strong style={{ 
-                        color: (affiliate.totalEarnings || 0) >= 5 ? '#28a745' : '#6c757d'
+                        color: (affiliate.currentEarnings || 0) >= 5 ? '#28a745' : '#6c757d'
                         }}>
-                        £{(affiliate.totalEarnings || 0).toFixed(2)}
+                        ${(affiliate.currentEarnings || 0).toFixed(2)}
                         </strong>
                         {affiliate.payoutHistory && affiliate.payoutHistory.length > 0 && (
                         <div style={{ fontSize: '10px', color: '#6c757d', marginTop: '2px' }}>
-                            Total paid: £{affiliate.payoutHistory.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
+                            Total paid: ${affiliate.payoutHistory.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
                         </div>
                         )}
                     </td>
@@ -893,27 +988,42 @@ const PayoutModal = () => {
                             borderRadius: '12px',
                             fontSize: '11px',
                             fontWeight: 'bold',
-                            backgroundColor: affiliate.paymentInfo.method === 'paypal' ? '#e3f2fd' : '#e8f5e8',
-                            color: affiliate.paymentInfo.method === 'paypal' ? '#1976d2' : '#155724'
+                            backgroundColor: affiliate.paymentInfo.method === 'global_payouts' ? '#ff6b00' : '#6c757d',
+                            color: 'white'
                             }}>
-                            {affiliate.paymentInfo.method === 'paypal' ? '💙 PayPal' : '🏦 Bank'}
+                            {affiliate.paymentInfo.method === 'global_payouts' ? '🏦 Wise' : '💳 Manual'}
                             </span>
-                            <div style={{ fontSize: '10px', color: '#6c757d', marginTop: '2px' }}>
-                            {affiliate.paymentInfo.method === 'paypal' 
-                                ? affiliate.paymentInfo.details.email.substring(0, 15) + '...'
-                                : affiliate.paymentInfo.details.bankName
-                            }
-                            </div>
+                            {affiliate.paymentInfo.details?.country && (
+                              <div style={{ fontSize: '10px', color: '#6c757d', marginTop: '2px' }}>
+                                {affiliate.paymentInfo.details.country}
+                              </div>
+                            )}
                         </div>
                         ) : (
                         <span style={{ color: '#dc3545', fontSize: '12px' }}>Not Set</span>
                         )}
                     </td>
                     <td style={{ padding: '15px', textAlign: 'center' }}>
+                        {affiliate.paymentInfo?.method === 'global_payouts' ? (
+                        <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '12px',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            backgroundColor: '#d4edda',
+                            color: '#155724'
+                        }}>
+                            ✅ Ready
+                        </span>
+                        ) : (
+                        <span style={{ color: '#6c757d', fontSize: '12px' }}>N/A</span>
+                        )}
+                    </td>
+                    <td style={{ padding: '15px', textAlign: 'center' }}>
                         {affiliate.lastPayoutDate ? (
                         <div>
                             <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#28a745' }}>
-                            £{affiliate.lastPayoutAmount.toFixed(2)}
+                            ${affiliate.lastPayoutAmount.toFixed(2)}
                             </div>
                             <div style={{ fontSize: '10px', color: '#6c757d' }}>
                             {affiliate.lastPayoutDate.toDate().toLocaleDateString()}
@@ -937,7 +1047,8 @@ const PayoutModal = () => {
                         }}>
                         {affiliate.status || 'active'}
                         </span>
-                        {(affiliate.totalEarnings || 0) >= 5 && affiliate.paymentInfo && (
+                        {(affiliate.currentEarnings || 0) >= 5 && 
+                         affiliate.paymentInfo?.method === 'global_payouts' && (
                         <div style={{ fontSize: '10px', color: '#28a745', marginTop: '2px' }}>
                             Ready for payout
                         </div>
@@ -1008,7 +1119,7 @@ const PayoutModal = () => {
                   <div>
                     <p style={{ margin: '0', fontSize: '12px', color: '#6c757d' }}>Earnings</p>
                     <p style={{ margin: '0', fontSize: '14px', fontWeight: 'bold', color: '#28a745' }}>
-                      £{(rating.earnings || 0).toFixed(2)}
+                      ${(rating.earnings || 0).toFixed(2)}
                     </p>
                   </div>
                   
@@ -1170,7 +1281,6 @@ const PayoutModal = () => {
                                     reviewedAt: new Date(),
                                     reviewedBy: 'admin'
                                   });
-                                  // Refresh the suspicious activity list
                                   setSuspiciousActivity(suspiciousActivity.map(a => 
                                     a.id === activity.id ? { ...a, reviewed: true } : a
                                   ));
@@ -1231,8 +1341,8 @@ const PayoutModal = () => {
         )}
       </div>
 
-      {/* Payout Processing Modal */}
-      {showPayoutModal && <PayoutModal />}
+      {/* Wise Payouts Modal */}
+      {showPayoutModal && <WisePayoutsModal />}
     </div>
   );
 };
