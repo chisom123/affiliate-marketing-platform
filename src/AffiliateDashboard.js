@@ -477,6 +477,8 @@ const Dashboard = ({ user, onLogout }) => {
   useEffect(() => {
     if (!user) return;
 
+    window.scrollTo(0, 0);
+
     // Get affiliate profile
     const loadAffiliateData = async () => {
       const affiliateDoc = await getDoc(doc(db, 'affiliates', user.uid));
@@ -662,60 +664,6 @@ const Dashboard = ({ user, onLogout }) => {
         minHeight: 'calc(100vh - 100px)'
       }}>
         
-      {/* Payment Status */}
-      <div style={{ marginBottom: '30px' }}>
-          {!affiliateData?.paymentInfo && (
-            <div style={{ 
-              backgroundColor: 'rgba(255, 193, 7, 0.1)',
-              border: '1px solid rgba(255, 193, 7, 0.3)',
-              borderRadius: '5px',
-              padding: '20px'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '15px'
-              }}>
-                <div>
-                  <h4 style={{ 
-                    margin: '0 0 8px 0', 
-                    color: '#ffc107',
-                    fontSize: '18px',
-                    fontWeight: 'bold'
-                  }}>
-                  Payment Setup Required
-                  </h4>
-                  <p style={{ 
-                    margin: '0', 
-                    color: 'rgba(255, 193, 7, 0.9)',
-                    fontSize: '14px'
-                  }}>
-                    Set up your payment information to receive earnings
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowPaymentModal(true)}
-                  style={{
-                    padding: '10px 20px',
-                    backgroundColor: '#ffc107',
-                    color: '#212529',
-                    border: 'none',
-                    borderRadius: '200px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  Setup Now
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* Stats Cards */}
         <div style={{ 
           display: 'grid', 
@@ -808,7 +756,7 @@ const Dashboard = ({ user, onLogout }) => {
               fontWeight: 'bold', 
               color: '#fff'
             }}>
-              $0.1
+              $0.10
             </p>
             <p style={{ 
               margin: '8px 0 0 0', 
@@ -1857,113 +1805,6 @@ const Dashboard = ({ user, onLogout }) => {
           </button>
         </div>
 
-        {/* First Earnings Celebration Modal */}
-        {showFirstEarningsPrompt && (
-          <div style={{ 
-            position: 'fixed', 
-            top: '0', 
-            left: '0', 
-            right: '0', 
-            bottom: '0', 
-            backgroundColor: 'rgba(0,0,0,0.8)', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '20px'
-          }}>
-            <div style={{ 
-              backgroundColor: '#323862', 
-              padding: '50px 40px', 
-              borderRadius: '25px', 
-              maxWidth: '450px', 
-              width: '100%',
-              textAlign: 'center',
-              border: '1px solid rgba(255,255,255,0.1)',
-              boxShadow: '0 25px 80px rgba(0,0,0,0.6)'
-            }}>
-              <div style={{ 
-                fontSize: '64px', 
-                marginBottom: '25px',
-                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
-              }}>
-                🎉
-              </div>
-              <h2 style={{ 
-                color: '#4169E1', 
-                marginBottom: '20px',
-                fontSize: '28px',
-                fontWeight: 'bold'
-              }}>
-                Congratulations!
-              </h2>
-              <p style={{ 
-                marginBottom: '20px', 
-                fontSize: '18px',
-                color: 'white',
-                lineHeight: '1.5'
-              }}>
-                You just earned your first money with SocialStar!
-              </p>
-              <p style={{ 
-                marginBottom: '35px', 
-                color: 'rgba(255,255,255,0.7)',
-                fontSize: '16px',
-                lineHeight: '1.4'
-              }}>
-                Set up your payment information so we can send you your earnings.
-              </p>
-              
-              <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                <button
-                  onClick={() => {
-                    setShowFirstEarningsPrompt(false);
-                    setShowPaymentModal(true);
-                  }}
-                  style={{
-                    flex: 1,
-                    minWidth: '140px',
-                    padding: '16px 24px',
-                    backgroundColor: '#4169E1',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '12px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#3557C7'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = '#4169E1'}
-                >
-                  Setup Payments
-                </button>
-                
-                <button
-                  onClick={() => setShowFirstEarningsPrompt(false)}
-                  style={{
-                    flex: 1,
-                    minWidth: '140px',
-                    padding: '16px 24px',
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    color: 'white',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: '12px',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.15)'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}
-                >
-                  Later
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Payment Setup Modal */}
         {showPaymentModal && (
           <PaymentSetupModal
@@ -2571,7 +2412,7 @@ const Dashboard = ({ user, onLogout }) => {
                 fontSize: '15px',
                 lineHeight: '1.6'
               }}>
-                Earn $0.1 for every story rating you receive. Track your earnings in real-time
+                Earn $0.10 for every story rating you receive. Track your earnings in real-time
               </p>
               
               <div style={{

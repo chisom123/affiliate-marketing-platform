@@ -553,7 +553,7 @@ const RatingPage = () => {
         fraudScore: fraudCheck.confidence,
         referrer: document.referrer,
         validated: true,
-        earnings: 0.1,
+        earnings: 0.10,
         protectionVersion: isLocalDevelopment() ? '2.0-dev' : '2.0',
         developmentMode: isLocalDevelopment()
       };
@@ -563,13 +563,13 @@ const RatingPage = () => {
       // Update stats
       await updateDoc(doc(db, 'rating_links', linkData.id), {
         totalRatings: increment(1),
-        earnings: increment(0.1),
+        earnings: increment(0.10),
         lastRatedAt: serverTimestamp()
       });
       
       await updateDoc(doc(db, 'affiliates', affiliateId), {
         totalRatings: increment(1),
-        totalEarnings: increment(0.1)
+        totalEarnings: increment(0.10)
       });
       
       // Mark as rated (skip in development to allow multiple ratings)
