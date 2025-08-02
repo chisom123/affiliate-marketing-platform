@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 const LandingPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [estimatedRatings, setEstimatedRatings] = useState(100);
+  const [estimatedRatings, setEstimatedRatings] = useState(50);
   const navigate = useNavigate();
   const handleDashboard = (mode = 'signup') => {
     navigate('/dashboard', { state: { authMode: mode } });
