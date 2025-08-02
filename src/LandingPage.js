@@ -5,6 +5,12 @@ const LandingPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [estimatedRatings, setEstimatedRatings] = useState(50);
   const navigate = useNavigate();
+  
+  // Define min/max values here - change these to update the slider range
+  const minRatings = 10;
+  const maxRatings = 500;
+  const stepSize = 10;
+  
   const handleDashboard = (mode = 'signup') => {
     navigate('/dashboard', { state: { authMode: mode } });
   };
@@ -139,7 +145,7 @@ const LandingPage = () => {
                     animationId = requestAnimationFrame(() => {
                       const x = clientX - rect.left;
                       const percentage = Math.max(0, Math.min(1, x / rect.width));
-                      const newValue = Math.round((percentage * (1000 - 10) + 10) / 10) * 10;
+                      const newValue = Math.round((percentage * (maxRatings - minRatings) + minRatings) / stepSize) * stepSize;
                       setEstimatedRatings(newValue);
                     });
                   };
@@ -174,7 +180,7 @@ const LandingPage = () => {
                     animationId = requestAnimationFrame(() => {
                       const x = clientX - rect.left;
                       const percentage = Math.max(0, Math.min(1, x / rect.width));
-                      const newValue = Math.round((percentage * (1000 - 10) + 10) / 10) * 10;
+                      const newValue = Math.round((percentage * (maxRatings - minRatings) + minRatings) / stepSize) * stepSize;
                       setEstimatedRatings(newValue);
                     });
                   };
@@ -218,7 +224,7 @@ const LandingPage = () => {
                       left: '0',
                       top: '0',
                       height: '100%',
-                      width: `${((estimatedRatings - 10) / (1000 - 10)) * 100}%`,
+                      width: `${((estimatedRatings - minRatings) / (maxRatings - minRatings)) * 100}%`,
                       background: 'linear-gradient(90deg, #4169E1 0%, #6B8AFF 100%)',
                       borderRadius: '4px',
                       transition: 'width 0.1s ease'
@@ -232,7 +238,7 @@ const LandingPage = () => {
                   style={{
                     position: 'absolute',
                     top: '7px',
-                    left: `calc(${((estimatedRatings - 10) / (1000 - 10)) * 100}% - 10px)`,
+                    left: `calc(${((estimatedRatings - minRatings) / (maxRatings - minRatings)) * 100}% - 10px)`,
                     width: '20px',
                     height: '20px',
                     backgroundColor: '#4169E1',
@@ -248,9 +254,9 @@ const LandingPage = () => {
                 {/* Hidden input for accessibility */}
                 <input
                   type="range"
-                  min="10"
-                  max="1000"
-                  step="10"
+                  min={minRatings}
+                  max={maxRatings}
+                  step={stepSize}
                   value={estimatedRatings}
                   onChange={(e) => setEstimatedRatings(e.target.value)}
                   style={{
