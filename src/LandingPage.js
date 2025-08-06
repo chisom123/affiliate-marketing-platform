@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 
 const LandingPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [estimatedRatings, setEstimatedRatings] = useState(50);
+  const [estimatedRatings, setEstimatedRatings] = useState(100);
   const navigate = useNavigate();
   
   // Define min/max values here - change these to update the slider range
   const minRatings = 10;
-  const maxRatings = 500;
+  const maxRatings = 1000;
   const stepSize = 10;
   
   const handleDashboard = (mode = 'signup') => {
@@ -36,8 +36,8 @@ const LandingPage = () => {
 
   const steps = [
     {
-      title: "Turn your stories into income",
-      subtitle: "Get paid every time your friends rate your story",
+      title: "Monetize your Instagram Stories",
+      subtitle: "Get paid every time your followers rate your story",
       content: "welcome"
     },
     {
@@ -47,7 +47,7 @@ const LandingPage = () => {
     },
     {
       title: "Get Ratings",
-      subtitle: "Your friends tap the link and rate your story",
+      subtitle: "Your followers tap the link and rate your story",
       content: "getRatings"
     },
     {
@@ -304,7 +304,7 @@ const LandingPage = () => {
                     fontWeight: 'bold', 
                     color: 'white'
                   }}>
-                    ${(estimatedRatings * 0.1).toFixed(2)}
+                    ${(estimatedRatings * 0.5).toFixed(2)}
                   </div>
                 </div>
               </div>
