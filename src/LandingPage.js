@@ -304,7 +304,7 @@ const LandingPage = () => {
                     fontWeight: 'bold', 
                     color: 'white'
                   }}>
-                    ${(estimatedRatings * 0.5).toFixed(2)}
+                    ${(estimatedRatings * 0.1).toFixed(2)}
                   </div>
                 </div>
               </div>

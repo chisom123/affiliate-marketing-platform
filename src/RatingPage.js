@@ -757,16 +757,6 @@ if (submitted) {
             </div>
           )}
 
-          <p style={{ 
-                color: '#FFF',
-                fontSize: '15px',
-                margin: '0 0 0px 0',
-                fontWeight: '600',
-                lineHeight: '22px'
-              }}>
-              Continue playing with {affiliateData.firstName} and others on SocialStar
-              </p>
-
           <button
               onClick={() => window.open('https://apps.apple.com/gb/app/socialstar-app/id6473705189', '_blank')}
               style={{
@@ -783,7 +773,7 @@ if (submitted) {
                 marginTop: '20px'
               }}
             >
-              Get SocialStar
+              Continue
             </button>
         </div>
         <a href="https://apps.apple.com/gb/app/socialstar-app/id6473705189" target="_blank" style={{ textDecoration: 'none', cursor: 'pointer' }}>
