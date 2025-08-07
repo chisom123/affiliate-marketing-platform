@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 const LandingPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [estimatedRatings, setEstimatedRatings] = useState(100);
+  const [imageLoading, setImageLoading] = useState({}); // Track loading state for each image
   const navigate = useNavigate();
   
   // Define min/max values here - change these to update the slider range
@@ -17,6 +18,12 @@ const LandingPage = () => {
 
   const nextStep = () => {
     if (currentStep < 3) {
+      // Pre-load the next image if it exists
+      if (currentStep === 0 || currentStep === 1) {
+        const nextImageKey = `step_${currentStep + 1}`;
+        setImageLoading(prev => ({ ...prev, [nextImageKey]: true }));
+      }
+      
       setCurrentStep(currentStep + 1);
       // Multiple scroll methods to ensure it works
       setTimeout(() => {
@@ -33,6 +40,39 @@ const LandingPage = () => {
       setCurrentStep(currentStep - 1);
     }
   };
+
+  const handleImageLoad = (imageKey) => {
+    setImageLoading(prev => ({ ...prev, [imageKey]: false }));
+  };
+
+  const handleImageError = (imageKey) => {
+    setImageLoading(prev => ({ ...prev, [imageKey]: false }));
+  };
+
+  // Spinner component
+  const Spinner = () => (
+    <div style={{
+      width: '40px',
+      height: '40px',
+      border: '3px solid rgba(255, 255, 255, 0.3)',
+      borderTop: '3px solid #FFF',
+      borderRadius: '50%',
+      animation: 'spin 1s linear infinite'
+    }} />
+  );
+
+  // Add keyframes for spinner animation
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
 
   const steps = [
     {
@@ -57,6 +97,52 @@ const LandingPage = () => {
     }
   ];
 
+  const renderImageWithPlaceholder = (src, alt, imageKey, maxWidth = '250px') => {
+    const isLoading = imageLoading[imageKey];
+    
+    return (
+      <div style={{ 
+        maxWidth: '300px', 
+        margin: '0 auto',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative'
+      }}>
+        {/* Loading placeholder */}
+        {isLoading && (
+          <div style={{
+            width: '100%',
+            maxWidth: maxWidth,
+            height: '444px', // Approximate height based on the image aspect ratio
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <Spinner />
+          </div>
+        )}
+        
+        {/* Actual image */}
+        <img 
+          src={src}
+          alt={alt}
+          onLoad={() => handleImageLoad(imageKey)}
+          onError={() => handleImageError(imageKey)}
+          style={{
+            width: '100%',
+            maxWidth: maxWidth,
+            height: 'auto',
+            borderRadius: '8px',
+            display: isLoading ? 'none' : 'block'
+          }}
+        />
+      </div>
+    );
+  };
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 0: // Welcome
@@ -68,48 +154,24 @@ const LandingPage = () => {
       case 1: // Add Link
         return (
           <div style={{ textAlign: 'center' }}>
-            <div style={{ 
-              maxWidth: '300px', 
-              margin: '0 auto',
-              display: 'flex',
-              justifyContent: 'center'
-            }}>
-              <img 
-                src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/IMG_4128%202.PNG?alt=media&token=89ecbb80-8e3d-4c0a-9ed8-35552ccf70d0"
-                alt="Instagram story with rating link"
-                style={{
-                  width: '100%',
-                  maxWidth: '250px',
-                  height: 'auto',
-                  borderRadius: '8px',
-                  boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
-                }}
-              />
-            </div>
+            {renderImageWithPlaceholder(
+              "https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/IMG_4128%202.PNG?alt=media&token=89ecbb80-8e3d-4c0a-9ed8-35552ccf70d0",
+              "Instagram story with rating link",
+              "step_1",
+              "250px"
+            )}
           </div>
         );
 
       case 2: // Get Ratings
         return (
           <div style={{ textAlign: 'center' }}>
-            <div style={{ 
-              maxWidth: '300px', 
-              margin: '0 auto',
-              display: 'flex',
-              justifyContent: 'center'
-            }}>
-              <img 
-                src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/IMG_4200.PNG?alt=media&token=b6d48305-034f-40f5-8c10-69fc52c56a6e"
-                alt="Rating interface on mobile"
-                style={{
-                  width: '100%',
-                  maxWidth: '250px',
-                  height: 'auto',
-                  borderRadius: '8px',
-                  boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
-                }}
-              />
-            </div>
+            {renderImageWithPlaceholder(
+              "https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/IMG_4200.PNG?alt=media&token=b6d48305-034f-40f5-8c10-69fc52c56a6e",
+              "Rating interface on mobile",
+              "step_2",
+              "250px"
+            )}
           </div>
         );
 
@@ -524,8 +586,6 @@ const LandingPage = () => {
           </div>
         </div>
       </main>
-
-
     </div>
   );
 };
