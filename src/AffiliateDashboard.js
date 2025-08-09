@@ -146,13 +146,6 @@ const AuthForm = ({ onLogin }) => {
             }}>
               {isLogin ? 'Welcome Back' : 'Get Started'}
             </h2>
-            <p style={{ 
-              color: 'rgba(255,255,255,0.7)',
-              margin: '0',
-              fontSize: '15px'
-            }}>
-              {isLogin ? 'Sign in to your partner dashboard' : 'Start earning from your stories today'}
-            </p>
           </div>
           
           <div onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -2212,7 +2205,7 @@ const Dashboard = ({ user, onLogout }) => {
                 fontSize: '15px',
                 lineHeight: '1.6'
               }}>
-                Copy your unique rating link to share with your audience
+                Copy your unique rating link
               </p>
               
               {/* Link Copy Section */}
