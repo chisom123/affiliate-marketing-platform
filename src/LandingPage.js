@@ -3,14 +3,23 @@ import { useNavigate } from 'react-router-dom';
 
 const LandingPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [estimatedRatings, setEstimatedRatings] = useState(100);
   const [imageLoading, setImageLoading] = useState({}); // Track loading state for each image
   const navigate = useNavigate();
   
-  // Define min/max values here - change these to update the slider range
-  const minRatings = 10;
-  const maxRatings = 1000;
-  const stepSize = 10;
+  const [followers, setFollowers] = useState(1000);
+  const [engagementRate, setEngagementRate] = useState(10);
+
+  // Define min/max values for followers and engagement
+  const minFollowers = 100;
+  const maxFollowers = 5000;
+  const followerStepSize = 100;
+
+  const minEngagement = 5;
+  const maxEngagement = 50;
+  const engagementStepSize = 5;
+
+  // Calculate estimated ratings based on followers and engagement
+  const estimatedRatings = Math.round((followers * engagementRate) / 100);
   
   const handleDashboard = (mode = 'signup') => {
     navigate('/dashboard', { state: { authMode: mode } });
@@ -76,8 +85,8 @@ const LandingPage = () => {
 
   const steps = [
     {
-      title: "Monetize your Instagram Stories",
-      subtitle: "Get paid every time your followers rate your story",
+      title: "Turn your stories into income",
+      subtitle: "Get paid every time your friends rate your story",
       content: "welcome"
     },
     {
@@ -87,12 +96,12 @@ const LandingPage = () => {
     },
     {
       title: "Get Ratings",
-      subtitle: "Your followers tap the link and rate your story",
+      subtitle: "Your friends tap the link and rate your story",
       content: "getRatings"
     },
     {
-      title: "Estimate Earnings",
-      subtitle: "How many ratings do you think you'll get per story?",
+      title: "How much could you earn as a SocialStar Partner?",
+      subtitle: "",
       content: "getPaid"
     }
   ];
@@ -175,176 +184,309 @@ const LandingPage = () => {
           </div>
         );
 
-      case 3: // Get Paid
+        case 3: // Get Paid
         return (
           <div>
-            {/* Custom Slider */}
+            {/* Custom Dual Slider */}
             <div style={{
               background: 'rgba(255,255,255,0.1)',
               borderRadius: '8px',
               padding: '24px'
             }}>
-              <div 
-                style={{ 
-                  position: 'relative', 
-                  marginBottom: '16px',
-                  padding: '16px 0',
-                  cursor: 'pointer',
-                  touchAction: 'none'
-                }}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const thumb = e.currentTarget.querySelector('[data-thumb]');
-                  const track = e.currentTarget.querySelector('[data-track]');
-                  
-                  thumb.style.transition = 'none';
-                  track.style.transition = 'none';
-                  
-                  let animationId;
-                  const updateValue = (clientX) => {
-                    if (animationId) cancelAnimationFrame(animationId);
-                    animationId = requestAnimationFrame(() => {
-                      const x = clientX - rect.left;
-                      const percentage = Math.max(0, Math.min(1, x / rect.width));
-                      const newValue = Math.round((percentage * (maxRatings - minRatings) + minRatings) / stepSize) * stepSize;
-                      setEstimatedRatings(newValue);
-                    });
-                  };
-                  
-                  updateValue(e.clientX);
-                  
-                  const handleMouseMove = (e) => updateValue(e.clientX);
-                  const handleMouseUp = () => {
-                    thumb.style.transition = 'left 0.1s ease';
-                    track.style.transition = 'width 0.1s ease';
-                    
-                    document.removeEventListener('mousemove', handleMouseMove);
-                    document.removeEventListener('mouseup', handleMouseUp);
-                    if (animationId) cancelAnimationFrame(animationId);
-                  };
-                  
-                  document.addEventListener('mousemove', handleMouseMove);
-                  document.addEventListener('mouseup', handleMouseUp);
-                }}
-                onTouchStart={(e) => {
-                  e.preventDefault();
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const thumb = e.currentTarget.querySelector('[data-thumb]');
-                  const track = e.currentTarget.querySelector('[data-track]');
-                  
-                  thumb.style.transition = 'none';
-                  track.style.transition = 'none';
-                  
-                  let animationId;
-                  const updateValue = (clientX) => {
-                    if (animationId) cancelAnimationFrame(animationId);
-                    animationId = requestAnimationFrame(() => {
-                      const x = clientX - rect.left;
-                      const percentage = Math.max(0, Math.min(1, x / rect.width));
-                      const newValue = Math.round((percentage * (maxRatings - minRatings) + minRatings) / stepSize) * stepSize;
-                      setEstimatedRatings(newValue);
-                    });
-                  };
-                  
-                  const touch = e.touches[0];
-                  updateValue(touch.clientX);
-                  
-                  const handleTouchMove = (e) => {
+              {/* Followers Slider */}
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+                  <div style={{ 
+                    fontSize: '20px', 
+                    fontWeight: 'bold', 
+                    color: 'white'
+                  }}>
+                    {followers.toLocaleString()} Followers
+                  </div>
+                </div>
+                
+                <div 
+                  style={{ 
+                    position: 'relative', 
+                    marginBottom: '16px',
+                    padding: '16px 0',
+                    cursor: 'pointer',
+                    touchAction: 'none'
+                  }}
+                  onMouseDown={(e) => {
                     e.preventDefault();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const thumb = e.currentTarget.querySelector('[data-followers-thumb]');
+                    const track = e.currentTarget.querySelector('[data-followers-track]');
+                    
+                    thumb.style.transition = 'none';
+                    track.style.transition = 'none';
+                    
+                    let animationId;
+                    const updateValue = (clientX) => {
+                      if (animationId) cancelAnimationFrame(animationId);
+                      animationId = requestAnimationFrame(() => {
+                        const x = clientX - rect.left;
+                        const percentage = Math.max(0, Math.min(1, x / rect.width));
+                        const newValue = Math.round((percentage * (maxFollowers - minFollowers) + minFollowers) / followerStepSize) * followerStepSize;
+                        setFollowers(newValue);
+                      });
+                    };
+                    
+                    updateValue(e.clientX);
+                    
+                    const handleMouseMove = (e) => updateValue(e.clientX);
+                    const handleMouseUp = () => {
+                      thumb.style.transition = 'left 0.1s ease';
+                      track.style.transition = 'width 0.1s ease';
+                      
+                      document.removeEventListener('mousemove', handleMouseMove);
+                      document.removeEventListener('mouseup', handleMouseUp);
+                      if (animationId) cancelAnimationFrame(animationId);
+                    };
+                    
+                    document.addEventListener('mousemove', handleMouseMove);
+                    document.addEventListener('mouseup', handleMouseUp);
+                  }}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const thumb = e.currentTarget.querySelector('[data-followers-thumb]');
+                    const track = e.currentTarget.querySelector('[data-followers-track]');
+                    
+                    thumb.style.transition = 'none';
+                    track.style.transition = 'none';
+                    
+                    let animationId;
+                    const updateValue = (clientX) => {
+                      if (animationId) cancelAnimationFrame(animationId);
+                      animationId = requestAnimationFrame(() => {
+                        const x = clientX - rect.left;
+                        const percentage = Math.max(0, Math.min(1, x / rect.width));
+                        const newValue = Math.round((percentage * (maxFollowers - minFollowers) + minFollowers) / followerStepSize) * followerStepSize;
+                        setFollowers(newValue);
+                      });
+                    };
+                    
                     const touch = e.touches[0];
                     updateValue(touch.clientX);
-                  };
-                  
-                  const handleTouchEnd = () => {
-                    thumb.style.transition = 'left 0.1s ease';
-                    track.style.transition = 'width 0.1s ease';
                     
-                    document.removeEventListener('touchmove', handleTouchMove);
-                    document.removeEventListener('touchend', handleTouchEnd);
-                    if (animationId) cancelAnimationFrame(animationId);
-                  };
+                    const handleTouchMove = (e) => {
+                      e.preventDefault();
+                      const touch = e.touches[0];
+                      updateValue(touch.clientX);
+                    };
+                    
+                    const handleTouchEnd = () => {
+                      thumb.style.transition = 'left 0.1s ease';
+                      track.style.transition = 'width 0.1s ease';
+                      
+                      document.removeEventListener('touchmove', handleTouchMove);
+                      document.removeEventListener('touchend', handleTouchEnd);
+                      if (animationId) cancelAnimationFrame(animationId);
+                    };
+                    
+                    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+                    document.addEventListener('touchend', handleTouchEnd);
+                  }}
+                >
+                  {/* Followers Slider Track */}
+                  <div style={{
+                    position: 'relative',
+                    width: '100%',
+                    height: '8px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '4px',
+                    overflow: 'hidden'
+                  }}>
+                    {/* Filled Track */}
+                    <div 
+                      data-followers-track
+                      style={{
+                        position: 'absolute',
+                        left: '0',
+                        top: '0',
+                        height: '100%',
+                        width: `${((followers - minFollowers) / (maxFollowers - minFollowers)) * 100}%`,
+                        background: 'linear-gradient(90deg, #FFFFFF 0%, #F8F9FA 100%)',
+                        borderRadius: '4px',
+                        transition: 'width 0.1s ease'
+                      }} 
+                    />
+                  </div>
                   
-                  document.addEventListener('touchmove', handleTouchMove, { passive: false });
-                  document.addEventListener('touchend', handleTouchEnd);
-                }}
-              >
-                {/* Slider Track */}
-                <div style={{
-                  position: 'relative',
-                  width: '100%',
-                  height: '8px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '4px',
-                  overflow: 'hidden'
-                }}>
-                  {/* Filled Track */}
+                  {/* Custom Thumb */}
                   <div 
-                    data-track
+                    data-followers-thumb
                     style={{
                       position: 'absolute',
-                      left: '0',
-                      top: '0',
-                      height: '100%',
-                      width: `${((estimatedRatings - minRatings) / (maxRatings - minRatings)) * 100}%`,
-                      background: 'linear-gradient(90deg, #4169E1 0%, #6B8AFF 100%)',
-                      borderRadius: '4px',
-                      transition: 'width 0.1s ease'
-                    }} 
+                      top: '8px',
+                      left: `calc(${((followers - minFollowers) / (maxFollowers - minFollowers)) * 100}% - 10px)`,
+                      width: '18px',
+                      height: '18px',
+                      backgroundColor: '#FFFFFF',
+                      border: '3px solid white',
+                      borderRadius: '50%',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                      transition: 'left 0.1s ease',
+                      cursor: 'grab',
+                      pointerEvents: 'none'
+                    }}
                   />
                 </div>
-                
-                {/* Custom Thumb */}
-                <div 
-                  data-thumb
-                  style={{
-                    position: 'absolute',
-                    top: '7px',
-                    left: `calc(${((estimatedRatings - minRatings) / (maxRatings - minRatings)) * 100}% - 10px)`,
-                    width: '20px',
-                    height: '20px',
-                    backgroundColor: '#4169E1',
-                    border: '3px solid white',
-                    borderRadius: '50%',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-                    transition: 'left 0.1s ease',
-                    cursor: 'grab',
-                    pointerEvents: 'none'
-                  }}
-                />
-                
-                {/* Hidden input for accessibility */}
-                <input
-                  type="range"
-                  min={minRatings}
-                  max={maxRatings}
-                  step={stepSize}
-                  value={estimatedRatings}
-                  onChange={(e) => setEstimatedRatings(e.target.value)}
-                  style={{
-                    position: 'absolute',
-                    top: '0',
-                    left: '0',
-                    width: '100%',
-                    height: '100%',
-                    opacity: 0,
-                    pointerEvents: 'none'
-                  }}
-                  tabIndex="0"
-                />
               </div>
-              
-              <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                <div style={{ 
-                  fontSize: '24px', 
-                  fontWeight: 'bold', 
-                  color: 'white',
-                  marginBottom: '8px'
-                }}>
-                  {estimatedRatings} ratings <span style={{ fontSize: '16px', fontWeight: 'normal', color: 'rgba(255,255,255,0.8)' }}>per story</span>
+      
+              {/* Engagement Rate Slider */}
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                  <div style={{ 
+                    fontSize: '20px', 
+                    fontWeight: 'bold', 
+                    color: 'white'
+                  }}>
+                    {engagementRate}% Engagement
+                  </div>
+                  <div style={{ 
+                    fontSize: '14px', 
+                    color: 'rgba(255,255,255,0.6)',
+                    marginTop: '4px'
+                  }}>
+                    {estimatedRatings} ratings per story
+                  </div>
+                </div>
+                
+                <div 
+                  style={{ 
+                    position: 'relative', 
+                    marginBottom: '16px',
+                    padding: '16px 0',
+                    cursor: 'pointer',
+                    touchAction: 'none'
+                  }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const thumb = e.currentTarget.querySelector('[data-engagement-thumb]');
+                    const track = e.currentTarget.querySelector('[data-engagement-track]');
+                    
+                    thumb.style.transition = 'none';
+                    track.style.transition = 'none';
+                    
+                    let animationId;
+                    const updateValue = (clientX) => {
+                      if (animationId) cancelAnimationFrame(animationId);
+                      animationId = requestAnimationFrame(() => {
+                        const x = clientX - rect.left;
+                        const percentage = Math.max(0, Math.min(1, x / rect.width));
+                        const newValue = Math.round((percentage * (maxEngagement - minEngagement) + minEngagement) / engagementStepSize) * engagementStepSize;
+                        setEngagementRate(newValue);
+                      });
+                    };
+                    
+                    updateValue(e.clientX);
+                    
+                    const handleMouseMove = (e) => updateValue(e.clientX);
+                    const handleMouseUp = () => {
+                      thumb.style.transition = 'left 0.1s ease';
+                      track.style.transition = 'width 0.1s ease';
+                      
+                      document.removeEventListener('mousemove', handleMouseMove);
+                      document.removeEventListener('mouseup', handleMouseUp);
+                      if (animationId) cancelAnimationFrame(animationId);
+                    };
+                    
+                    document.addEventListener('mousemove', handleMouseMove);
+                    document.addEventListener('mouseup', handleMouseUp);
+                  }}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const thumb = e.currentTarget.querySelector('[data-engagement-thumb]');
+                    const track = e.currentTarget.querySelector('[data-engagement-track]');
+                    
+                    thumb.style.transition = 'none';
+                    track.style.transition = 'none';
+                    
+                    let animationId;
+                    const updateValue = (clientX) => {
+                      if (animationId) cancelAnimationFrame(animationId);
+                      animationId = requestAnimationFrame(() => {
+                        const x = clientX - rect.left;
+                        const percentage = Math.max(0, Math.min(1, x / rect.width));
+                        const newValue = Math.round((percentage * (maxEngagement - minEngagement) + minEngagement) / engagementStepSize) * engagementStepSize;
+                        setEngagementRate(newValue);
+                      });
+                    };
+                    
+                    const touch = e.touches[0];
+                    updateValue(touch.clientX);
+                    
+                    const handleTouchMove = (e) => {
+                      e.preventDefault();
+                      const touch = e.touches[0];
+                      updateValue(touch.clientX);
+                    };
+                    
+                    const handleTouchEnd = () => {
+                      thumb.style.transition = 'left 0.1s ease';
+                      track.style.transition = 'width 0.1s ease';
+                      
+                      document.removeEventListener('touchmove', handleTouchMove);
+                      document.removeEventListener('touchend', handleTouchEnd);
+                      if (animationId) cancelAnimationFrame(animationId);
+                    };
+                    
+                    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+                    document.addEventListener('touchend', handleTouchEnd);
+                  }}
+                >
+                  {/* Engagement Slider Track */}
+                  <div style={{
+                    position: 'relative',
+                    width: '100%',
+                    height: '8px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '4px',
+                    overflow: 'hidden'
+                  }}>
+                    {/* Filled Track */}
+                    <div 
+                      data-engagement-track
+                      style={{
+                        position: 'absolute',
+                        left: '0',
+                        top: '0',
+                        height: '100%',
+                        width: `${((engagementRate - minEngagement) / (maxEngagement - minEngagement)) * 100}%`,
+                        background: 'linear-gradient(90deg, #FFFFFF 0%, #F8F9FA 100%)',
+                        borderRadius: '4px',
+                        transition: 'width 0.1s ease'
+                      }} 
+                    />
+                  </div>
+                  
+                  {/* Custom Thumb */}
+                  <div 
+                    data-engagement-thumb
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      left: `calc(${((engagementRate - minEngagement) / (maxEngagement - minEngagement)) * 100}% - 10px)`,
+                      width: '18px',
+                      height: '18px',
+                      backgroundColor: '#FFFFFF',
+                      border: '3px solid white',
+                      borderRadius: '50%',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                      transition: 'left 0.1s ease',
+                      cursor: 'grab',
+                      pointerEvents: 'none'
+                    }}
+                  />
                 </div>
               </div>
               
+              {/* Earnings Display */}
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
@@ -366,11 +508,37 @@ const LandingPage = () => {
                     fontWeight: 'bold', 
                     color: 'white'
                   }}>
-                    ${(estimatedRatings * 0.1).toFixed(2)}
+                    ${(estimatedRatings * 0.25).toFixed(2)}
+                  </div>
+                </div>
+      
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ 
+                    fontSize: '16px', 
+                    color: 'rgba(255,255,255,0.8)',
+                    marginBottom: '5px'
+                  }}>
+                    Per Week*
+                  </div>
+                  <div style={{ 
+                    fontSize: '24px', 
+                    fontWeight: 'bold', 
+                    color: 'white'
+                  }}>
+                    ${(estimatedRatings * 0.25 * 7).toFixed(2)}
                   </div>
                 </div>
               </div>
             </div>
+            <p style={{ 
+              color: '#B8C5D1',
+              fontSize: '16px',
+              marginTop: '20px',
+              fontWeight: '500',
+              textAlign: 'right'
+            }}>
+              *7 Stories
+            </p>
           </div>
         );
 
@@ -578,7 +746,7 @@ const LandingPage = () => {
                     onMouseOver={(e) => e.target.style.backgroundColor = '#3b5de6'}
                     onMouseOut={(e) => e.target.style.backgroundColor = '#4169E1'}
                   >
-                    Get Started
+                    Start earning ${(estimatedRatings * 0.25).toFixed(2)} per story
                   </button>
                 )}
               </div>

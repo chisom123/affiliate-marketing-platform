@@ -656,142 +656,6 @@ const Dashboard = ({ user, onLogout }) => {
         padding: '20px',
         minHeight: 'calc(100vh - 100px)'
       }}>
-        
-        {/* Stats Cards */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
-          gap: '20px', 
-          marginBottom: '40px' 
-        }}>
-          <div style={{ 
-            padding: '25px', 
-            backgroundColor: '#323862', 
-            borderRadius: '5px', 
-            border: '1px solid rgba(255,255,255,0.1)',
-            textAlign: 'center'
-          }}>
-            <h3 style={{ 
-              margin: '0 0 10px 0', 
-              color: 'rgba(255,255,255,0.8)',
-              fontSize: '16px',
-              fontWeight: '500'
-            }}>
-              Current Balance
-            </h3>
-            <p style={{ 
-              margin: '0', 
-              fontSize: '32px', 
-              fontWeight: 'bold', 
-              color: '#fff'
-            }}>
-              ${totalEarnings.toFixed(2)}
-            </p>
-            <p style={{ 
-              margin: '8px 0 0 0', 
-              fontSize: '12px', 
-              color: 'rgba(255,255,255,0.6)'
-            }}>
-              Unpaid earnings
-            </p>
-          </div>
-
-          <div style={{ 
-            padding: '25px', 
-            backgroundColor: '#323862', 
-            borderRadius: '5px', 
-            border: '1px solid rgba(255,255,255,0.1)',
-            textAlign: 'center'
-          }}>
-            <h3 style={{ 
-              margin: '0 0 10px 0', 
-              color: 'rgba(255,255,255,0.8)',
-              fontSize: '16px',
-              fontWeight: '500'
-            }}>
-              Total Paid Out
-            </h3>
-            <p style={{ 
-              margin: '0', 
-              fontSize: '32px', 
-              fontWeight: 'bold', 
-              color: '#fff'
-            }}>
-              ${totalPaidOut.toFixed(2)}
-            </p>
-            <p style={{ 
-              margin: '8px 0 0 0', 
-              fontSize: '12px', 
-              color: 'rgba(255,255,255,0.6)'
-            }}>
-              Already received
-            </p>
-          </div>
-          
-          <div style={{ 
-            padding: '25px', 
-            backgroundColor: '#323862', 
-            borderRadius: '5px', 
-            border: '1px solid rgba(255,255,255,0.1)',
-            textAlign: 'center'
-          }}>
-            <h3 style={{ 
-              margin: '0 0 10px 0', 
-              color: 'rgba(255,255,255,0.8)',
-              fontSize: '16px',
-              fontWeight: '500'
-            }}>
-             Earnings Per Rating
-            </h3>
-            <p style={{ 
-              margin: '0', 
-              fontSize: '32px', 
-              fontWeight: 'bold', 
-              color: '#fff'
-            }}>
-              $0.10
-            </p>
-            <p style={{ 
-              margin: '8px 0 0 0', 
-              fontSize: '12px', 
-              color: 'rgba(255,255,255,0.6)'
-            }}>
-              Per story rating
-            </p>
-          </div>
-          
-          <div style={{ 
-            padding: '25px', 
-            backgroundColor: '#323862', 
-            borderRadius: '5px', 
-            border: '1px solid rgba(255,255,255,0.1)',
-            textAlign: 'center'
-          }}>
-            <h3 style={{ 
-              margin: '0 0 10px 0', 
-              color: 'rgba(255,255,255,0.8)',
-              fontSize: '16px',
-              fontWeight: '500'
-            }}>
-              Total Ratings Received
-            </h3>
-            <p style={{ 
-              margin: '0', 
-              fontSize: '32px', 
-              fontWeight: 'bold', 
-              color: '#fff'
-            }}>
-              {totalRatings}
-            </p>
-            <p style={{ 
-              margin: '8px 0 0 0', 
-              fontSize: '12px', 
-              color: 'rgba(255,255,255,0.6)'
-            }}>
-              Story ratings
-            </p>
-          </div>
-        </div>
 
 {/* Settings Modal */}
 {showSettings && (
@@ -1718,7 +1582,7 @@ const Dashboard = ({ user, onLogout }) => {
 )}
 
         {/* Create New Link Button */}
-        <div style={{ marginBottom: '40px', textAlign: 'center' }}>
+        <div style={{ marginBottom: '40px', marginTop: '20px', textAlign: 'center' }}>
           <button
             onClick={async () => {
               setLoading(true);
@@ -1793,7 +1657,7 @@ const Dashboard = ({ user, onLogout }) => {
                 Creating Link...
               </>
             ) : (
-              'Create New Rating Link'
+              'Create New Link'
             )}
           </button>
         </div>
@@ -2405,7 +2269,7 @@ const Dashboard = ({ user, onLogout }) => {
                 fontSize: '15px',
                 lineHeight: '1.6'
               }}>
-                Earn $0.10 for every story rating you receive. Track your earnings in real-time
+                Earn $0.25 for every story rating you receive. Track your earnings in real-time
               </p>
               
               <div style={{

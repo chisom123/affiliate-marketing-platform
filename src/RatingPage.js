@@ -553,7 +553,7 @@ const RatingPage = () => {
         fraudScore: fraudCheck.confidence,
         referrer: document.referrer,
         validated: true,
-        earnings: 0.10,
+        earnings: 0.25,
         protectionVersion: isLocalDevelopment() ? '2.0-dev' : '2.0',
         developmentMode: isLocalDevelopment()
       };
@@ -563,13 +563,14 @@ const RatingPage = () => {
       // Update stats
       await updateDoc(doc(db, 'rating_links', linkData.id), {
         totalRatings: increment(1),
-        earnings: increment(0.10),
+        earnings: increment(0.25),
         lastRatedAt: serverTimestamp()
       });
-      
+
       await updateDoc(doc(db, 'affiliates', affiliateId), {
         totalRatings: increment(1),
-        totalEarnings: increment(0.10)
+        totalEarnings: increment(0.25), 
+        balance: increment(0.25)      
       });
       
       // Mark as rated (skip in development to allow multiple ratings)
@@ -757,8 +758,18 @@ if (submitted) {
             </div>
           )}
 
+          <p style={{ 
+            color: '#FFF',
+            fontSize: '15px',
+            margin: '0 0 0px 0',
+            fontWeight: '600',
+            lineHeight: '22px'
+          }}>
+            {affiliateData.firstName} used SocialStar to get ratings
+          </p>
+
           <button
-              onClick={() => window.open('https://apps.apple.com/gb/app/socialstar-app/id6473705189', '_blank')}
+              onClick={() => window.open('https://apps.apple.com/app/socialstar-app/id6473705189', '_blank')}
               style={{
                 padding: '23px 30px',
                 backgroundColor: '#4169E1',
@@ -773,7 +784,7 @@ if (submitted) {
                 marginTop: '20px'
               }}
             >
-              Continue
+              Get SocialStar
             </button>
         </div>
         <a href="https://apps.apple.com/gb/app/socialstar-app/id6473705189" target="_blank" style={{ textDecoration: 'none', cursor: 'pointer' }}>
