@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getFirestore, collection, onSnapshot, query, where, orderBy, doc, updateDoc, getDocs } from 'firebase/firestore';
+import { decryptBankAccount } from './utils/encryptionUtils'; // Import the encryption utilities
 
 // Use your existing Firebase instance
 const db = getFirestore();
@@ -11,6 +12,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedWithdrawals, setSelectedWithdrawals] = useState([]);
   const [processingAction, setProcessingAction] = useState(false);
+  const [decryptionErrors, setDecryptionErrors] = useState(new Set());
 
   // Real-time data loading
   useEffect(() => {
@@ -86,8 +88,43 @@ const AdminDashboard = () => {
     setProcessingAction(false);
   };
 
-  // Generate CSV for approved withdrawals - EXACT Wise format from your function
-  const generateWiseCSV = () => {
+  // Decrypt bank account with error handling
+  const getDecryptedBankAccount = async (withdrawal) => {
+    try {
+      // Check if it's using old format (bankAccount) or new format (encryptedBankAccount)
+      if (withdrawal.encryptedBankAccount) {
+        console.log('🔓 Decrypting bank account for withdrawal:', withdrawal.id);
+        const decrypted = await decryptBankAccount(withdrawal.encryptedBankAccount);
+        console.log('✅ Successfully decrypted bank account');
+        return decrypted;
+      } else if (withdrawal.bankAccount) {
+        // Legacy unencrypted data
+        console.log('📦 Using legacy unencrypted bank account data');
+        return withdrawal.bankAccount;
+      } else {
+        throw new Error('No bank account data found');
+      }
+    } catch (error) {
+      console.error('❌ Failed to decrypt bank account for withdrawal:', withdrawal.id, error);
+      setDecryptionErrors(prev => new Set([...prev, withdrawal.id]));
+      
+      // Return a placeholder for display
+      return {
+        accountHolderName: '[Decryption Failed]',
+        bankName: '[Decryption Failed]',
+        accountNumber: '0000',
+        routingNumber: '000000000',
+        accountType: 'checking',
+        addressLine1: '[Decryption Failed]',
+        city: '[Decryption Failed]',
+        state: 'XX',
+        zipCode: '00000'
+      };
+    }
+  };
+
+  // Generate CSV for approved withdrawals with decryption
+  const generateWiseCSV = async () => {
     const approvedWithdrawals = withdrawals.filter(w => w.status === 'approved');
     
     if (approvedWithdrawals.length === 0) {
@@ -95,110 +132,119 @@ const AdminDashboard = () => {
       return;
     }
 
-    const wiseCSVData = [];
+    setProcessingAction(true);
+    
+    try {
+      const wiseCSVData = [];
+      const failedDecryptions = [];
+      const successfulDecryptions = [];
 
-    // Process each withdrawal with exact Wise formatting
-    approvedWithdrawals.forEach(withdrawal => {
-      const affiliate = affiliates.find(a => a.id === withdrawal.userId);
-      
-      if (!affiliate) {
-        console.warn('Affiliate not found for withdrawal:', withdrawal.id);
-        return;
-      }
+      console.log(`🔓 Starting decryption of ${approvedWithdrawals.length} withdrawals...`);
 
-      // For US transfers, always use USD (UK -> US transfers)
-      const country = 'US'; // All withdrawals are to US accounts
-      const recipientCurrency = 'USD';
-      
-      // Use withdrawal bank account data (now includes address)
-      const bankDetails = withdrawal.bankAccount;
-      
-      // Validate required address fields
-      if (!bankDetails.addressLine1 || !bankDetails.city || !bankDetails.state || !bankDetails.zipCode) {
-        console.warn('Missing address data for withdrawal:', withdrawal.id);
-        return;
-      }
-      
-      // Create Wise row with exact format from your function
-      const wiseRow = {
-        // Wise template required fields (exact column names)
-        'sourceCurrency': 'GBP', // REQUIRED: Currency of your Wise account (UK account)
-        'targetCurrency': 'USD', // Currency recipient receives (US users get USD)
-        'amount': withdrawal.amount.toFixed(2), // Amount user receives in USD
-        'amountCurrency': 'target', // REQUIRED: Recipient gets exact USD amount, you pay GBP equivalent + fees
-        'name': bankDetails.accountHolderName,
-        'email': affiliate.email,
-        'reference': `SocialStar earnings ${new Date().toISOString().split('T')[0]}`,
-        'receiverType': 'PERSON', // Uppercase PERSON
+      // Process each withdrawal with decryption
+      for (const withdrawal of approvedWithdrawals) {
+        const affiliate = affiliates.find(a => a.id === withdrawal.userId);
         
-        // US specific fields (using withdrawal bank account data)
-        'accountNumber': bankDetails.accountNumber,
-        'abartn': bankDetails.routingNumber,
-        'accountType': (bankDetails.accountType === 'checking') ? 'CHECKING' : 'SAVINGS', // Dynamic based on user choice
-        'addressFirstLine': bankDetails.addressLine1,
-        'addressCity': bankDetails.city,
-        'addressState': bankDetails.state, // Already 2-letter code from iOS picker
-        'addressPostCode': bankDetails.zipCode,
-        'addressCountryCode': 'US'
-      };
+        if (!affiliate) {
+          console.warn('Affiliate not found for withdrawal:', withdrawal.id);
+          continue;
+        }
 
-      wiseCSVData.push(wiseRow);
-    });
+        try {
+          // Decrypt bank account details
+          const bankDetails = await getDecryptedBankAccount(withdrawal);
+          
+          // Skip if decryption failed (check for placeholder values)
+          if (bankDetails.accountHolderName === '[Decryption Failed]') {
+            failedDecryptions.push(withdrawal.id);
+            continue;
+          }
+          
+          // Validate required address fields
+          if (!bankDetails.addressLine1 || !bankDetails.city || !bankDetails.state || !bankDetails.zipCode) {
+            console.warn('Missing address data for withdrawal:', withdrawal.id);
+            continue;
+          }
+          
+          // Create Wise row with decrypted data
+          const wiseRow = {
+            'sourceCurrency': 'GBP',
+            'targetCurrency': 'USD',
+            'amount': withdrawal.amount.toFixed(2),
+            'amountCurrency': 'target',
+            'name': bankDetails.accountHolderName,
+            'email': affiliate.email,
+            'reference': `SocialStar earnings ${new Date().toISOString().split('T')[0]}`,
+            'receiverType': 'PERSON',
+            'accountNumber': bankDetails.accountNumber,
+            'abartn': bankDetails.routingNumber,
+            'accountType': (bankDetails.accountType === 'checking') ? 'CHECKING' : 'SAVINGS',
+            'addressFirstLine': bankDetails.addressLine1,
+            'addressCity': bankDetails.city,
+            'addressState': bankDetails.state,
+            'addressPostCode': bankDetails.zipCode,
+            'addressCountryCode': 'US'
+          };
 
-    if (wiseCSVData.length === 0) {
-      alert('No valid withdrawals to export (missing address data)');
-      return;
-    }
+          wiseCSVData.push(wiseRow);
+          successfulDecryptions.push(withdrawal.id);
+          
+        } catch (error) {
+          console.error('Error processing withdrawal:', withdrawal.id, error);
+          failedDecryptions.push(withdrawal.id);
+        }
+      }
 
-    // Convert to CSV with proper column order (exact from your function)
-    let csvContent = '';
-    
-    // Define the proper column order for Wise CSV (exact column names)
-    const wiseColumnOrder = [
-      'sourceCurrency',
-      'targetCurrency', 
-      'amount',
-      'amountCurrency',
-      'name',
-      'email',
-      'reference',
-      'receiverType',
-      'accountNumber',
-      'abartn',
-      'accountType',
-      'addressFirstLine',
-      'addressCity',
-      'addressState',
-      'addressPostCode',
-      'addressCountryCode'
-    ];
+      console.log(`✅ Successfully decrypted ${successfulDecryptions.length} withdrawals`);
+      
+      if (failedDecryptions.length > 0) {
+        console.warn(`⚠️ Failed to decrypt ${failedDecryptions.length} withdrawals:`, failedDecryptions);
+        alert(`Warning: ${failedDecryptions.length} withdrawals could not be decrypted and were skipped.\n\nSuccessfully processed: ${successfulDecryptions.length}\nFailed: ${failedDecryptions.length}\n\nCheck console for details.`);
+      }
 
-    // Create header row with only columns that exist in the data
-    const availableHeaders = wiseColumnOrder.filter(header => 
-      wiseCSVData.some(row => row.hasOwnProperty(header))
-    );
-    
-    csvContent = availableHeaders.join(',') + '\n';
-    
-    // Add data rows with proper escaping
-    wiseCSVData.forEach(row => {
-      const values = availableHeaders.map(header => {
-        const value = row[header] || '';
-        return `"${String(value).replace(/"/g, '""')}"`;
+      if (wiseCSVData.length === 0) {
+        alert('No valid withdrawals to export (decryption failures or missing data)');
+        return;
+      }
+
+      // Convert to CSV
+      const wiseColumnOrder = [
+        'sourceCurrency', 'targetCurrency', 'amount', 'amountCurrency', 'name', 'email', 
+        'reference', 'receiverType', 'accountNumber', 'abartn', 'accountType', 
+        'addressFirstLine', 'addressCity', 'addressState', 'addressPostCode', 'addressCountryCode'
+      ];
+
+      let csvContent = wiseColumnOrder.join(',') + '\n';
+      
+      wiseCSVData.forEach(row => {
+        const values = wiseColumnOrder.map(header => {
+          const value = row[header] || '';
+          return `"${String(value).replace(/"/g, '""')}"`;
+        });
+        csvContent += values.join(',') + '\n';
       });
-      csvContent += values.join(',') + '\n';
-    });
 
-    // Download CSV
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `wise_payouts_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+      // Download CSV
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `wise_payouts_decrypted_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
 
-    console.log('Generated Wise CSV with', wiseCSVData.length, 'withdrawals');
+      console.log('📥 Generated Wise CSV with', wiseCSVData.length, 'decrypted withdrawals');
+      
+      if (failedDecryptions.length === 0) {
+        alert(`🎉 Successfully generated CSV with ${wiseCSVData.length} decrypted withdrawals!`);
+      }
+      
+    } catch (error) {
+      console.error('Error generating CSV:', error);
+      alert('Error generating CSV: ' + error.message);
+    } finally {
+      setProcessingAction(false);
+    }
   };
 
   // Mark batch as completed
@@ -258,7 +304,7 @@ const AdminDashboard = () => {
             SocialStar Admin Dashboard
           </h1>
           <p style={{ margin: '5px 0 0 0', opacity: '0.8', fontSize: '14px' }}>
-            Withdrawal management & payout processing
+            Withdrawal management & payout processing • 🔒 Bank details encrypted & auto-decrypted
           </p>
         </div>
       </header>
@@ -292,6 +338,24 @@ const AdminDashboard = () => {
       </div>
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '30px 20px' }}>
+        
+        {/* Decryption Error Alert */}
+        {decryptionErrors.size > 0 && (
+          <div style={{
+            backgroundColor: '#fff3cd',
+            border: '1px solid #ffeaa7',
+            borderRadius: '8px',
+            padding: '15px',
+            marginBottom: '20px'
+          }}>
+            <h4 style={{ margin: '0 0 10px 0', color: '#856404' }}>
+              ⚠️ Decryption Issues Detected
+            </h4>
+            <p style={{ margin: '0', fontSize: '14px', color: '#856404' }}>
+              {decryptionErrors.size} withdrawal(s) have bank details that cannot be decrypted.
+            </p>
+          </div>
+        )}
         
         {/* Overview Tab */}
         {selectedTab === 'overview' && (
@@ -391,35 +455,37 @@ const AdminDashboard = () => {
                     {stats.approvedCount} withdrawals ready • ${stats.approvedAmount.toFixed(2)} total
                   </p>
                   <p style={{ margin: '0', fontSize: '14px', color: '#495057' }}>
-                    Download CSV and upload to Wise for processing
+                    🔓 Download CSV with automatically decrypted bank details and upload to Wise
                   </p>
                 </div>
                 
                 <div style={{ display: 'flex', gap: '15px' }}>
                   <button
                     onClick={generateWiseCSV}
+                    disabled={processingAction}
                     style={{
                       padding: '12px 25px',
-                      backgroundColor: '#007bff',
+                      backgroundColor: processingAction ? '#6c757d' : '#007bff',
                       color: 'white',
                       border: 'none',
                       borderRadius: '6px',
-                      cursor: 'pointer',
+                      cursor: processingAction ? 'not-allowed' : 'pointer',
                       fontWeight: 'bold'
                     }}
                   >
-                    📥 Download Wise CSV
+                    {processingAction ? '🔓 Decrypting...' : '📥 Download Decrypted CSV'}
                   </button>
                   
                   <button
                     onClick={markBatchCompleted}
+                    disabled={processingAction}
                     style={{
                       padding: '12px 25px',
-                      backgroundColor: '#28a745',
+                      backgroundColor: processingAction ? '#6c757d' : '#28a745',
                       color: 'white',
                       border: 'none',
                       borderRadius: '6px',
-                      cursor: 'pointer',
+                      cursor: processingAction ? 'not-allowed' : 'pointer',
                       fontWeight: 'bold'
                     }}
                   >
@@ -582,21 +648,15 @@ const AdminDashboard = () => {
                           </div>
                         </div>
                         
-                        {/* Bank Details */}
+                        {/* Bank Details - Encrypted Notice */}
                         <div style={{ 
                           backgroundColor: '#f8f9fa',
                           padding: '10px',
                           borderRadius: '6px',
                           marginBottom: '15px'
                         }}>
-                          <p style={{ margin: '0 0 5px 0', fontSize: '14px' }}>
-                            <strong>Bank:</strong> {withdrawal.bankAccount.bankName}
-                          </p>
-                          <p style={{ margin: '0 0 5px 0', fontSize: '14px' }}>
-                            <strong>Account:</strong> ****{withdrawal.bankAccount.accountNumber.slice(-4)}
-                          </p>
-                          <p style={{ margin: '0', fontSize: '14px' }}>
-                            <strong>Routing:</strong> {withdrawal.bankAccount.routingNumber}
+                          <p style={{ margin: '0', fontSize: '14px', color: '#6c757d' }}>
+                            🔒 Bank details encrypted • Will be decrypted during CSV export
                           </p>
                         </div>
                         
@@ -836,7 +896,7 @@ const AdminDashboard = () => {
                           amount: w.amount,
                           status: w.status,
                           requestedAt: w.requestedAt.toISOString(),
-                          bankName: w.bankAccount.bankName
+                          encrypted: w.encryptedBankAccount ? 'Yes' : 'No'
                         };
                       });
                       
@@ -932,11 +992,17 @@ const AdminDashboard = () => {
                         '0.00'}
                     </strong>
                   </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>🔒 Encrypted:</span>
+                    <strong style={{ color: '#28a745' }}>
+                      {withdrawals.filter(w => w.encryptedBankAccount).length} / {withdrawals.length}
+                    </strong>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Recent Activity Chart Placeholder */}
+            {/* Encryption Status Chart */}
             <div style={{ 
               backgroundColor: 'white',
               padding: '25px',
@@ -945,7 +1011,7 @@ const AdminDashboard = () => {
               marginTop: '20px',
               textAlign: 'center'
             }}>
-              <h3 style={{ marginBottom: '20px' }}>Withdrawal Trends</h3>
+              <h3 style={{ marginBottom: '20px' }}>Security Status</h3>
               <div style={{ 
                 height: '200px',
                 backgroundColor: '#f8f9fa',
@@ -953,11 +1019,16 @@ const AdminDashboard = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#6c757d'
+                color: '#6c757d',
+                flexDirection: 'column'
               }}>
-                📈 Chart integration coming soon
-                <br />
-                <small>(Recharts/Chart.js integration placeholder)</small>
+                <div style={{ fontSize: '48px', marginBottom: '10px' }}>🔒</div>
+                <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#28a745' }}>
+                  {withdrawals.filter(w => w.encryptedBankAccount).length} of {withdrawals.length} withdrawals encrypted
+                </div>
+                <div style={{ fontSize: '14px', marginTop: '5px' }}>
+                  Bank details are secured with AES-256-GCM encryption
+                </div>
               </div>
             </div>
           </div>
@@ -993,7 +1064,9 @@ const AdminDashboard = () => {
               animation: 'spin 1s linear infinite',
               margin: '0 auto 15px'
             }}></div>
-            <p style={{ margin: '0', fontSize: '16px' }}>Processing...</p>
+            <p style={{ margin: '0', fontSize: '16px' }}>
+              {processingAction ? 'Decrypting bank details & processing...' : 'Processing...'}
+            </p>
           </div>
         </div>
       )}
