@@ -21,10 +21,6 @@ const LandingPage = () => {
   // Calculate estimated ratings based on followers and engagement
   const estimatedRatings = Math.round((followers * engagementRate) / 100);
   
-  const handleDashboard = (mode = 'signup') => {
-    navigate('/dashboard', { state: { authMode: mode } });
-  };
-
   const nextStep = () => {
     if (currentStep < 3) {
       // Pre-load the next image if it exists
@@ -588,22 +584,6 @@ const LandingPage = () => {
               
             </h1>
           </div>
-          
-          <button
-            onClick={() => handleDashboard('login')}
-            style={{
-              color: 'white',
-              background: 'transparent',
-              border: 'none',
-              fontWeight: '600',
-              cursor: 'pointer',
-              fontSize: '16px'
-            }}
-            onMouseOver={(e) => e.target.style.color = '#60a5fa'}
-            onMouseOut={(e) => e.target.style.color = 'white'}
-          >
-            Sign In
-          </button>
         </div>
       </header>
 
@@ -729,7 +709,10 @@ const LandingPage = () => {
                   </button>
                 ) : (
                   <button
-                    onClick={() => handleDashboard('signup')}
+                    onClick={() => {
+                      // Open App Store URL
+                      window.open('https://apps.apple.com/app/socialstar-partners/id6751140592', '_blank');
+                    }}
                     style={{
                       width: '100%',
                       padding: '16px 24px',
