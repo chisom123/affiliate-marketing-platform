@@ -566,7 +566,7 @@ const RatingPage = () => {
         earnings: increment(0.25),
         lastRatedAt: serverTimestamp()
       });
-
+      
       await updateDoc(doc(db, 'affiliates', affiliateId), {
         totalRatings: increment(1),
         totalEarnings: increment(0.25), 
