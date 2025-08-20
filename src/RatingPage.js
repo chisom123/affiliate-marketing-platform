@@ -869,6 +869,26 @@ if (submitted) {
                 </button>
               ))}
             </div>
+
+            {/* Spinner shown during submission */}
+            {submitting && (
+              <div style={{ 
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginTop: '40px'
+              }}>
+                <div style={{
+                  width: '24px',
+                  height: '24px',
+                  border: '4px solid #323862',
+                  borderTop: '4px solid #fff',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }}></div>
+              </div>
+            )}
+            
           </div>
         </div>
         <a href="https://apps.apple.com/gb/app/socialstar-app/id6473705189" target="_blank" style={{ textDecoration: 'none', cursor: 'pointer' }}>
