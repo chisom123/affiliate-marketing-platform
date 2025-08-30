@@ -488,7 +488,7 @@ const EarningsCalculator = () => {
               onMouseOver={(e) => e.target.style.backgroundColor = '#3b5de6'}
               onMouseOut={(e) => e.target.style.backgroundColor = '#4169E1'}
             >
-              Start earning ${(estimatedRatings * 0.25).toFixed(2)} per story
+              Get Started
             </button>
           </div>
         </div>
