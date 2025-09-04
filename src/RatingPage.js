@@ -829,12 +829,26 @@ if (submitted) {
           <div style={{ marginBottom: '30px' }}>
             <p style={{
               color: '#fff',
-              marginBottom: '20px',
+              marginBottom: '10px',
               fontSize: '20px',
               fontWeight: 'bold',
               lineHeight: '28px'
               }}>
               Rate {affiliateData?.firstName ? `${affiliateData.firstName}'s` : 'this'} Story
+            </p>
+
+            <p style={{
+              color: '#fff',
+              marginBottom: '20px',
+              fontSize: '14px',
+              fontWeight: '600',
+              lineHeight: '20px',
+              backgroundColor: 'rgba(36, 48, 85, 0.6)',
+              borderRadius: '200px',
+              padding: '8px 16px',
+              display: 'inline-block'
+              }}>
+              Your rating is anonymous
             </p>
             
             <div style={{ 
