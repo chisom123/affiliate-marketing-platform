@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 
 const EarningsCalculator = () => {
-  const [followers, setFollowers] = useState(1000);
-  const [engagementRate, setEngagementRate] = useState(10);
+  const [stories, setStories] = useState(4);
+  const [ratings, setRatings] = useState(100);
 
-  // Define min/max values for followers and engagement
-  const minFollowers = 100;
-  const maxFollowers = 5000;
-  const followerStepSize = 100;
+  // Define min/max values for stories and ratings
+  const minStories = 1;
+  const maxStories = 10;
+  const storiesStepSize = 1;
 
-  const minEngagement = 5;
-  const maxEngagement = 50;
-  const engagementStepSize = 5;
+  const minRatings = 10;
+  const maxRatings = 500;
+  const ratingsStepSize = 10;
 
-  // Calculate estimated ratings based on followers and engagement
-  const estimatedRatings = Math.round((followers * engagementRate) / 100);
+  // Calculate total earnings (assuming $0.25 per rating)
+  const totalEarnings = stories * ratings * 0.25;
 
   // Spinner component
   const Spinner = () => (
@@ -106,7 +106,7 @@ const EarningsCalculator = () => {
               borderRadius: '8px',
               padding: '24px'
             }}>
-              {/* Followers Slider */}
+              {/* Stories Slider */}
               <div style={{ marginBottom: '10px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '10px' }}>
                   <div style={{ 
@@ -114,7 +114,7 @@ const EarningsCalculator = () => {
                     fontWeight: 'bold', 
                     color: 'white'
                   }}>
-                    {followers.toLocaleString()} Followers
+                    {stories} {stories === 1 ? 'Story' : 'Stories'}
                   </div>
                 </div>
                 
@@ -129,8 +129,8 @@ const EarningsCalculator = () => {
                   onMouseDown={(e) => {
                     e.preventDefault();
                     const rect = e.currentTarget.getBoundingClientRect();
-                    const thumb = e.currentTarget.querySelector('[data-followers-thumb]');
-                    const track = e.currentTarget.querySelector('[data-followers-track]');
+                    const thumb = e.currentTarget.querySelector('[data-stories-thumb]');
+                    const track = e.currentTarget.querySelector('[data-stories-track]');
                     
                     thumb.style.transition = 'none';
                     track.style.transition = 'none';
@@ -141,8 +141,8 @@ const EarningsCalculator = () => {
                       animationId = requestAnimationFrame(() => {
                         const x = clientX - rect.left;
                         const percentage = Math.max(0, Math.min(1, x / rect.width));
-                        const newValue = Math.round((percentage * (maxFollowers - minFollowers) + minFollowers) / followerStepSize) * followerStepSize;
-                        setFollowers(newValue);
+                        const newValue = Math.round((percentage * (maxStories - minStories) + minStories) / storiesStepSize) * storiesStepSize;
+                        setStories(newValue);
                       });
                     };
                     
@@ -164,8 +164,8 @@ const EarningsCalculator = () => {
                   onTouchStart={(e) => {
                     e.preventDefault();
                     const rect = e.currentTarget.getBoundingClientRect();
-                    const thumb = e.currentTarget.querySelector('[data-followers-thumb]');
-                    const track = e.currentTarget.querySelector('[data-followers-track]');
+                    const thumb = e.currentTarget.querySelector('[data-stories-thumb]');
+                    const track = e.currentTarget.querySelector('[data-stories-track]');
                     
                     thumb.style.transition = 'none';
                     track.style.transition = 'none';
@@ -176,8 +176,8 @@ const EarningsCalculator = () => {
                       animationId = requestAnimationFrame(() => {
                         const x = clientX - rect.left;
                         const percentage = Math.max(0, Math.min(1, x / rect.width));
-                        const newValue = Math.round((percentage * (maxFollowers - minFollowers) + minFollowers) / followerStepSize) * followerStepSize;
-                        setFollowers(newValue);
+                        const newValue = Math.round((percentage * (maxStories - minStories) + minStories) / storiesStepSize) * storiesStepSize;
+                        setStories(newValue);
                       });
                     };
                     
@@ -203,7 +203,7 @@ const EarningsCalculator = () => {
                     document.addEventListener('touchend', handleTouchEnd);
                   }}
                 >
-                  {/* Followers Slider Track */}
+                  {/* Stories Slider Track */}
                   <div style={{
                     position: 'relative',
                     width: '100%',
@@ -214,13 +214,13 @@ const EarningsCalculator = () => {
                   }}>
                     {/* Filled Track */}
                     <div 
-                      data-followers-track
+                      data-stories-track
                       style={{
                         position: 'absolute',
                         left: '0',
                         top: '0',
                         height: '100%',
-                        width: `${((followers - minFollowers) / (maxFollowers - minFollowers)) * 100}%`,
+                        width: `${((stories - minStories) / (maxStories - minStories)) * 100}%`,
                         background: 'linear-gradient(90deg, #FFFFFF 0%, #F8F9FA 100%)',
                         borderRadius: '4px',
                         transition: 'width 0.1s ease'
@@ -230,11 +230,11 @@ const EarningsCalculator = () => {
                   
                   {/* Custom Thumb */}
                   <div 
-                    data-followers-thumb
+                    data-stories-thumb
                     style={{
                       position: 'absolute',
                       top: '8px',
-                      left: `calc(${((followers - minFollowers) / (maxFollowers - minFollowers)) * 100}% - 10px)`,
+                      left: `calc(${((stories - minStories) / (maxStories - minStories)) * 100}% - 10px)`,
                       width: '18px',
                       height: '18px',
                       backgroundColor: '#FFFFFF',
@@ -249,7 +249,7 @@ const EarningsCalculator = () => {
                 </div>
               </div>
       
-              {/* Engagement Rate Slider */}
+              {/* Ratings Slider */}
               <div style={{ marginBottom: '10px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '16px' }}>
                   <div style={{ 
@@ -257,14 +257,7 @@ const EarningsCalculator = () => {
                     fontWeight: 'bold', 
                     color: 'white'
                   }}>
-                    {engagementRate}% Engagement
-                  </div>
-                  <div style={{ 
-                    fontSize: '14px', 
-                    color: 'rgba(255,255,255,0.6)',
-                    marginTop: '4px'
-                  }}>
-                    {estimatedRatings} ratings per story
+                    {ratings} Ratings{stories > 1 ? ' per Story' : ''}
                   </div>
                 </div>
                 
@@ -279,8 +272,8 @@ const EarningsCalculator = () => {
                   onMouseDown={(e) => {
                     e.preventDefault();
                     const rect = e.currentTarget.getBoundingClientRect();
-                    const thumb = e.currentTarget.querySelector('[data-engagement-thumb]');
-                    const track = e.currentTarget.querySelector('[data-engagement-track]');
+                    const thumb = e.currentTarget.querySelector('[data-ratings-thumb]');
+                    const track = e.currentTarget.querySelector('[data-ratings-track]');
                     
                     thumb.style.transition = 'none';
                     track.style.transition = 'none';
@@ -291,8 +284,8 @@ const EarningsCalculator = () => {
                       animationId = requestAnimationFrame(() => {
                         const x = clientX - rect.left;
                         const percentage = Math.max(0, Math.min(1, x / rect.width));
-                        const newValue = Math.round((percentage * (maxEngagement - minEngagement) + minEngagement) / engagementStepSize) * engagementStepSize;
-                        setEngagementRate(newValue);
+                        const newValue = Math.round((percentage * (maxRatings - minRatings) + minRatings) / ratingsStepSize) * ratingsStepSize;
+                        setRatings(newValue);
                       });
                     };
                     
@@ -314,8 +307,8 @@ const EarningsCalculator = () => {
                   onTouchStart={(e) => {
                     e.preventDefault();
                     const rect = e.currentTarget.getBoundingClientRect();
-                    const thumb = e.currentTarget.querySelector('[data-engagement-thumb]');
-                    const track = e.currentTarget.querySelector('[data-engagement-track]');
+                    const thumb = e.currentTarget.querySelector('[data-ratings-thumb]');
+                    const track = e.currentTarget.querySelector('[data-ratings-track]');
                     
                     thumb.style.transition = 'none';
                     track.style.transition = 'none';
@@ -326,8 +319,8 @@ const EarningsCalculator = () => {
                       animationId = requestAnimationFrame(() => {
                         const x = clientX - rect.left;
                         const percentage = Math.max(0, Math.min(1, x / rect.width));
-                        const newValue = Math.round((percentage * (maxEngagement - minEngagement) + minEngagement) / engagementStepSize) * engagementStepSize;
-                        setEngagementRate(newValue);
+                        const newValue = Math.round((percentage * (maxRatings - minRatings) + minRatings) / ratingsStepSize) * ratingsStepSize;
+                        setRatings(newValue);
                       });
                     };
                     
@@ -353,7 +346,7 @@ const EarningsCalculator = () => {
                     document.addEventListener('touchend', handleTouchEnd);
                   }}
                 >
-                  {/* Engagement Slider Track */}
+                  {/* Ratings Slider Track */}
                   <div style={{
                     position: 'relative',
                     width: '100%',
@@ -364,13 +357,13 @@ const EarningsCalculator = () => {
                   }}>
                     {/* Filled Track */}
                     <div 
-                      data-engagement-track
+                      data-ratings-track
                       style={{
                         position: 'absolute',
                         left: '0',
                         top: '0',
                         height: '100%',
-                        width: `${((engagementRate - minEngagement) / (maxEngagement - minEngagement)) * 100}%`,
+                        width: `${((ratings - minRatings) / (maxRatings - minRatings)) * 100}%`,
                         background: 'linear-gradient(90deg, #FFFFFF 0%, #F8F9FA 100%)',
                         borderRadius: '4px',
                         transition: 'width 0.1s ease'
@@ -380,11 +373,11 @@ const EarningsCalculator = () => {
                   
                   {/* Custom Thumb */}
                   <div 
-                    data-engagement-thumb
+                    data-ratings-thumb
                     style={{
                       position: 'absolute',
                       top: '8px',
-                      left: `calc(${((engagementRate - minEngagement) / (maxEngagement - minEngagement)) * 100}% - 10px)`,
+                      left: `calc(${((ratings - minRatings) / (maxRatings - minRatings)) * 100}% - 10px)`,
                       width: '18px',
                       height: '18px',
                       backgroundColor: '#FFFFFF',
@@ -399,59 +392,33 @@ const EarningsCalculator = () => {
                 </div>
               </div>
               
-              {/* Earnings Display */}
+              {/* Single Earnings Display */}
               <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                gap: '16px',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
                 background: 'rgba(255,255,255,0.1)',
                 borderRadius: '8px',
-                padding: '16px'
+                padding: '24px'
               }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ 
-                    fontSize: '16px', 
+                    fontSize: '18px', 
                     color: 'rgba(255,255,255,0.8)',
-                    marginBottom: '5px'
+                    marginBottom: '8px'
                   }}>
-                    Per Story
+                    Total Earnings
                   </div>
                   <div style={{ 
-                    fontSize: '24px', 
+                    fontSize: '36px', 
                     fontWeight: 'bold', 
                     color: 'white'
                   }}>
-                    ${(estimatedRatings * 0.25).toFixed(2)}
-                  </div>
-                </div>
-      
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ 
-                    fontSize: '16px', 
-                    color: 'rgba(255,255,255,0.8)',
-                    marginBottom: '5px'
-                  }}>
-                    Per Week*
-                  </div>
-                  <div style={{ 
-                    fontSize: '24px', 
-                    fontWeight: 'bold', 
-                    color: 'white'
-                  }}>
-                    ${(estimatedRatings * 0.25 * 7).toFixed(2)}
+                    ${totalEarnings.toFixed(2)}
                   </div>
                 </div>
               </div>
             </div>
-            <p style={{ 
-              color: '#B8C5D1',
-              fontSize: '16px',
-              marginTop: '20px',
-              fontWeight: '500',
-              textAlign: 'right'
-            }}>
-              *7 Stories
-            </p>
           </div>
         </div>
 
