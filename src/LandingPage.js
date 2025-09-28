@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 
 const EarningsCalculator = () => {
-  const [stories, setStories] = useState(4);
-  const [ratings, setRatings] = useState(100);
+  const [stories, setStories] = useState(1);
+  const [ratings, setRatings] = useState(50);
 
   // Define min/max values for stories and ratings
   const minStories = 1;
@@ -13,8 +13,8 @@ const EarningsCalculator = () => {
   const maxRatings = 500;
   const ratingsStepSize = 10;
 
-  // Calculate total earnings (assuming $0.25 per rating)
-  const totalEarnings = stories * ratings * 0.25;
+  // Calculate total earnings (assuming $1.0 per rating)
+  const totalEarnings = stories * ratings * 1.0;
 
   // Spinner component
   const Spinner = () => (
