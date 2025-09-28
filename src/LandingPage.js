@@ -422,7 +422,7 @@ const EarningsCalculator = () => {
           </div>
         </div>
 
-        {/* Fixed Bottom Button */}
+        {/* Fixed Bottom Button
         <div style={{ 
           position: 'fixed',
           bottom: '0',
@@ -458,7 +458,8 @@ const EarningsCalculator = () => {
               Get Started
             </button>
           </div>
-        </div>
+        </div> */}
+
       </main>
     </div>
   );
