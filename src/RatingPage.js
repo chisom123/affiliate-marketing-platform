@@ -675,8 +675,7 @@ if (submitted) {
       fontFamily: 'Arial, sans-serif',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px'
+      justifyContent: 'center'
     }}>
       <div style={{ 
         padding: '30px 20px',
