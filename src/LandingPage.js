@@ -13,8 +13,8 @@ const EarningsCalculator = () => {
   const maxRatings = 500;
   const ratingsStepSize = 10;
 
-  // Calculate total earnings (assuming $1.0 per rating)
-  const totalEarnings = stories * ratings * 1.0;
+  // Calculate total earnings (assuming $0.50 per rating)
+  const totalEarnings = stories * ratings * 0.50;
 
   // Spinner component
   const Spinner = () => (
