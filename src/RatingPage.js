@@ -668,6 +668,10 @@ if (error) {
 
 // Success state
 if (submitted) {
+  const prediction = linkData?.predictedRating;
+  const userRating = rating;
+  const hasPrediction = prediction && prediction > 0;
+  
   return (
     <div style={{ 
       minHeight: '100vh',
@@ -686,76 +690,128 @@ if (submitted) {
         <div style={{ 
           backgroundColor: '#1A2245',
           borderRadius: '12px',
-          padding: '40px 30px 0px 30px', // Remove bottom padding
+          padding: '20px 30px 0px 30px', // Remove bottom padding
           marginBottom: '30px'
         }}>
-          <h2 style={{ 
-            color: '#fff',
-            marginTop: '0px',
-            marginBottom: '30px',
-            fontSize: '22px',
-            fontWeight: 'bold'
-          }}>
-            Thanks for rating!
-          </h2>
 
-          {/* NEW: Average Rating Display */}
-          {averageRating && (
+        <p style={{ 
+          color: '#fff',
+          fontSize: '16px',
+          marginBottom: '30px',
+          fontWeight: '600',
+          textAlign: 'left',
+          lineHeight: '20px'
+        }}>
+          {affiliateData.firstName} predicted what you would rate
+        </p>
+
+          {/* NEW: Prediction vs Your Rating Comparison */}
+          {hasPrediction && (
             <div style={{ 
               backgroundColor: '#243055',
               borderRadius: '12px',
-              padding: '20px',
+              padding: '25px 20px',
               marginBottom: '20px'
             }}>
-              <p style={{ 
-                color: '#B8C5D1',
-                fontSize: '15px',
-                margin: '0 0 10px 0',
-                fontWeight: '500'
-              }}>
-                Average Rating
-              </p>
+              
               <div style={{ 
                 display: 'flex',
+                justifyContent: 'space-around',
                 alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '10px'
+                gap: '15px'
               }}>
-                <div style={{ 
-                  fontSize: '32px',
-                  fontWeight: 'bold',
-                  color: '#ffc107',
-                  marginRight: '10px'
-                }}>
-                  {averageRating.toFixed(1)}
-                </div>
-                <div style={{ 
-                  display: 'flex',
-                  gap: '2px'
-                }}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <span
-                      key={star}
-                      style={{
-                        fontSize: '20px',
-                        color: star <= Math.round(averageRating) ? '#ffc107' : '#dee2e6'
-                      }}
-                    >
+                {/* Creator's Prediction */}
+                <div style={{ flex: 1 }}>
+                  <p style={{ 
+                    color: '#B8C5D1',
+                    fontSize: '14px',
+                    margin: '0 0 8px 0',
+                    fontWeight: '500',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    Prediction
+                  </p>
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '5px'
+                  }}>
+                    <span style={{ 
+                      fontSize: '28px',
+                      fontWeight: 'bold',
+                      color: '#fff'
+                    }}>
+                      {prediction}
+                    </span>
+                    <span style={{ 
+                      fontSize: '20px',
+                      color: '#fff'
+                    }}>
                       ★
                     </span>
-                  ))}
+                  </div>
+                </div>
+
+                {/* VS Divider */}
+                <div style={{ 
+                  color: '#B8C5D1',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  opacity: 0.5
+                }}>
+                  VS
+                </div>
+
+                {/* Your Rating */}
+                <div style={{ flex: 1 }}>
+                  <p style={{ 
+                    color: '#B8C5D1',
+                    fontSize: '14px',
+                    margin: '0 0 8px 0',
+                    fontWeight: '500',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    Your Rating
+                  </p>
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '5px'
+                  }}>
+                    <span style={{ 
+                      fontSize: '28px',
+                      fontWeight: 'bold',
+                      color: '#ffc107'
+                    }}>
+                      {userRating}
+                    </span>
+                    <span style={{ 
+                      fontSize: '20px',
+                      color: '#ffc107'
+                    }}>
+                      ★
+                    </span>
+                  </div>
                 </div>
               </div>
-              <p style={{ 
-                color: '#B8C5D1',
-                fontSize: '15px',
-                margin: '0',
-                fontWeight: '500'
-              }}>
-                {totalRatingsCount} rater{totalRatingsCount !== 1 ? 's' : ''}
-              </p>
             </div>
           )}
+
+          <p style={{ 
+            color: '#B8C5D1',
+            fontSize: '15px',
+            marginBottom: '0px',
+            fontWeight: '500',
+            lineHeight: '20px'
+          }}>
+            {affiliateData.firstName} used SocialStar to make predictions
+          </p>
 
           <button
               onClick={() => window.open('https://apps.apple.com/app/socialstar-app/id6473705189', '_blank')}
