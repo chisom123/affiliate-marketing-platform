@@ -6,7 +6,7 @@ const LandingPage = () => {
   const [imageLoading, setImageLoading] = useState({});
   const navigate = useNavigate();
   
-  const [followers, setFollowers] = useState(5000);
+  const [followers, setFollowers] = useState(1000);
   const [engagementRate, setEngagementRate] = useState(1.5);
 
   const minFollowers = 1000;
@@ -328,9 +328,9 @@ const LandingPage = () => {
                     {engagementRate}% Engagement
                   </div>
                   <div style={{ 
-                    fontSize: '14px', 
+                    fontSize: '16px', 
                     color: 'rgba(255,255,255,0.6)',
-                    marginTop: '4px'
+                    marginTop: '6px'
                   }}>
                     {estimatedRatings} ratings per story
                   </div>
