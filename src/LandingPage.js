@@ -6,12 +6,12 @@ const LandingPage = () => {
   const [imageLoading, setImageLoading] = useState({});
   const navigate = useNavigate();
   
-  const [followers, setFollowers] = useState(1000);
+  const [followers, setFollowers] = useState(5000);
   const [engagementRate, setEngagementRate] = useState(1.5);
 
   const minFollowers = 1000;
-  const maxFollowers = 50000;
-  const followerStepSize = 1000;
+  const maxFollowers = 75000;
+  const followerStepSize = 500;
 
   const minEngagement = 0.5;
   const maxEngagement = 5;
