@@ -17,10 +17,15 @@ const LandingPage = () => {
   const maxEngagement = 5;
   const engagementStepSize = 0.5;
 
-  const estimatedRatings = Math.round((followers * engagementRate) / 100);
+  // This is no longer needed but kept for completeness in the unused variables:
+  // const estimatedRatings = Math.round((followers * engagementRate) / 100);
   
+  // *** MODIFICATION 2: Update the maximum step to 1 (steps.length - 1) ***
+  const maxStepsIndex = 1; // Since steps array will have 2 items (0 and 1)
+
   const nextStep = () => {
-    if (currentStep < 2) {
+    // Current step check is updated from 'currentStep < 2' to 'currentStep < maxStepsIndex'
+    if (currentStep < maxStepsIndex) { 
       if (currentStep === 0) {
         const nextImageKey = `step_2`;
         setImageLoading(prev => ({ ...prev, [nextImageKey]: true }));
@@ -83,6 +88,7 @@ const LandingPage = () => {
     return () => document.head.removeChild(style);
   }, []);
 
+  // *** MODIFICATION 1: Remove the last step from the array ***
   const steps = [
     {
       title: "Add Rating Link",
@@ -93,12 +99,13 @@ const LandingPage = () => {
       title: "Get Ratings",
       subtitle: "Your followers tap the link and rate",
       content: "getRatings"
-    },
-    {
-      title: "How much could you earn?",
-      subtitle: "Get paid based on ratings",
-      content: "getPaid"
     }
+    // Removed: 
+    // {
+    //   title: "How much could you earn?",
+    //   subtitle: "Get paid based on ratings",
+    //   content: "getPaid"
+    // }
   ];
 
   const renderImageWithPlaceholder = (src, alt, imageKey, maxWidth = '250px') => {
@@ -160,6 +167,7 @@ const LandingPage = () => {
         );
 
       case 1:
+        // *** MODIFICATION 3: Case 2 (earnings) is now case 1 (get ratings) ***
         return (
           <div style={{ textAlign: 'center' }}>
             {renderImageWithPlaceholder(
@@ -171,327 +179,7 @@ const LandingPage = () => {
           </div>
         );
 
-      case 2:
-        return (
-          <div>
-            <div style={{
-              background: 'rgba(255,255,255,0.1)',
-              borderRadius: '8px',
-              padding: '24px'
-            }}>
-              <div style={{ marginBottom: '10px' }}>
-                <div style={{ textAlign: 'center', marginBottom: '10px' }}>
-                  <div style={{ 
-                    fontSize: '20px', 
-                    fontWeight: 'bold', 
-                    color: 'white'
-                  }}>
-                    {followers.toLocaleString()} Followers
-                  </div>
-                </div>
-                
-                <div 
-                  style={{ 
-                    position: 'relative', 
-                    marginBottom: '16px',
-                    padding: '16px 0',
-                    cursor: 'pointer',
-                    touchAction: 'none'
-                  }}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const thumb = e.currentTarget.querySelector('[data-followers-thumb]');
-                    const track = e.currentTarget.querySelector('[data-followers-track]');
-                    
-                    thumb.style.transition = 'none';
-                    track.style.transition = 'none';
-                    
-                    let animationId;
-                    const updateValue = (clientX) => {
-                      if (animationId) cancelAnimationFrame(animationId);
-                      animationId = requestAnimationFrame(() => {
-                        const x = clientX - rect.left;
-                        const percentage = Math.max(0, Math.min(1, x / rect.width));
-                        const newValue = Math.round((percentage * (maxFollowers - minFollowers) + minFollowers) / followerStepSize) * followerStepSize;
-                        setFollowers(newValue);
-                      });
-                    };
-                    
-                    updateValue(e.clientX);
-                    
-                    const handleMouseMove = (e) => updateValue(e.clientX);
-                    const handleMouseUp = () => {
-                      thumb.style.transition = 'left 0.1s ease';
-                      track.style.transition = 'width 0.1s ease';
-                      
-                      document.removeEventListener('mousemove', handleMouseMove);
-                      document.removeEventListener('mouseup', handleMouseUp);
-                      if (animationId) cancelAnimationFrame(animationId);
-                    };
-                    
-                    document.addEventListener('mousemove', handleMouseMove);
-                    document.addEventListener('mouseup', handleMouseUp);
-                  }}
-                  onTouchStart={(e) => {
-                    e.preventDefault();
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const thumb = e.currentTarget.querySelector('[data-followers-thumb]');
-                    const track = e.currentTarget.querySelector('[data-followers-track]');
-                    
-                    thumb.style.transition = 'none';
-                    track.style.transition = 'none';
-                    
-                    let animationId;
-                    const updateValue = (clientX) => {
-                      if (animationId) cancelAnimationFrame(animationId);
-                      animationId = requestAnimationFrame(() => {
-                        const x = clientX - rect.left;
-                        const percentage = Math.max(0, Math.min(1, x / rect.width));
-                        const newValue = Math.round((percentage * (maxFollowers - minFollowers) + minFollowers) / followerStepSize) * followerStepSize;
-                        setFollowers(newValue);
-                      });
-                    };
-                    
-                    const touch = e.touches[0];
-                    updateValue(touch.clientX);
-                    
-                    const handleTouchMove = (e) => {
-                      e.preventDefault();
-                      const touch = e.touches[0];
-                      updateValue(touch.clientX);
-                    };
-                    
-                    const handleTouchEnd = () => {
-                      thumb.style.transition = 'left 0.1s ease';
-                      track.style.transition = 'width 0.1s ease';
-                      
-                      document.removeEventListener('touchmove', handleTouchMove);
-                      document.removeEventListener('touchend', handleTouchEnd);
-                      if (animationId) cancelAnimationFrame(animationId);
-                    };
-                    
-                    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-                    document.addEventListener('touchend', handleTouchEnd);
-                  }}
-                >
-                  <div style={{
-                    position: 'relative',
-                    width: '100%',
-                    height: '8px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                    borderRadius: '4px',
-                    overflow: 'hidden'
-                  }}>
-                    <div 
-                      data-followers-track
-                      style={{
-                        position: 'absolute',
-                        left: '0',
-                        top: '0',
-                        height: '100%',
-                        width: `${((followers - minFollowers) / (maxFollowers - minFollowers)) * 100}%`,
-                        background: 'linear-gradient(90deg, #FFFFFF 0%, #F8F9FA 100%)',
-                        borderRadius: '4px',
-                        transition: 'width 0.1s ease'
-                      }} 
-                    />
-                  </div>
-                  
-                  <div 
-                    data-followers-thumb
-                    style={{
-                      position: 'absolute',
-                      top: '8px',
-                      left: `calc(${((followers - minFollowers) / (maxFollowers - minFollowers)) * 100}% - 10px)`,
-                      width: '18px',
-                      height: '18px',
-                      backgroundColor: '#FFFFFF',
-                      border: '3px solid white',
-                      borderRadius: '50%',
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-                      transition: 'left 0.1s ease',
-                      cursor: 'grab',
-                      pointerEvents: 'none'
-                    }}
-                  />
-                </div>
-              </div>
-      
-              <div style={{ marginBottom: '10px' }}>
-                <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-                  <div style={{ 
-                    fontSize: '20px', 
-                    fontWeight: 'bold', 
-                    color: 'white'
-                  }}>
-                    {engagementRate}% Engagement
-                  </div>
-                  <div style={{ 
-                    fontSize: '16px', 
-                    color: 'rgba(255,255,255,0.6)',
-                    marginTop: '6px'
-                  }}>
-                    {estimatedRatings} ratings per story
-                  </div>
-                </div>
-                
-                <div 
-                  style={{ 
-                    position: 'relative', 
-                    marginBottom: '16px',
-                    padding: '16px 0',
-                    cursor: 'pointer',
-                    touchAction: 'none'
-                  }}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const thumb = e.currentTarget.querySelector('[data-engagement-thumb]');
-                    const track = e.currentTarget.querySelector('[data-engagement-track]');
-                    
-                    thumb.style.transition = 'none';
-                    track.style.transition = 'none';
-                    
-                    let animationId;
-                    const updateValue = (clientX) => {
-                      if (animationId) cancelAnimationFrame(animationId);
-                      animationId = requestAnimationFrame(() => {
-                        const x = clientX - rect.left;
-                        const percentage = Math.max(0, Math.min(1, x / rect.width));
-                        const newValue = Math.round((percentage * (maxEngagement - minEngagement) + minEngagement) / engagementStepSize) * engagementStepSize;
-                        setEngagementRate(newValue);
-                      });
-                    };
-                    
-                    updateValue(e.clientX);
-                    
-                    const handleMouseMove = (e) => updateValue(e.clientX);
-                    const handleMouseUp = () => {
-                      thumb.style.transition = 'left 0.1s ease';
-                      track.style.transition = 'width 0.1s ease';
-                      
-                      document.removeEventListener('mousemove', handleMouseMove);
-                      document.removeEventListener('mouseup', handleMouseUp);
-                      if (animationId) cancelAnimationFrame(animationId);
-                    };
-                    
-                    document.addEventListener('mousemove', handleMouseMove);
-                    document.addEventListener('mouseup', handleMouseUp);
-                  }}
-                  onTouchStart={(e) => {
-                    e.preventDefault();
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const thumb = e.currentTarget.querySelector('[data-engagement-thumb]');
-                    const track = e.currentTarget.querySelector('[data-engagement-track]');
-                    
-                    thumb.style.transition = 'none';
-                    track.style.transition = 'none';
-                    
-                    let animationId;
-                    const updateValue = (clientX) => {
-                      if (animationId) cancelAnimationFrame(animationId);
-                      animationId = requestAnimationFrame(() => {
-                        const x = clientX - rect.left;
-                        const percentage = Math.max(0, Math.min(1, x / rect.width));
-                        const newValue = Math.round((percentage * (maxEngagement - minEngagement) + minEngagement) / engagementStepSize) * engagementStepSize;
-                        setEngagementRate(newValue);
-                      });
-                    };
-                    
-                    const touch = e.touches[0];
-                    updateValue(touch.clientX);
-                    
-                    const handleTouchMove = (e) => {
-                      e.preventDefault();
-                      const touch = e.touches[0];
-                      updateValue(touch.clientX);
-                    };
-                    
-                    const handleTouchEnd = () => {
-                      thumb.style.transition = 'left 0.1s ease';
-                      track.style.transition = 'width 0.1s ease';
-                      
-                      document.removeEventListener('touchmove', handleTouchMove);
-                      document.removeEventListener('touchend', handleTouchEnd);
-                      if (animationId) cancelAnimationFrame(animationId);
-                    };
-                    
-                    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-                    document.addEventListener('touchend', handleTouchEnd);
-                  }}
-                >
-                  <div style={{
-                    position: 'relative',
-                    width: '100%',
-                    height: '8px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                    borderRadius: '4px',
-                    overflow: 'hidden'
-                  }}>
-                    <div 
-                      data-engagement-track
-                      style={{
-                        position: 'absolute',
-                        left: '0',
-                        top: '0',
-                        height: '100%',
-                        width: `${((engagementRate - minEngagement) / (maxEngagement - minEngagement)) * 100}%`,
-                        background: 'linear-gradient(90deg, #FFFFFF 0%, #F8F9FA 100%)',
-                        borderRadius: '4px',
-                        transition: 'width 0.1s ease'
-                      }} 
-                    />
-                  </div>
-                  
-                  <div 
-                    data-engagement-thumb
-                    style={{
-                      position: 'absolute',
-                      top: '8px',
-                      left: `calc(${((engagementRate - minEngagement) / (maxEngagement - minEngagement)) * 100}% - 10px)`,
-                      width: '18px',
-                      height: '18px',
-                      backgroundColor: '#FFFFFF',
-                      border: '3px solid white',
-                      borderRadius: '50%',
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-                      transition: 'left 0.1s ease',
-                      cursor: 'grab',
-                      pointerEvents: 'none'
-                    }}
-                  />
-                </div>
-              </div>
-              
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                gap: '16px',
-                background: 'rgba(255,255,255,0.1)',
-                borderRadius: '8px',
-                padding: '16px'
-              }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ 
-                    fontSize: '16px', 
-                    color: 'rgba(255,255,255,0.8)',
-                    marginBottom: '5px'
-                  }}>
-                    Per Story
-                  </div>
-                  <div style={{ 
-                    fontSize: '24px', 
-                    fontWeight: 'bold', 
-                    color: 'white'
-                  }}>
-                    ${(estimatedRatings * 0.50).toFixed(2)}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
+      // Removed case 2 (earnings step) entirely
 
       default:
         return null;
@@ -558,7 +246,8 @@ const LandingPage = () => {
                   height: '100%',
                   backgroundColor: '#4169E1',
                   transition: 'width 0.5s ease',
-                  width: `${((currentStep + 1) / steps.length) * 100}%`
+                  // *** MODIFICATION 4: Progress bar calculation updated to use steps.length (which is now 2) ***
+                  width: `${((currentStep + 1) / steps.length) * 100}%` 
                 }}
               />
             </div>
@@ -608,7 +297,8 @@ const LandingPage = () => {
               zIndex: 50
             }}>
               <div style={{ maxWidth: '500px', margin: '0 auto' }}>
-                {currentStep < 2 ? (
+                {/* Current step check is updated from 'currentStep < 2' to 'currentStep < maxStepsIndex' (which is 1) */}
+                {currentStep < maxStepsIndex ? ( 
                   <button
                     onClick={nextStep}
                     style={{
@@ -630,12 +320,12 @@ const LandingPage = () => {
                     Next
                   </button>
                 ) : (
-                  // The text and onClick action of this button have been updated.
+                  // This will be displayed on the final step (now step 1)
                   <button
                     onClick={goToStart}
                     style={{
                       width: '100%',
-                      padding: '16px 24px',
+                      padding: '16px 32px',
                       backgroundColor: '#4169E1',
                       color: 'white',
                       borderRadius: '200px',
@@ -643,13 +333,13 @@ const LandingPage = () => {
                       transition: 'all 0.3s ease',
                       border: 'none',
                       cursor: 'pointer',
-                      fontSize: '16px',
+                      fontSize: '18px',
                       boxShadow: '0 4px 20px rgba(65, 105, 225, 0.3)'
                     }}
                     onMouseOver={(e) => e.target.style.backgroundColor = '#3b5de6'}
                     onMouseOut={(e) => e.target.style.backgroundColor = '#4169E1'}
                   >
-                    Back to Start
+                    Back
                   </button>
                 )}
               </div>
