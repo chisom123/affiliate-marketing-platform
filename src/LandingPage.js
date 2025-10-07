@@ -151,7 +151,7 @@ const LandingPage = () => {
         return (
           <div style={{ textAlign: 'center' }}>
             {renderImageWithPlaceholder(
-              "https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/IMG_4942.PNG?alt=media&token=16455dcf-3839-4b10-8201-6d7d6f29048a",
+              "https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/IMG_4947.PNG?alt=media&token=f479d885-4034-4412-81c3-33adbd5a220e",
               "Instagram story with rating link",
               "step_1",
               "250px"
