@@ -9,6 +9,8 @@ const AdminDashboard = () => {
   const [selectedTab, setSelectedTab] = useState('overview');
   const [withdrawals, setWithdrawals] = useState([]);
   const [affiliates, setAffiliates] = useState([]);
+  const [ratingLinks, setRatingLinks] = useState([]);
+  const [linkAnalytics, setLinkAnalytics] = useState({});
   const [loading, setLoading] = useState(true);
   const [selectedWithdrawals, setSelectedWithdrawals] = useState([]);
   const [processingAction, setProcessingAction] = useState(false);
@@ -42,13 +44,67 @@ const AdminDashboard = () => {
       }
     );
 
+    const unsubscribeLinks = onSnapshot(
+      query(collection(db, 'rating_links'), orderBy('createdAt', 'desc')),
+      (snapshot) => {
+        const linksData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+          expiresAt: doc.data().expiresAt?.toDate() || null,
+          lastOpenedAt: doc.data().lastOpenedAt?.toDate() || null,
+          lastRatedAt: doc.data().lastRatedAt?.toDate() || null
+        }));
+        setRatingLinks(linksData);
+      }
+    );
+
     return () => {
       unsubscribeWithdrawals();
       unsubscribeAffiliates();
+      unsubscribeLinks();
     };
   }, []);
 
-  // Update withdrawal status
+  useEffect(() => {
+    const calculateLinkAnalytics = async () => {
+      const analytics = {};
+      
+      for (const link of ratingLinks) {
+        const ratingsQuery = query(
+          collection(db, 'ratings'),
+          where('linkIdString', '==', link.linkId)
+        );
+        const ratingsSnapshot = await getDocs(ratingsQuery);
+        
+        const ratings = ratingsSnapshot.docs.map(doc => doc.data().rating);
+        const avgRating = ratings.length > 0 
+          ? (ratings.reduce((sum, r) => sum + r, 0) / ratings.length).toFixed(2)
+          : 0;
+        
+        const pageOpens = link.totalPageOpens || 0;
+        const totalRatings = link.totalRatings || 0;
+        const continueClicks = link.totalContinueClicks || 0;
+        
+        const ratingConversion = pageOpens > 0 ? ((totalRatings / pageOpens) * 100).toFixed(1) : 0;
+        const continueConversion = totalRatings > 0 ? ((continueClicks / totalRatings) * 100).toFixed(1) : 0;
+        
+        analytics[link.id] = {
+          avgRating,
+          ratingConversion,
+          continueConversion,
+          totalRatings: ratings.length
+        };
+      }
+      
+      setLinkAnalytics(analytics);
+    };
+
+    if (ratingLinks.length > 0) {
+      calculateLinkAnalytics();
+    }
+  }, [ratingLinks]);
+
   const updateWithdrawalStatus = async (withdrawalId, newStatus, rejectionReason = null) => {
     setProcessingAction(true);
     try {
@@ -274,7 +330,9 @@ const AdminDashboard = () => {
       const requestDate = w.requestedAt;
       return requestDate.toDateString() === today.toDateString();
     }).length,
-    totalAffiliates: affiliates.length
+    totalAffiliates: affiliates.length,
+    totalLinks: ratingLinks.length,
+    activeLinks: ratingLinks.filter(l => !l.expiresAt || l.expiresAt > new Date()).length
   };
 
   if (loading) {
@@ -314,6 +372,7 @@ const AdminDashboard = () => {
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex' }}>
           {[
             { id: 'overview', label: '📊 Overview' },
+            { id: 'links', label: '🔗 Rating Links' },
             { id: 'withdrawals', label: '💸 Withdrawals' },
             { id: 'affiliates', label: '👥 Affiliates' },
             { id: 'analytics', label: '📈 Analytics' }
@@ -546,7 +605,200 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Withdrawals Tab */}
+        {selectedTab === 'links' && (
+          <div>
+            <div style={{ 
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px'
+            }}>
+              <h2 style={{ margin: '0', color: '#495057' }}>Rating Links & Analytics</h2>
+            </div>
+
+            <div style={{ 
+              backgroundColor: 'white',
+              borderRadius: '10px',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+              overflow: 'hidden'
+            }}>
+              {ratingLinks.map((link) => {
+                const affiliate = affiliates.find(a => a.id === link.affiliateId);
+                const analytics = linkAnalytics[link.id] || {};
+                const isExpired = link.expiresAt && link.expiresAt < new Date();
+                
+                return (
+                  <div key={link.id} style={{ 
+                    padding: '20px',
+                    borderBottom: '1px solid #eee'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
+                      <div style={{ flex: 1 }}>
+                        <h4 style={{ margin: '0 0 5px 0', fontSize: '16px', fontWeight: 'bold' }}>
+                          {affiliate?.firstName} {affiliate?.lastName}
+                        </h4>
+                        <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#6c757d' }}>
+                          {affiliate?.email}
+                        </p>
+                        <p style={{ margin: '0', fontSize: '12px', color: '#6c757d', fontFamily: 'monospace' }}>
+                          Link ID: {link.linkId}
+                        </p>
+                      </div>
+                      
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{
+                          padding: '6px 12px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          backgroundColor: isExpired ? '#f8d7da' : '#d4edda',
+                          color: isExpired ? '#721c24' : '#155724'
+                        }}>
+                          {isExpired ? 'EXPIRED' : 'ACTIVE'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{ 
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                      gap: '15px',
+                      marginBottom: '15px'
+                    }}>
+                      <div style={{ 
+                        backgroundColor: '#f8f9fa',
+                        padding: '15px',
+                        borderRadius: '8px',
+                        textAlign: 'center'
+                      }}>
+                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
+                          Page Opens
+                        </p>
+                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#007bff' }}>
+                          {link.totalPageOpens || 0}
+                        </p>
+                      </div>
+
+                      <div style={{ 
+                        backgroundColor: '#f8f9fa',
+                        padding: '15px',
+                        borderRadius: '8px',
+                        textAlign: 'center'
+                      }}>
+                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
+                          Ratings
+                        </p>
+                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#28a745' }}>
+                          {link.totalRatings || 0}
+                        </p>
+                      </div>
+
+                      <div style={{ 
+                        backgroundColor: '#f8f9fa',
+                        padding: '15px',
+                        borderRadius: '8px',
+                        textAlign: 'center'
+                      }}>
+                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
+                          Avg Rating
+                        </p>
+                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#ffc107' }}>
+                          {analytics.avgRating || '0.00'} ★
+                        </p>
+                      </div>
+
+                      <div style={{ 
+                        backgroundColor: '#f8f9fa',
+                        padding: '15px',
+                        borderRadius: '8px',
+                        textAlign: 'center'
+                      }}>
+                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
+                          Continue Clicks
+                        </p>
+                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#6f42c1' }}>
+                          {link.totalContinueClicks || 0}
+                        </p>
+                      </div>
+
+                      <div style={{ 
+                        backgroundColor: '#f8f9fa',
+                        padding: '15px',
+                        borderRadius: '8px',
+                        textAlign: 'center'
+                      }}>
+                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
+                          Rating Conv.
+                        </p>
+                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#17a2b8' }}>
+                          {analytics.ratingConversion || 0}%
+                        </p>
+                      </div>
+
+                      <div style={{ 
+                        backgroundColor: '#f8f9fa',
+                        padding: '15px',
+                        borderRadius: '8px',
+                        textAlign: 'center'
+                      }}>
+                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
+                          Continue Conv.
+                        </p>
+                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#e83e8c' }}>
+                          {analytics.continueConversion || 0}%
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ 
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '12px',
+                      color: '#6c757d'
+                    }}>
+                      <div>
+                        <p style={{ margin: '0 0 3px 0' }}>
+                          Created: {link.createdAt.toLocaleDateString()}
+                        </p>
+                        {link.lastOpenedAt && (
+                          <p style={{ margin: '0 0 3px 0' }}>
+                            Last opened: {link.lastOpenedAt.toLocaleString()}
+                          </p>
+                        )}
+                        {link.lastRatedAt && (
+                          <p style={{ margin: '0' }}>
+                            Last rated: {link.lastRatedAt.toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                      
+                      {link.predictedRating && (
+                        <div style={{ 
+                          backgroundColor: '#e7f3ff',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          fontSize: '13px',
+                          fontWeight: 'bold',
+                          color: '#007bff'
+                        }}>
+                          Predicted: {link.predictedRating} ★
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {ratingLinks.length === 0 && (
+                <div style={{ padding: '40px', textAlign: 'center', color: '#6c757d' }}>
+                  No rating links yet
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {selectedTab === 'withdrawals' && (
           <div>
             <div style={{ 

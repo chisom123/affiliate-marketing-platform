@@ -17,6 +17,7 @@ import {
   orderBy
 } from 'firebase/firestore';
 import { useParams } from 'react-router-dom';
+import { Star } from 'lucide-react';
 
 // DEVELOPMENT BYPASS HELPER
 const isLocalDevelopment = () => {
@@ -396,12 +397,10 @@ const RatingPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [averageRating, setAverageRating] = useState(null);
   const [totalRatingsCount, setTotalRatingsCount] = useState(0);
-
-  // Check if user is in a valid browser
   const [isValidBrowser, setIsValidBrowser] = useState(false);
+  const [pageOpenTracked, setPageOpenTracked] = useState(false);
 
   useEffect(() => {
-    // Check browser environment immediately
     const browserCheck = detectSocialMediaApp();
     console.log('Browser check result:', browserCheck);
     
@@ -449,6 +448,18 @@ const RatingPage = () => {
           setAffiliateData(affiliateDoc.data());
         }
 
+        // NEW: Track page open (only once per load)
+        if (!pageOpenTracked) {
+
+          // Update link stats
+          await updateDoc(doc(db, 'rating_links', linkDoc.id), {
+            totalPageOpens: increment(1),
+            lastOpenedAt: serverTimestamp()
+          });
+          
+          setPageOpenTracked(true);
+        }
+
       } catch (error) {
         console.error('Error loading data:', error);
         setError('Failed to load rating page');
@@ -460,7 +471,7 @@ const RatingPage = () => {
     if (affiliateId && linkId && isValidBrowser) {
       loadData();
     }
-  }, [affiliateId, linkId, isValidBrowser]);
+  }, [affiliateId, linkId, isValidBrowser, pageOpenTracked]);
 
   const calculateAverageRating = async () => {
     try {
@@ -593,7 +604,16 @@ const RatingPage = () => {
     setSubmitting(false);
   };
 
-  // Loading state
+  // NEW: Handle continue button click
+  const handleContinueClick = async () => {
+    window.open('https://apps.apple.com/app/socialstar-app/id6473705189', '_blank');
+
+    // Update link stats
+    await updateDoc(doc(db, 'rating_links', linkData.id), {
+      totalContinueClicks: increment(1)
+    });
+  };
+
   if (loading) {
     return (
       <>
@@ -629,81 +649,75 @@ const RatingPage = () => {
     );
   }
 
-// Error state
-if (error) {
-  return (
-    <div style={{ 
-      minHeight: '100vh',
-      backgroundColor: '#10183C',
-      fontFamily: 'Arial, sans-serif',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px'
-    }}>
+  if (error) {
+    return (
       <div style={{ 
-        backgroundColor: '#1A2245',
-        borderRadius: '20px',
-        padding: '40px 30px',
-        maxWidth: '500px',
-        width: '100%',
-        textAlign: 'center'
-      }}>
-        
-        {/* Error Message */}
-        <p style={{ 
-          color: 'rgba(255,255,255,0.8)',
-          marginBottom: '30px',
-          fontWeight: 'normal',
-          fontSize: '18px',
-          lineHeight: '1.5'
-        }}>
-          {error}
-        </p>
-
-      </div>
-    </div>
-  );
-}
-
-// Success state
-if (submitted) {
-  const prediction = linkData?.predictedRating;
-  const userRating = rating;
-  const hasPrediction = prediction && prediction > 0;
-  
-  return (
-    <div style={{ 
-      minHeight: '100vh',
-      backgroundColor: '#10183C',
-      fontFamily: 'Arial, sans-serif',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}>
-      <div style={{ 
-        padding: '30px 20px',
-        textAlign: 'center',
-        width: '100%',
-        maxWidth: '500px'
+        minHeight: '100vh',
+        backgroundColor: '#10183C',
+        fontFamily: 'Arial, sans-serif',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px'
       }}>
         <div style={{ 
           backgroundColor: '#1A2245',
-          borderRadius: '12px',
-          padding: '20px 30px 0px 30px', // Remove bottom padding
-          marginBottom: '30px'
+          borderRadius: '20px',
+          padding: '40px 30px',
+          maxWidth: '500px',
+          width: '100%',
+          textAlign: 'center'
         }}>
+          <p style={{ 
+            color: 'rgba(255,255,255,0.8)',
+            marginBottom: '30px',
+            fontWeight: 'normal',
+            fontSize: '18px',
+            lineHeight: '1.5'
+          }}>
+            {error}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-        <p style={{ 
-          color: '#fff',
-          fontSize: '16px',
-          marginBottom: '30px',
-          fontWeight: '600',
-          textAlign: 'left',
-          lineHeight: '20px'
+  if (submitted) {
+    const prediction = linkData?.predictedRating;
+    const userRating = rating;
+    const hasPrediction = prediction && prediction > 0;
+    
+    return (
+      <div style={{ 
+        minHeight: '100vh',
+        backgroundColor: '#10183C',
+        fontFamily: 'Arial, sans-serif',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{ 
+          padding: '30px 20px',
+          textAlign: 'center',
+          width: '100%',
+          maxWidth: '500px'
         }}>
-          {affiliateData.firstName} predicted what you would rate
-        </p>
+          <div style={{ 
+            backgroundColor: '#1A2245',
+            borderRadius: '12px',
+            padding: '20px 30px 0px 30px',
+            marginBottom: '30px'
+          }}>
+            <p style={{ 
+              color: '#fff',
+              fontSize: '17px',
+              marginBottom: '30px',
+              fontWeight: '600',
+              textAlign: 'left',
+              lineHeight: '20px'
+            }}>
+              {affiliateData.firstName} predicted what you would rate
+            </p>
 
           {/* NEW: Prediction vs Your Rating Comparison */}
           {hasPrediction && (
@@ -724,9 +738,9 @@ if (submitted) {
                 <div style={{ flex: 1 }}>
                   <p style={{ 
                     color: '#B8C5D1',
-                    fontSize: '14px',
-                    margin: '0 0 8px 0',
-                    fontWeight: '500',
+                    fontSize: '15px',
+                    margin: '0 0 10px 0',
+                    fontWeight: '600',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -747,10 +761,10 @@ if (submitted) {
                       {prediction}
                     </span>
                     <span style={{ 
-                      fontSize: '20px',
-                      color: '#fff'
+                      color: '#fff',
+                      marginTop: '0.5px'
                     }}>
-                      ★
+                      <Star size={28} />
                     </span>
                   </div>
                 </div>
@@ -769,9 +783,9 @@ if (submitted) {
                 <div style={{ flex: 1 }}>
                   <p style={{ 
                     color: '#B8C5D1',
-                    fontSize: '14px',
-                    margin: '0 0 8px 0',
-                    fontWeight: '500',
+                    fontSize: '15px',
+                    margin: '0 0 10px 0',
+                    fontWeight: '600',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -792,10 +806,10 @@ if (submitted) {
                       {userRating}
                     </span>
                     <span style={{ 
-                      fontSize: '20px',
-                      color: '#ffc107'
+                      color: '#ffc107',
+                      marginTop: '0.5px'
                     }}>
-                      ★
+                      <Star size={28} />
                     </span>
                   </div>
                 </div>
@@ -803,18 +817,8 @@ if (submitted) {
             </div>
           )}
 
-          <p style={{ 
-            color: '#B8C5D1',
-            fontSize: '15px',
-            marginBottom: '0px',
-            fontWeight: '500',
-            lineHeight: '20px'
-          }}>
-            {affiliateData.firstName} used SocialStar to make predictions
-          </p>
-
-          <button
-              onClick={() => window.open('https://apps.apple.com/app/socialstar-app/id6473705189', '_blank')}
+            <button
+              onClick={handleContinueClick}
               style={{
                 padding: '23px 30px',
                 backgroundColor: '#4169E1',
@@ -845,7 +849,6 @@ if (submitted) {
   );
 }
 
-  // Main rating interface
   return (
     <div style={{ 
       minHeight: '100vh',
@@ -855,14 +858,12 @@ if (submitted) {
       alignItems: 'center',
       justifyContent: 'center'
     }}>
-
       <div style={{ 
         padding: '30px 20px',
         textAlign: 'center',
         width: '100%',
         maxWidth: '500px'
       }}>
-
         <div style={{ 
           backgroundColor: '#1A2245',
           borderRadius: '12px',
@@ -870,7 +871,6 @@ if (submitted) {
           marginBottom: '30px',
           position: 'relative'
         }}>
-
           <div style={{ marginBottom: '30px' }}>
             <p style={{
               color: '#fff',
@@ -878,7 +878,7 @@ if (submitted) {
               fontSize: '20px',
               fontWeight: 'bold',
               lineHeight: '28px'
-              }}>
+            }}>
               Tap to Rate
             </p>
             
@@ -915,7 +915,6 @@ if (submitted) {
               ))}
             </div>
 
-            {/* Spinner shown during submission */}
             {submitting && (
               <div style={{ 
                 display: 'flex',
@@ -933,7 +932,6 @@ if (submitted) {
                 }}></div>
               </div>
             )}
-            
           </div>
         </div>
         <a href="https://apps.apple.com/gb/app/socialstar-app/id6473705189" target="_blank" style={{ textDecoration: 'none', cursor: 'pointer' }}>
