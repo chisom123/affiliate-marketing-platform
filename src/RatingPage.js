@@ -762,7 +762,7 @@ const RatingPage = () => {
                     </span>
                     <span style={{ 
                       color: '#fff',
-                      marginTop: '0.75px'
+                      marginTop: '1px'
                     }}>
                       <Star size={28} />
                     </span>
@@ -807,7 +807,7 @@ const RatingPage = () => {
                     </span>
                     <span style={{ 
                       color: '#ffc107',
-                      marginTop: '0.75px'
+                      marginTop: '1px'
                     }}>
                       <Star size={28} />
                     </span>
