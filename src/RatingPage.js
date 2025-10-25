@@ -1,4 +1,3 @@
-// RATING PAGE COMPONENT
 import React, { useState, useEffect } from 'react';
 import { db } from './firebase';
 import { 
@@ -51,15 +50,15 @@ const RatingPage = () => {
         
         setLinkData(linkData);
 
-        // Load affiliate data
+        // Load affiliate data including profile picture
         const affiliateDoc = await getDoc(doc(db, 'affiliates', affiliateId));
         if (affiliateDoc.exists()) {
-          setAffiliateData(affiliateDoc.data());
+          const affiliateData = affiliateDoc.data();
+          setAffiliateData(affiliateData);
         }
 
-        // NEW: Track page open (only once per load)
+        // Track page open (only once per load)
         if (!pageOpenTracked) {
-
           // Update link stats
           await updateDoc(doc(db, 'rating_links', linkDoc.id), {
             totalPageOpens: increment(1),
@@ -113,7 +112,6 @@ const RatingPage = () => {
     setSubmitting(true);
 
     try {
-      
       const ratingData = {
         linkId: linkData.id,
         linkIdString: linkData.linkId,
@@ -145,7 +143,7 @@ const RatingPage = () => {
     setSubmitting(false);
   };
 
-  // NEW: Handle continue button click
+  // Handle continue button click
   const handleContinueClick = async () => {
     window.open('https://apps.apple.com/app/socialstar-app/id6473705189', '_blank');
 
@@ -154,6 +152,145 @@ const RatingPage = () => {
       totalContinueClicks: increment(1)
     });
   };
+
+  // Updated Prediction Row Component with actual affiliate profile picture
+  const PredictionRow = ({ prediction, userRating, isCorrect }) => (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '8px 0',
+        width: '100%',
+      }}
+    >
+      {/* Left section: profile + prediction */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          flex: 1,
+        }}
+      >
+        {/* Profile Picture - Now using actual affiliate profile picture */}
+        <div
+          style={{
+            width: '35px',
+            height: '35px',
+            borderRadius: '50%',
+            overflow: 'hidden',
+            flexShrink: 0,
+            position: 'relative',
+          }}
+        >
+          {affiliateData?.profilePictureUrl ? (
+            <img
+              src={affiliateData.profilePictureUrl}
+              alt={`${affiliateData?.firstName || 'Affiliate'} profile`}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+              onError={(e) => {
+                // Fallback if image fails to load
+                e.target.style.display = 'none';
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                backgroundColor: '#4169E1',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                borderRadius: '50%',
+              }}
+            >
+              {affiliateData?.firstName?.charAt(0) || 'A'}
+            </div>
+          )}
+        </div>
+
+        {/* Prediction section */}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div
+            style={{
+              color: '#fff',
+              fontSize: '14px',
+              fontWeight: '600',
+              marginBottom: '5px',
+            }}
+          >
+            Prediction
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', height: '28px' }}>
+            {/* Prediction tab */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+                height: '100%',
+                padding: '0 8px',
+                backgroundColor: isCorrect ? 'rgba(0, 255, 0, 0.6)' : '#FF4444',
+                borderRadius: '6px',
+              }}
+            >
+              <Star size={11} color="#fff" fill="#fff" />
+              <span
+                style={{
+                  fontSize: '13px',
+                  fontWeight: 'bold',
+                  color: '#fff',
+                }}
+              >
+                {prediction}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right side: Win/Lost badge */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '6px 12px',
+          backgroundColor: isCorrect ? 'rgba(0, 255, 0, 0.15)' : 'rgba(255, 68, 68, 0.15)',
+          borderRadius: '20px',
+          flexShrink: 0,
+        }}
+      >
+        <div
+          style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            backgroundColor: isCorrect ? '#00FF00' : '#FF4444',
+          }}
+        ></div>
+        <span
+          style={{
+            fontSize: '14px',
+            fontWeight: 'bold',
+            color: isCorrect ? '#00FF00' : '#FF4444',
+          }}
+        >
+          {isCorrect ? 'Win' : 'Lost'}
+        </span>
+      </div>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -227,6 +364,14 @@ const RatingPage = () => {
     const prediction = linkData?.predictedRating;
     const userRating = rating;
     const hasPrediction = prediction && prediction > 0;
+    const isCorrect = hasPrediction && prediction === userRating;
+    
+    // NEW: Get parlay amounts from linkData instead of fake data
+    const parlayData = {
+      entry: linkData?.parlayEntry || 25, // Fallback to old values if not set
+      win: linkData?.parlayWin || 100,
+      profit: linkData?.parlayProfit || 75
+    };
     
     return (
       <div style={{ 
@@ -246,118 +391,149 @@ const RatingPage = () => {
           <div style={{ 
             backgroundColor: '#1A2245',
             borderRadius: '12px',
-            padding: '20px 30px 0px 30px',
-            marginBottom: '30px'
+            padding: '10px 0px 0px 0px',
+            marginBottom: '30px',
+            overflow: 'hidden'
           }}>
-            <p style={{ 
-              color: '#fff',
-              fontSize: '17px',
-              marginBottom: '30px',
-              fontWeight: '600',
-              textAlign: 'left',
-              lineHeight: '20px'
+            {/* Header - Updated to show affiliate's actual name */}
+            <div style={{ 
+              padding: '0px 30px 20px 20px'
             }}>
-              {affiliateData.firstName} predicted what you would rate
-            </p>
+              <p style={{ 
+                color: '#fff',
+                fontSize: '17px',
+                marginBottom: '0px',
+                fontWeight: '600',
+                textAlign: 'left',
+                lineHeight: '20px'
+              }}>
+                {affiliateData?.firstName || 'The affiliate'} predicted your rating
+              </p>
+            </div>
 
-          {/* NEW: Prediction vs Your Rating Comparison */}
-          {hasPrediction && (
+            {/* Parlay Slip Style Container */}
             <div style={{ 
               backgroundColor: '#243055',
               borderRadius: '12px',
-              padding: '25px 20px',
-              marginBottom: '20px'
+              padding: '20px',
+              margin: '0px 20px 20px 20px',
+              position: 'relative'
             }}>
-              
+              {/* Prediction Row - iOS Style with actual profile picture */}
+              {hasPrediction && (
+                <PredictionRow 
+                  prediction={prediction}
+                  userRating={userRating}
+                  isCorrect={isCorrect}
+                />
+              )}
+
+              {/* Divider */}
+              <div style={{ 
+                height: '1px',
+                backgroundColor: 'rgba(184, 197, 209, 0.2)',
+                margin: '15px 0'
+              }}></div>
+
+              {/* Parlay Entry Data - Now using stored data from Firestore */}
               <div style={{ 
                 display: 'flex',
-                justifyContent: 'space-around',
-                alignItems: 'center',
-                gap: '15px'
+                flexDirection: 'column',
+                gap: '5px'
               }}>
-                {/* Creator's Prediction */}
-                <div style={{ flex: 1 }}>
-                  <p style={{ 
+                {/* Entry */}
+                <div style={{ 
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <span style={{ 
                     color: '#B8C5D1',
-                    fontSize: '15px',
-                    margin: '0 0 10px 0',
-                    fontWeight: '600',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
+                    fontSize: '14px',
+                    fontWeight: '600'
                   }}>
-                    Prediction
-                  </p>
+                    Bet
+                  </span>
                   <div style={{ 
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '5px'
+                    gap: '6px'
                   }}>
                     <span style={{ 
-                      fontSize: '28px',
+                      fontSize: '16px',
                       fontWeight: 'bold',
                       color: '#fff'
                     }}>
-                      {prediction}
+                      {parlayData.entry}
                     </span>
-                    <span style={{ 
-                      color: '#fff',
-                      marginTop: '1.25px'
-                    }}>
-                      <Star size={28} />
-                    </span>
+                    <img 
+                      src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/dollar.png?alt=media&token=a1fccb79-e00b-474e-9411-577c0624e81f" 
+                      alt="Coin" 
+                      style={{ width: '16px', height: '16px' }}
+                    />
                   </div>
                 </div>
 
-                {/* VS Divider */}
+                {/* Win */}
                 <div style={{ 
-                  color: '#B8C5D1',
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  opacity: 0.5
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
                 }}>
-                  VS
-                </div>
-
-                {/* Your Rating */}
-                <div style={{ flex: 1 }}>
-                  <p style={{ 
+                  <span style={{ 
                     color: '#B8C5D1',
-                    fontSize: '15px',
-                    margin: '0 0 10px 0',
-                    fontWeight: '600',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
+                    fontSize: '14px',
+                    fontWeight: '600'
                   }}>
-                    Your Rating
-                  </p>
+                    Win
+                  </span>
                   <div style={{ 
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '5px'
+                    gap: '6px'
                   }}>
                     <span style={{ 
-                      fontSize: '28px',
+                      fontSize: '16px',
                       fontWeight: 'bold',
-                      color: '#ffc107'
+                      color: '#fff'
                     }}>
-                      {userRating}
+                      {isCorrect ? parlayData.win : 0}
                     </span>
-                    <span style={{ 
-                      color: '#ffc107',
-                      marginTop: '1.25px'
-                    }}>
-                      <Star size={28} />
-                    </span>
+                    <img 
+                      src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/dollar.png?alt=media&token=a1fccb79-e00b-474e-9411-577c0624e81f" 
+                      alt="Coin" 
+                      style={{ width: '16px', height: '16px' }}
+                    />
                   </div>
                 </div>
+
+                {/* Profit - Only show when won */}
+                {isCorrect && (
+                  <div style={{ 
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <span style={{ 
+                      color: '#B8C5D1',
+                      fontSize: '14px',
+                      fontWeight: '600'
+                    }}>
+                      Profit
+                    </span>
+                    <span style={{ 
+                      fontSize: '16px',
+                      fontWeight: 'bold',
+                      color: '#00FF00'
+                    }}>
+                      +{parlayData.profit}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
-          )}
 
+            {/* Continue Button */}
             <button
               onClick={handleContinueClick}
               style={{
@@ -365,31 +541,39 @@ const RatingPage = () => {
                 backgroundColor: '#4169E1',
                 color: 'white',
                 border: 'none',
-                borderRadius: '0px 0px 12px 12px', // Only round bottom corners to match container
+                borderRadius: '0px',
                 fontSize: '18px',
                 fontWeight: 'bold',
                 cursor: 'pointer',
-                width: 'calc(100% + 60px)', // Extend beyond padding
-                marginLeft: '-30px',        // Offset to align with container edge
-                marginTop: '20px'
+                width: '100%',
+                marginTop: '0px'
               }}
             >
               Continue
             </button>
-        </div>
-        <a href="https://apps.apple.com/gb/app/socialstar-app/id6473705189" target="_blank" style={{ textDecoration: 'none', cursor: 'pointer' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a" alt="Star icon" style={{ width: '22px', height: '22px' }} />
-            </div>
-            <h1 style={{ margin: '2px 0px 0px 0px', fontSize: '18px', color: 'white' }}> SocialStar </h1>
           </div>
-        </a>
-      </div>
-    </div>
-  );
-}
 
+          {/* SocialStar Branding - Floated to the left */}
+          <a href="https://apps.apple.com/gb/app/socialstar-app/id6473705189" target="_blank" style={{ textDecoration: 'none', cursor: 'pointer' }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '10px', 
+              justifyContent: 'flex-start',
+              width: '100%'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a" alt="Star icon" style={{ width: '22px', height: '22px' }} />
+              </div>
+              <h1 style={{ margin: '2px 0px 0px 0px', fontSize: '18px', color: 'white' }}> SocialStar </h1>
+            </div>
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // Original rating selection UI remains the same
   return (
     <div style={{ 
       minHeight: '100vh',
@@ -475,8 +659,16 @@ const RatingPage = () => {
             )}
           </div>
         </div>
+        
+        {/* SocialStar Branding - Floated to the left */}
         <a href="https://apps.apple.com/gb/app/socialstar-app/id6473705189" target="_blank" style={{ textDecoration: 'none', cursor: 'pointer' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '10px', 
+            justifyContent: 'flex-start',
+            width: '100%'
+          }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <img src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a" alt="Star icon" style={{ width: '22px', height: '22px' }} />
             </div>

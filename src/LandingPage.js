@@ -3,59 +3,45 @@ import { useNavigate } from 'react-router-dom';
 
 const LandingPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [estimatedRatings, setEstimatedRatings] = useState(30);
   const [imageLoading, setImageLoading] = useState({});
+  
+  // Define min/max values here - change these to update the slider range
+  const minRatings = 10;
+  const maxRatings = 100;
+  const stepSize = 1;
+
   const navigate = useNavigate();
-  
-  const [followers, setFollowers] = useState(5000);
-  const [engagementRate, setEngagementRate] = useState(1.5);
-
-  const minFollowers = 1000;
-  const maxFollowers = 75000;
-  const followerStepSize = 500;
-
-  const minEngagement = 0.5;
-  const maxEngagement = 5;
-  const engagementStepSize = 0.5;
-
-  // This is no longer needed but kept for completeness in the unused variables:
-  // const estimatedRatings = Math.round((followers * engagementRate) / 100);
-  
-  // *** MODIFICATION 2: Update the maximum step to 1 (steps.length - 1) ***
-  const maxStepsIndex = 1; // Since steps array will have 2 items (0 and 1)
 
   const nextStep = () => {
-    // Current step check is updated from 'currentStep < 2' to 'currentStep < maxStepsIndex'
-    if (currentStep < maxStepsIndex) { 
+    if (currentStep < 3) {
+      // Preload next step images
       if (currentStep === 0) {
+        const nextImageKey = `step_1`;
+        setImageLoading(prev => ({ ...prev, [nextImageKey]: true }));
+      } else if (currentStep === 1) {
         const nextImageKey = `step_2`;
+        setImageLoading(prev => ({ ...prev, [nextImageKey]: true }));
+      } else if (currentStep === 2) {
+        const nextImageKey = `step_3`;
         setImageLoading(prev => ({ ...prev, [nextImageKey]: true }));
       }
       
       setCurrentStep(currentStep + 1);
+      // Multiple scroll methods to ensure it works
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Fallback method
         document.documentElement.scrollTop = 0;
         document.body.scrollTop = 0;
       }, 50);
     }
   };
 
-  const prevStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
+  const handleGetStarted = () => {
+    // Redirect to the App Store URL
+    window.location.href = "https://apps.apple.com/app/socialstar-partners/id6751140592";
   };
-
-  // New function to handle resetting the view to the first slide.
-  const goToStart = () => {
-    setCurrentStep(0);
-    setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
-    }, 50);
-  };
-
 
   const handleImageLoad = (imageKey) => {
     setImageLoading(prev => ({ ...prev, [imageKey]: false }));
@@ -87,26 +73,6 @@ const LandingPage = () => {
     document.head.appendChild(style);
     return () => document.head.removeChild(style);
   }, []);
-
-  // *** MODIFICATION 1: Remove the last step from the array ***
-  const steps = [
-    {
-      title: "Add Rating Link",
-      subtitle: "Simply add our link to your Instagram story",
-      content: "addLink"
-    },
-    {
-      title: "Get Ratings",
-      subtitle: "Your followers tap the link and rate",
-      content: "getRatings"
-    }
-    // Removed: 
-    // {
-    //   title: "How much could you earn?",
-    //   subtitle: "Get paid based on ratings",
-    //   content: "getPaid"
-    // }
-  ];
 
   const renderImageWithPlaceholder = (src, alt, imageKey, maxWidth = '250px') => {
     const isLoading = imageLoading[imageKey];
@@ -145,6 +111,7 @@ const LandingPage = () => {
             maxWidth: maxWidth,
             height: 'auto',
             borderRadius: '8px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
             display: isLoading ? 'none' : 'block'
           }}
         />
@@ -152,13 +119,42 @@ const LandingPage = () => {
     );
   };
 
+  const steps = [
+    {
+      title: "Monetize your Instagram Stories",
+      subtitle: "Get paid every time your followers rate your story",
+      content: "welcome"
+    },
+    {
+      title: "Add Rating Link",
+      subtitle: "Simply add our link to your Instagram story",
+      content: "addLink"
+    },
+    {
+      title: "Get Ratings",
+      subtitle: "Your followers tap the link and rate your story",
+      content: "getRatings"
+    },
+    {
+      title: "Earnings Calculator",
+      subtitle: "How many ratings do you think you'll get per story?",
+      content: "getPaid"
+    }
+  ];
+
   const renderStepContent = () => {
     switch (currentStep) {
-      case 0:
+      case 0: // Welcome
+        return (
+          <div style={{ textAlign: 'center' }}>
+          </div>
+        );
+
+      case 1: // Add Link
         return (
           <div style={{ textAlign: 'center' }}>
             {renderImageWithPlaceholder(
-              "https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/IMG_4954.PNG?alt=media&token=b86b333b-e554-47ad-84f6-412f42cf971e",
+              "https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/IMG_5126.PNG?alt=media&token=239e8cb9-b50f-48f1-9d98-e321f42a4009",
               "Instagram story with rating link",
               "step_1",
               "250px"
@@ -166,8 +162,7 @@ const LandingPage = () => {
           </div>
         );
 
-      case 1:
-        // *** MODIFICATION 3: Case 2 (earnings) is now case 1 (get ratings) ***
+      case 2: // Get Ratings
         return (
           <div style={{ textAlign: 'center' }}>
             {renderImageWithPlaceholder(
@@ -179,7 +174,204 @@ const LandingPage = () => {
           </div>
         );
 
-      // Removed case 2 (earnings step) entirely
+      case 3: // Get Paid
+        return (
+          <div>
+            {/* Custom Slider */}
+            <div style={{
+              background: 'rgba(255,255,255,0.1)',
+              borderRadius: '8px',
+              padding: '24px'
+            }}>
+              <div 
+                style={{ 
+                  position: 'relative', 
+                  marginBottom: '16px',
+                  padding: '16px 0',
+                  cursor: 'pointer',
+                  touchAction: 'none'
+                }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const thumb = e.currentTarget.querySelector('[data-thumb]');
+                  const track = e.currentTarget.querySelector('[data-track]');
+                  
+                  thumb.style.transition = 'none';
+                  track.style.transition = 'none';
+                  
+                  let animationId;
+                  const updateValue = (clientX) => {
+                    if (animationId) cancelAnimationFrame(animationId);
+                    animationId = requestAnimationFrame(() => {
+                      const x = clientX - rect.left;
+                      const percentage = Math.max(0, Math.min(1, x / rect.width));
+                      const newValue = Math.round((percentage * (maxRatings - minRatings) + minRatings) / stepSize) * stepSize;
+                      setEstimatedRatings(newValue);
+                    });
+                  };
+                  
+                  updateValue(e.clientX);
+                  
+                  const handleMouseMove = (e) => updateValue(e.clientX);
+                  const handleMouseUp = () => {
+                    thumb.style.transition = 'left 0.1s ease';
+                    track.style.transition = 'width 0.1s ease';
+                    
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                    if (animationId) cancelAnimationFrame(animationId);
+                  };
+                  
+                  document.addEventListener('mousemove', handleMouseMove);
+                  document.addEventListener('mouseup', handleMouseUp);
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const thumb = e.currentTarget.querySelector('[data-thumb]');
+                  const track = e.currentTarget.querySelector('[data-track]');
+                  
+                  thumb.style.transition = 'none';
+                  track.style.transition = 'none';
+                  
+                  let animationId;
+                  const updateValue = (clientX) => {
+                    if (animationId) cancelAnimationFrame(animationId);
+                    animationId = requestAnimationFrame(() => {
+                      const x = clientX - rect.left;
+                      const percentage = Math.max(0, Math.min(1, x / rect.width));
+                      const newValue = Math.round((percentage * (maxRatings - minRatings) + minRatings) / stepSize) * stepSize;
+                      setEstimatedRatings(newValue);
+                    });
+                  };
+                  
+                  const touch = e.touches[0];
+                  updateValue(touch.clientX);
+                  
+                  const handleTouchMove = (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    updateValue(touch.clientX);
+                  };
+                  
+                  const handleTouchEnd = () => {
+                    thumb.style.transition = 'left 0.1s ease';
+                    track.style.transition = 'width 0.1s ease';
+                    
+                    document.removeEventListener('touchmove', handleTouchMove);
+                    document.removeEventListener('touchend', handleTouchEnd);
+                    if (animationId) cancelAnimationFrame(animationId);
+                  };
+                  
+                  document.addEventListener('touchmove', handleTouchMove, { passive: false });
+                  document.addEventListener('touchend', handleTouchEnd);
+                }}
+              >
+                {/* Slider Track */}
+                <div style={{
+                  position: 'relative',
+                  width: '100%',
+                  height: '8px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '4px',
+                  overflow: 'hidden'
+                }}>
+                  {/* Filled Track */}
+                  <div 
+                    data-track
+                    style={{
+                      position: 'absolute',
+                      left: '0',
+                      top: '0',
+                      height: '100%',
+                      width: `${((estimatedRatings - minRatings) / (maxRatings - minRatings)) * 100}%`,
+                      background: 'linear-gradient(90deg, #4169E1 0%, #6B8AFF 100%)',
+                      borderRadius: '4px',
+                      transition: 'width 0.1s ease'
+                    }} 
+                  />
+                </div>
+                
+                {/* Custom Thumb */}
+                <div 
+                  data-thumb
+                  style={{
+                    position: 'absolute',
+                    top: '7px',
+                    left: `calc(${((estimatedRatings - minRatings) / (maxRatings - minRatings)) * 100}% - 10px)`,
+                    width: '20px',
+                    height: '20px',
+                    backgroundColor: '#4169E1',
+                    border: '3px solid white',
+                    borderRadius: '50%',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                    transition: 'left 0.1s ease',
+                    cursor: 'grab',
+                    pointerEvents: 'none'
+                  }}
+                />
+                
+                {/* Hidden input for accessibility */}
+                <input
+                  type="range"
+                  min={minRatings}
+                  max={maxRatings}
+                  step={stepSize}
+                  value={estimatedRatings}
+                  onChange={(e) => setEstimatedRatings(e.target.value)}
+                  style={{
+                    position: 'absolute',
+                    top: '0',
+                    left: '0',
+                    width: '100%',
+                    height: '100%',
+                    opacity: 0,
+                    pointerEvents: 'none'
+                  }}
+                  tabIndex="0"
+                />
+              </div>
+              
+              <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                <div style={{ 
+                  fontSize: '24px', 
+                  fontWeight: 'bold', 
+                  color: 'white',
+                  marginBottom: '8px'
+                }}>
+                  {estimatedRatings} ratings <span style={{ fontSize: '16px', fontWeight: 'normal', color: 'rgba(255,255,255,0.8)' }}>per story</span>
+                </div>
+              </div>
+              
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                gap: '16px',
+                background: 'rgba(255,255,255,0.1)',
+                borderRadius: '8px',
+                padding: '16px'
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ 
+                    fontSize: '16px', 
+                    color: 'rgba(255,255,255,0.8)',
+                    marginBottom: '5px'
+                  }}>
+                    Per Story
+                  </div>
+                  <div style={{ 
+                    fontSize: '24px', 
+                    fontWeight: 'bold', 
+                    color: 'white'
+                  }}>
+                    ${(estimatedRatings * 1.0).toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
 
       default:
         return null;
@@ -194,6 +386,7 @@ const LandingPage = () => {
       flexDirection: 'column',
       fontFamily: 'Arial, sans-serif'
     }}>
+      {/* Header */}
       <header style={{ 
         backgroundColor: 'rgba(30, 41, 59, 0.8)',
         backdropFilter: 'blur(10px)',
@@ -229,7 +422,9 @@ const LandingPage = () => {
         </div>
       </header>
 
+      {/* Main Content */}
       <main style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>
+        {/* Progress Bar */}
         <div style={{ 
           background: 'rgba(30, 41, 59, 0.5)',
           padding: '12px 20px'
@@ -246,24 +441,51 @@ const LandingPage = () => {
                   height: '100%',
                   backgroundColor: '#4169E1',
                   transition: 'width 0.5s ease',
-                  // *** MODIFICATION 4: Progress bar calculation updated to use steps.length (which is now 2) ***
-                  width: `${((currentStep + 1) / steps.length) * 100}%` 
+                  width: `${((currentStep + 1) / steps.length) * 100}%`
                 }}
               />
             </div>
           </div>
         </div>
 
+        {/* Step Content */}
         <div style={{ 
           flex: '1',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           padding: '32px 20px',
-          marginTop: (currentStep === 2) && window.innerWidth <= 768 ? '-70px' : '0'
+          marginTop: (currentStep === 0 || currentStep === 3) && window.innerWidth <= 768 ? '-70px' : '0'
         }}>
           <div style={{ maxWidth: '500px', margin: '0 auto', width: '100%' }}>
+            {/* Step Header */}
             <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+              {currentStep === 0 && (
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  gap: '12px',
+                  marginBottom: '32px'
+                }}>
+                  <img 
+                    src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a"
+                    alt="Star icon"
+                    style={{
+                      width: '32px',
+                      height: '32px'
+                    }}
+                  />
+                  <span style={{
+                    fontSize: '20px',
+                    fontWeight: 'bold',
+                    color: 'white',
+                    marginTop: '5px'
+                  }}>
+                    SocialStar Partners
+                  </span>
+                </div>
+              )}
               <h1 style={{ 
                 fontSize: window.innerWidth > 768 ? '28px' : '24px',
                 fontWeight: 'bold',
@@ -282,10 +504,12 @@ const LandingPage = () => {
               </p>
             </div>
 
+            {/* Step Content */}
             <div style={{ marginBottom: '80px' }}>
               {renderStepContent()}
             </div>
 
+            {/* Navigation */}
             <div style={{ 
               position: 'fixed',
               bottom: '0',
@@ -297,8 +521,7 @@ const LandingPage = () => {
               zIndex: 50
             }}>
               <div style={{ maxWidth: '500px', margin: '0 auto' }}>
-                {/* Current step check is updated from 'currentStep < 2' to 'currentStep < maxStepsIndex' (which is 1) */}
-                {currentStep < maxStepsIndex ? ( 
+                {currentStep < 3 ? (
                   <button
                     onClick={nextStep}
                     style={{
@@ -317,15 +540,14 @@ const LandingPage = () => {
                     onMouseOver={(e) => e.target.style.backgroundColor = '#3b5de6'}
                     onMouseOut={(e) => e.target.style.backgroundColor = '#4169E1'}
                   >
-                    Next
+                    {currentStep === 0 ? 'Learn More' : 'Next'}
                   </button>
                 ) : (
-                  // This will be displayed on the final step (now step 1)
                   <button
-                    onClick={goToStart}
+                    onClick={handleGetStarted}
                     style={{
                       width: '100%',
-                      padding: '16px 32px',
+                      padding: '16px 24px',
                       backgroundColor: '#4169E1',
                       color: 'white',
                       borderRadius: '200px',
@@ -333,13 +555,13 @@ const LandingPage = () => {
                       transition: 'all 0.3s ease',
                       border: 'none',
                       cursor: 'pointer',
-                      fontSize: '18px',
+                      fontSize: '16px',
                       boxShadow: '0 4px 20px rgba(65, 105, 225, 0.3)'
                     }}
                     onMouseOver={(e) => e.target.style.backgroundColor = '#3b5de6'}
                     onMouseOut={(e) => e.target.style.backgroundColor = '#4169E1'}
                   >
-                    Back
+                    Get Started
                   </button>
                 )}
               </div>
