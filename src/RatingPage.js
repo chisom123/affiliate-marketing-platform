@@ -25,8 +25,6 @@ const RatingPage = () => {
   const [hoveredStar, setHoveredStar] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [averageRating, setAverageRating] = useState(null);
-  const [totalRatingsCount, setTotalRatingsCount] = useState(0);
   const [pageOpenTracked, setPageOpenTracked] = useState(false);
 
   useEffect(() => {
@@ -81,27 +79,6 @@ const RatingPage = () => {
     }
   }, [affiliateId, linkId, pageOpenTracked]);
 
-  const calculateAverageRating = async () => {
-    try {
-      const ratingsQuery = query(
-        collection(db, 'ratings'),
-        where('linkIdString', '==', linkId)
-      );
-      const ratingsSnapshot = await getDocs(ratingsQuery);
-      
-      if (!ratingsSnapshot.empty) {
-        const ratings = ratingsSnapshot.docs.map(doc => doc.data().rating);
-        const total = ratings.reduce((sum, rating) => sum + rating, 0);
-        const average = total / ratings.length;
-        
-        setAverageRating(average);
-        setTotalRatingsCount(ratings.length);
-      }
-    } catch (error) {
-      console.error('Error calculating average rating:', error);
-    }
-  };
-
   const submitRating = async (selectedRating = rating) => {
     const finalRating = selectedRating || rating;
     if (finalRating === 0) {
@@ -117,22 +94,26 @@ const RatingPage = () => {
         linkIdString: linkData.linkId,
         affiliateId: affiliateId,
         rating: finalRating,
+        earnings: 1.0, // ADDED: Each rating earns $1.0
         createdAt: serverTimestamp(),
       };
       
       await addDoc(collection(db, 'ratings'), ratingData);
       
-      // Update stats
+      // Update stats with earnings
       await updateDoc(doc(db, 'rating_links', linkData.id), {
         totalRatings: increment(1),
+        earnings: increment(1.0), // ADDED: Track earnings per link
         lastRatedAt: serverTimestamp()
       });
       
+      // ADDED: Update affiliate earnings
       await updateDoc(doc(db, 'affiliates', affiliateId), {
-        totalRatings: increment(1)    
+        totalRatings: increment(1),
+        totalEarnings: increment(1.0), // ADDED: Track total earnings
+        balance: increment(1.0) // ADDED: Add to balance  
       });
-      
-      await calculateAverageRating();
+    
       setSubmitted(true);
 
     } catch (error) {
