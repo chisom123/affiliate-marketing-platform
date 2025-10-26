@@ -231,6 +231,7 @@ const RatingPage = () => {
                   fontSize: '15px',
                   fontWeight: 'bold',
                   color: '#fff',
+                  marginTop: '1px'
                 }}
               >
                 {prediction}
