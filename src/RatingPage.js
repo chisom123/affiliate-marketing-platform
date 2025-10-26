@@ -141,7 +141,7 @@ const RatingPage = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '8px 0',
+        padding: '0',
         width: '100%',
       }}
     >
@@ -157,8 +157,8 @@ const RatingPage = () => {
         {/* Profile Picture - Now using actual affiliate profile picture */}
         <div
           style={{
-            width: '35px',
-            height: '35px',
+            width: '38px',
+            height: '38px',
             borderRadius: '50%',
             overflow: 'hidden',
             flexShrink: 0,
@@ -204,7 +204,7 @@ const RatingPage = () => {
           <div
             style={{
               color: '#fff',
-              fontSize: '14px',
+              fontSize: '15px',
               fontWeight: '600',
               marginBottom: '5px',
             }}
@@ -225,10 +225,10 @@ const RatingPage = () => {
                 borderRadius: '6px',
               }}
             >
-              <Star size={11} color="#fff" fill="#fff" />
+              <Star size={13} color="#fff" fill="#fff" />
               <span
                 style={{
-                  fontSize: '13px',
+                  fontSize: '15px',
                   fontWeight: 'bold',
                   color: '#fff',
                 }}
@@ -372,18 +372,19 @@ const RatingPage = () => {
           <div style={{ 
             backgroundColor: '#1A2245',
             borderRadius: '12px',
-            padding: '10px 0px 0px 0px',
+            padding: '0',
             marginBottom: '30px',
             overflow: 'hidden'
           }}>
             {/* Header - Updated to show affiliate's actual name */}
             <div style={{ 
-              padding: '0px 30px 20px 20px'
+              padding: '10px 0px 25px 20px'
             }}>
               <p style={{ 
                 color: '#fff',
                 fontSize: '17px',
                 marginBottom: '0px',
+                padding: '0',
                 fontWeight: '600',
                 textAlign: 'left',
                 lineHeight: '20px'
@@ -430,7 +431,7 @@ const RatingPage = () => {
                 }}>
                   <span style={{ 
                     color: '#B8C5D1',
-                    fontSize: '14px',
+                    fontSize: '16px',
                     fontWeight: '600'
                   }}>
                     Bet
@@ -441,7 +442,7 @@ const RatingPage = () => {
                     gap: '6px'
                   }}>
                     <span style={{ 
-                      fontSize: '16px',
+                      fontSize: '18px',
                       fontWeight: 'bold',
                       color: '#fff'
                     }}>
@@ -450,7 +451,7 @@ const RatingPage = () => {
                     <img 
                       src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/dollar.png?alt=media&token=a1fccb79-e00b-474e-9411-577c0624e81f" 
                       alt="Coin" 
-                      style={{ width: '16px', height: '16px' }}
+                      style={{ width: '18px', height: '18px' }}
                     />
                   </div>
                 </div>
@@ -463,7 +464,7 @@ const RatingPage = () => {
                 }}>
                   <span style={{ 
                     color: '#B8C5D1',
-                    fontSize: '14px',
+                    fontSize: '16px',
                     fontWeight: '600'
                   }}>
                     Win
@@ -474,7 +475,7 @@ const RatingPage = () => {
                     gap: '6px'
                   }}>
                     <span style={{ 
-                      fontSize: '16px',
+                      fontSize: '18px',
                       fontWeight: 'bold',
                       color: '#fff'
                     }}>
@@ -483,7 +484,7 @@ const RatingPage = () => {
                     <img 
                       src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/dollar.png?alt=media&token=a1fccb79-e00b-474e-9411-577c0624e81f" 
                       alt="Coin" 
-                      style={{ width: '16px', height: '16px' }}
+                      style={{ width: '18px', height: '18px' }}
                     />
                   </div>
                 </div>
@@ -497,13 +498,13 @@ const RatingPage = () => {
                   }}>
                     <span style={{ 
                       color: '#B8C5D1',
-                      fontSize: '14px',
+                      fontSize: '16px',
                       fontWeight: '600'
                     }}>
                       Profit
                     </span>
                     <span style={{ 
-                      fontSize: '16px',
+                      fontSize: '18px',
                       fontWeight: 'bold',
                       color: '#00FF00'
                     }}>
@@ -527,7 +528,7 @@ const RatingPage = () => {
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 width: '100%',
-                marginTop: '0px'
+                marginTop: '10px'
               }}
             >
               Continue
