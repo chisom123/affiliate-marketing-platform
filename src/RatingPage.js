@@ -225,10 +225,25 @@ const RatingPage = () => {
                 borderRadius: '6px',
               }}
             >
-              <Star size={13} color="#fff" fill="#fff" />
+              <button
+                style={{
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  color: '#fff',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  cursor: 'default',
+                  padding: '0',
+                  pointerEvents: 'none'
+                }}
+                disabled
+              >
+                ★
+              </button>
               <span
                 style={{
-                  fontSize: '15px',
+                  fontSize: '16px',
                   fontWeight: 'bold',
                   color: '#fff',
                   marginTop: '1px'
