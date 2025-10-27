@@ -492,7 +492,7 @@ const RatingPage = () => {
         }}>
           <div style={{ 
             backgroundColor: '#1A2245',
-            borderRadius: '20px',
+            borderRadius: '12px',
             padding: '40px 30px',
             marginBottom: '30px',
             textAlign: 'center'
