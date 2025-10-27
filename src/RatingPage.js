@@ -486,22 +486,43 @@ const RatingPage = () => {
         padding: '20px'
       }}>
         <div style={{ 
-          backgroundColor: '#1A2245',
-          borderRadius: '20px',
-          padding: '40px 30px',
-          maxWidth: '500px',
+          textAlign: 'center',
           width: '100%',
-          textAlign: 'center'
+          maxWidth: '500px'
         }}>
-          <p style={{ 
-            color: 'rgba(255,255,255,0.8)',
+          <div style={{ 
+            backgroundColor: '#1A2245',
+            borderRadius: '20px',
+            padding: '40px 30px',
             marginBottom: '30px',
-            fontWeight: 'normal',
-            fontSize: '18px',
-            lineHeight: '1.5'
+            textAlign: 'center'
           }}>
-            {error}
-          </p>
+            <p style={{ 
+              color: 'rgba(255,255,255,0.8)',
+              marginBottom: '30px',
+              fontWeight: 'normal',
+              fontSize: '18px',
+              lineHeight: '1.5'
+            }}>
+              {error}
+            </p>
+          </div>
+          
+          {/* SocialStar Branding - Added under error container */}
+          <a href="https://apps.apple.com/gb/app/socialstar-app/id6473705189" target="_blank" style={{ textDecoration: 'none', cursor: 'pointer' }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '10px', 
+              justifyContent: 'flex-start',
+              width: '100%'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a" alt="Star icon" style={{ width: '22px', height: '22px' }} />
+              </div>
+              <h1 style={{ margin: '2px 0px 0px 0px', fontSize: '18px', color: 'white' }}> SocialStar</h1>
+            </div>
+          </a>
         </div>
       </div>
     );
