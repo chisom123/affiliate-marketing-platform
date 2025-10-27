@@ -14,6 +14,97 @@ import {
 } from 'firebase/firestore';
 import { useParams } from 'react-router-dom';
 
+// Generate a fingerprint using available browser data
+const generateFingerprint = async () => {
+  const components = [];
+  
+  // Screen properties - using window.screen to avoid ESLint errors
+  components.push(`screen:${window.screen.width}x${window.screen.height}`);
+  components.push(`colorDepth:${window.screen.colorDepth}`);
+  components.push(`pixelRatio:${window.devicePixelRatio}`);
+  
+  // Timezone
+  components.push(`timezone:${Intl.DateTimeFormat().resolvedOptions().timeZone}`);
+  
+  // Language
+  components.push(`language:${navigator.language}`);
+  
+  // Platform
+  components.push(`platform:${navigator.platform}`);
+  
+  // Hardware concurrency
+  components.push(`hardwareConcurrency:${navigator.hardwareConcurrency || 'unknown'}`);
+  
+  // User agent (limited)
+  const ua = navigator.userAgent;
+  components.push(`mobile:${/Mobile|Android|iPhone/i.test(ua)}`);
+  
+  // Canvas fingerprint (basic)
+  try {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 200;
+    canvas.height = 50;
+    ctx.textBaseline = 'top';
+    ctx.font = '14px Arial';
+    ctx.fillStyle = '#f60';
+    ctx.fillRect(125, 1, 62, 20);
+    ctx.fillStyle = '#069';
+    ctx.fillText('Fingerprint', 2, 15);
+    ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+    ctx.fillText('Fingerprint', 4, 17);
+    const canvasData = canvas.toDataURL();
+    components.push(`canvas:${canvasData.length}`);
+  } catch (e) {
+    components.push(`canvas:error`);
+  }
+  
+  // WebGL fingerprint (basic)
+  try {
+    const gl = document.createElement('canvas').getContext('webgl');
+    if (gl) {
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+      const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+      components.push(`webglVendor:${vendor?.substring(0, 20) || 'unknown'}`);
+      components.push(`webglRenderer:${renderer?.substring(0, 20) || 'unknown'}`);
+    }
+  } catch (e) {
+    components.push(`webgl:error`);
+  }
+  
+  const fingerprintString = components.join('|');
+  
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < fingerprintString.length; i++) {
+    const char = fingerprintString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  return Math.abs(hash).toString(36);
+};
+
+// Check if user is in Instagram app
+const isInstagramApp = () => {
+  // Check if we're in a browser environment
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return false;
+  }
+  
+  const userAgent = navigator.userAgent.toLowerCase();
+  
+  // Check for Instagram in-app browser
+  const isInstagram = /instagram/i.test(userAgent);
+  
+  // Check for iOS/Android Instagram patterns
+  const isIOSInstagram = /instagram.*applewebkit/i.test(userAgent) && !/safari/i.test(userAgent);
+  const isAndroidInstagram = /instagram.*android/i.test(userAgent);
+  
+  return isInstagram || isIOSInstagram || isAndroidInstagram;
+};
+
 const RatingPage = () => {
   const { affiliateId, linkId } = useParams();
   const [linkData, setLinkData] = useState(null);
@@ -25,9 +116,45 @@ const RatingPage = () => {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [pageOpenTracked, setPageOpenTracked] = useState(false);
+  const [fingerprint, setFingerprint] = useState(null);
+  const [isValidEnvironment, setIsValidEnvironment] = useState(true);
+
+  useEffect(() => {
+    const initializeFingerprint = async () => {
+      try {
+        // Check if we're in Instagram app
+        if (!isInstagramApp()) {
+          setIsValidEnvironment(false);
+          setError('Please open this link in the Instagram app to rate stories');
+          setLoading(false);
+          return;
+        }
+
+        const fp = await generateFingerprint();
+        setFingerprint(fp);
+        
+        // Store fingerprint in localStorage to persist across sessions
+        localStorage.setItem(`rating_fingerprint_${linkId}`, fp);
+        
+      } catch (error) {
+        console.error('Error generating fingerprint:', error);
+        // Continue anyway but with limited protection
+        const fallbackFp = `fallback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        setFingerprint(fallbackFp);
+        localStorage.setItem(`rating_fingerprint_${linkId}`, fallbackFp);
+      }
+    };
+
+    initializeFingerprint();
+  }, [linkId]);
 
   useEffect(() => {
     const loadData = async () => {
+      if (!isValidEnvironment || !fingerprint) {
+        setLoading(false);
+        return;
+      }
+
       try {
         // Find the rating link
         const linksQuery = query(
@@ -54,6 +181,20 @@ const RatingPage = () => {
           setAffiliateData(affiliateData);
         }
 
+        // Check if this fingerprint has already rated
+        const existingRatingQuery = query(
+          collection(db, 'ratings'),
+          where('linkId', '==', linkData.id),
+          where('fingerprint', '==', fingerprint)
+        );
+        const existingRatings = await getDocs(existingRatingQuery);
+        
+        if (!existingRatings.empty) {
+          setError('You have already rated this story!');
+          setLoading(false);
+          return;
+        }
+
         // Track page open (only once per load)
         if (!pageOpenTracked) {
           // Update link stats
@@ -73,12 +214,17 @@ const RatingPage = () => {
       setLoading(false);
     };
 
-    if (affiliateId && linkId) {
+    if (affiliateId && linkId && fingerprint && isValidEnvironment) {
       loadData();
     }
-  }, [affiliateId, linkId, pageOpenTracked]);
+  }, [affiliateId, linkId, pageOpenTracked, fingerprint, isValidEnvironment]);
 
   const submitRating = async (selectedRating = rating) => {
+    if (!isValidEnvironment) {
+      alert('Please open this link in the Instagram app to rate stories');
+      return;
+    }
+
     const finalRating = selectedRating || rating;
     if (finalRating === 0) {
       alert('Please select a star rating first!');
@@ -93,7 +239,10 @@ const RatingPage = () => {
         linkIdString: linkData.linkId,
         affiliateId: affiliateId,
         rating: finalRating,
-        earnings: 1.0, // ADDED: Each rating earns $1.0
+        earnings: 1.0,
+        fingerprint: fingerprint, // Store fingerprint with rating
+        userAgent: navigator.userAgent,
+        timestamp: serverTimestamp(),
         createdAt: serverTimestamp(),
       };
       
@@ -102,15 +251,15 @@ const RatingPage = () => {
       // Update stats with earnings
       await updateDoc(doc(db, 'rating_links', linkData.id), {
         totalRatings: increment(1),
-        earnings: increment(1.0), // ADDED: Track earnings per link
+        earnings: increment(1.0),
         lastRatedAt: serverTimestamp()
       });
       
-      // ADDED: Update affiliate earnings
+      // Update affiliate earnings
       await updateDoc(doc(db, 'affiliates', affiliateId), {
         totalRatings: increment(1),
-        totalEarnings: increment(1.0), // ADDED: Track total earnings
-        balance: increment(1.0) // ADDED: Add to balance  
+        totalEarnings: increment(1.0),
+        balance: increment(1.0)
       });
     
       setSubmitted(true);
@@ -128,12 +277,14 @@ const RatingPage = () => {
     window.open('https://apps.apple.com/app/socialstar-app/id6473705189', '_blank');
 
     // Update link stats
-    await updateDoc(doc(db, 'rating_links', linkData.id), {
-      totalContinueClicks: increment(1)
-    });
+    if (linkData) {
+      await updateDoc(doc(db, 'rating_links', linkData.id), {
+        totalContinueClicks: increment(1)
+      });
+    }
   };
 
-  // Updated Prediction Row Component with actual affiliate profile picture
+  // Prediction Row Component with actual affiliate profile picture
   const PredictionRow = ({ prediction, userRating, isCorrect }) => (
     <div
       style={{
@@ -362,9 +513,9 @@ const RatingPage = () => {
     const hasPrediction = prediction && prediction > 0;
     const isCorrect = hasPrediction && prediction === userRating;
     
-    // NEW: Get parlay amounts from linkData instead of fake data
+    // Get parlay amounts from linkData
     const parlayData = {
-      entry: linkData?.parlayEntry || 25, // Fallback to old values if not set
+      entry: linkData?.parlayEntry || 25,
       win: linkData?.parlayWin || 100,
       profit: linkData?.parlayProfit || 75
     };
