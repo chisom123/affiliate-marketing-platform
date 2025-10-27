@@ -190,7 +190,7 @@ const RatingPage = () => {
         const existingRatings = await getDocs(existingRatingQuery);
         
         if (!existingRatings.empty) {
-          setError('You have already rated this story!');
+          setError('You have already rated this story');
           setLoading(false);
           return;
         }
@@ -227,7 +227,7 @@ const RatingPage = () => {
 
     const finalRating = selectedRating || rating;
     if (finalRating === 0) {
-      alert('Please select a star rating first!');
+      alert('Please select a star rating first');
       return;
     }
 
