@@ -13,7 +13,6 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { useParams } from 'react-router-dom';
-import { Star } from 'lucide-react';
 
 const RatingPage = () => {
   const { affiliateId, linkId } = useParams();
