@@ -14,6 +14,9 @@ import {
 } from 'firebase/firestore';
 import { useParams } from 'react-router-dom';
 
+// Development environment check
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 // Generate a fingerprint using available browser data
 const generateFingerprint = async () => {
   const components = [];
@@ -88,6 +91,12 @@ const generateFingerprint = async () => {
 
 // Check if user is in Instagram app
 const isInstagramApp = () => {
+  // Allow bypass in development
+  if (isDevelopment) {
+    console.log('Development mode: Instagram requirement bypassed');
+    return true; // Always return true in development
+  }
+  
   // Check if we're in a browser environment
   if (typeof window === 'undefined' || typeof navigator === 'undefined') {
     return false;
@@ -122,8 +131,8 @@ const RatingPage = () => {
   useEffect(() => {
     const initializeFingerprint = async () => {
       try {
-        // Check if we're in Instagram app
-        if (!isInstagramApp()) {
+        // Check if we're in Instagram app (bypassed in development)
+        if (!isInstagramApp() && !isDevelopment) {
           setIsValidEnvironment(false);
           setError('Please open this link in the Instagram app to rate stories');
           setLoading(false);
@@ -181,18 +190,22 @@ const RatingPage = () => {
           setAffiliateData(affiliateData);
         }
 
-        // Check if this fingerprint has already rated
-        const existingRatingQuery = query(
-          collection(db, 'ratings'),
-          where('linkId', '==', linkData.id),
-          where('fingerprint', '==', fingerprint)
-        );
-        const existingRatings = await getDocs(existingRatingQuery);
-        
-        if (!existingRatings.empty) {
-          setError('You have already rated this story');
-          setLoading(false);
-          return;
+        // Check if this fingerprint has already rated (bypassed in development)
+        if (!isDevelopment) {
+          const existingRatingQuery = query(
+            collection(db, 'ratings'),
+            where('linkId', '==', linkData.id),
+            where('fingerprint', '==', fingerprint)
+          );
+          const existingRatings = await getDocs(existingRatingQuery);
+          
+          if (!existingRatings.empty) {
+            setError('You have already rated this story');
+            setLoading(false);
+            return;
+          }
+        } else {
+          console.log('Development mode: Skipping "already rated" check');
         }
 
         // Track page open (only once per load)
@@ -220,7 +233,8 @@ const RatingPage = () => {
   }, [affiliateId, linkId, pageOpenTracked, fingerprint, isValidEnvironment]);
 
   const submitRating = async (selectedRating = rating) => {
-    if (!isValidEnvironment) {
+    // Only enforce environment check in production
+    if (!isValidEnvironment && !isDevelopment) {
       alert('Please open this link in the Instagram app to rate stories');
       return;
     }
@@ -234,16 +248,22 @@ const RatingPage = () => {
     setSubmitting(true);
 
     try {
+      // In development, generate a unique fingerprint for each rating to avoid conflicts
+      const ratingFingerprint = isDevelopment 
+        ? `dev_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        : fingerprint;
+
       const ratingData = {
         linkId: linkData.id,
         linkIdString: linkData.linkId,
         affiliateId: affiliateId,
         rating: finalRating,
         earnings: 1.0,
-        fingerprint: fingerprint, // Store fingerprint with rating
+        fingerprint: ratingFingerprint,
         userAgent: navigator.userAgent,
         timestamp: serverTimestamp(),
         createdAt: serverTimestamp(),
+        isDevelopment: isDevelopment // Mark development ratings for tracking
       };
       
       await addDoc(collection(db, 'ratings'), ratingData);
