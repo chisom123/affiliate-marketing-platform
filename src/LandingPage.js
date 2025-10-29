@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const LandingPage = () => {
@@ -12,6 +12,38 @@ const LandingPage = () => {
   const stepSize = 1;
 
   const navigate = useNavigate();
+
+  // Check for hash on component mount and when hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash === '#earnings-calculator') {
+        setCurrentStep(3); // Earnings calculator is step 3
+        // Scroll to top when navigating via hash
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 100);
+      }
+    };
+
+    // Check initial hash
+    handleHashChange();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+    
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
+
+  // Update URL hash when step changes to earnings calculator
+  useEffect(() => {
+    if (currentStep === 3) {
+      window.history.replaceState(null, '', '#earnings-calculator');
+    } else if (window.location.hash === '#earnings-calculator') {
+      window.history.replaceState(null, '', ' ');
+    }
+  }, [currentStep]);
 
   const nextStep = () => {
     if (currentStep < 3) {
