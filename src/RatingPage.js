@@ -127,6 +127,8 @@ const RatingPage = () => {
   const [pageOpenTracked, setPageOpenTracked] = useState(false);
   const [fingerprint, setFingerprint] = useState(null);
   const [isValidEnvironment, setIsValidEnvironment] = useState(true);
+  const [averageRating, setAverageRating] = useState(null);
+  const [totalRatingsCount, setTotalRatingsCount] = useState(0);
 
   useEffect(() => {
     const initializeFingerprint = async () => {
@@ -156,6 +158,27 @@ const RatingPage = () => {
 
     initializeFingerprint();
   }, [linkId]);
+
+  const calculateAverageRating = async () => {
+    try {
+      const ratingsQuery = query(
+        collection(db, 'ratings'),
+        where('linkIdString', '==', linkId)
+      );
+      const ratingsSnapshot = await getDocs(ratingsQuery);
+      
+      if (!ratingsSnapshot.empty) {
+        const ratings = ratingsSnapshot.docs.map(doc => doc.data().rating);
+        const total = ratings.reduce((sum, rating) => sum + rating, 0);
+        const average = total / ratings.length;
+        
+        setAverageRating(average);
+        setTotalRatingsCount(ratings.length);
+      }
+    } catch (error) {
+      console.error('Error calculating average rating:', error);
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -282,6 +305,7 @@ const RatingPage = () => {
         balance: increment(1.0)
       });
     
+      await calculateAverageRating();
       setSubmitted(true);
 
     } catch (error) {
@@ -303,161 +327,6 @@ const RatingPage = () => {
       });
     }
   };
-
-  // Prediction Row Component with actual affiliate profile picture
-  const PredictionRow = ({ prediction, userRating, isCorrect }) => (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0',
-        width: '100%',
-      }}
-    >
-      {/* Left section: profile + prediction */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          flex: 1,
-        }}
-      >
-        {/* Profile Picture - Now using actual affiliate profile picture */}
-        <div
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '50%',
-            overflow: 'hidden',
-            flexShrink: 0,
-            position: 'relative',
-          }}
-        >
-          {affiliateData?.profilePictureUrl ? (
-            <img
-              src={affiliateData.profilePictureUrl}
-              alt={`${affiliateData?.firstName || 'Affiliate'} profile`}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              }}
-              onError={(e) => {
-                // Fallback if image fails to load
-                e.target.style.display = 'none';
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                width: '100%',
-                height: '100%',
-                backgroundColor: '#4169E1',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontSize: '14px',
-                fontWeight: 'bold',
-                borderRadius: '50%',
-              }}
-            >
-              {affiliateData?.firstName?.charAt(0) || 'A'}
-            </div>
-          )}
-        </div>
-
-        {/* Prediction section */}
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div
-            style={{
-              color: '#fff',
-              fontSize: '15px',
-              fontWeight: '600',
-              marginBottom: '5px',
-            }}
-          >
-            Prediction
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', height: '28px' }}>
-            {/* Prediction tab */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '3px',
-                height: '100%',
-                padding: '0 8px',
-                backgroundColor: isCorrect ? 'rgba(0, 255, 0, 0.6)' : '#FF4444',
-                borderRadius: '6px',
-              }}
-            >
-              <button
-                style={{
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  color: '#fff',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  outline: 'none',
-                  cursor: 'default',
-                  padding: '0',
-                  pointerEvents: 'none'
-                }}
-                disabled
-              >
-                ★
-              </button>
-              <span
-                style={{
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  color: '#fff',
-                  marginTop: '1px'
-                }}
-              >
-                {prediction}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right side: Win/Lost badge */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          padding: '6px 12px',
-          backgroundColor: isCorrect ? 'rgba(0, 255, 0, 0.15)' : 'rgba(255, 68, 68, 0.15)',
-          borderRadius: '20px',
-          flexShrink: 0,
-        }}
-      >
-        <div
-          style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            backgroundColor: isCorrect ? '#00FF00' : '#FF4444',
-          }}
-        ></div>
-        <span
-          style={{
-            fontSize: '14px',
-            fontWeight: 'bold',
-            color: isCorrect ? '#00FF00' : '#FF4444',
-          }}
-        >
-          {isCorrect ? 'Win' : 'Lost'}
-        </span>
-      </div>
-    </div>
-  );
 
   if (loading) {
     return (
@@ -549,18 +418,6 @@ const RatingPage = () => {
   }
 
   if (submitted) {
-    const prediction = linkData?.predictedRating;
-    const userRating = rating;
-    const hasPrediction = prediction && prediction > 0;
-    const isCorrect = hasPrediction && prediction === userRating;
-    
-    // Get parlay amounts from linkData
-    const parlayData = {
-      entry: linkData?.parlayEntry || 25,
-      win: linkData?.parlayWin || 100,
-      profit: linkData?.parlayProfit || 75
-    };
-    
     return (
       <div style={{ 
         minHeight: '100vh',
@@ -579,150 +436,82 @@ const RatingPage = () => {
           <div style={{ 
             backgroundColor: '#1A2245',
             borderRadius: '12px',
-            padding: '0',
-            marginBottom: '30px',
-            overflow: 'hidden'
+            padding: '40px 30px 0px 30px', // Remove bottom padding
+            marginBottom: '30px'
           }}>
-            {/* Header - Updated to show affiliate's actual name */}
-            <div style={{ 
-              padding: '10px 0px 25px 20px'
+            <h2 style={{ 
+              color: '#fff',
+              marginTop: '0px',
+              marginBottom: '30px',
+              fontSize: '22px',
+              fontWeight: 'bold'
             }}>
-              <p style={{ 
-                color: '#fff',
-                fontSize: '17px',
-                marginBottom: '0px',
-                padding: '0',
-                fontWeight: '600',
-                textAlign: 'left',
-                lineHeight: '20px'
-              }}>
-                {affiliateData?.firstName || 'The affiliate'} predicted your rating
-              </p>
-            </div>
+              Thanks for rating!
+            </h2>
 
-            {/* Parlay Slip Style Container */}
-            <div style={{ 
-              backgroundColor: '#243055',
-              borderRadius: '12px',
-              padding: '20px',
-              margin: '0px 20px 20px 20px',
-              position: 'relative'
-            }}>
-              {/* Prediction Row - iOS Style with actual profile picture */}
-              {hasPrediction && (
-                <PredictionRow 
-                  prediction={prediction}
-                  userRating={userRating}
-                  isCorrect={isCorrect}
-                />
-              )}
-
-              {/* Divider */}
+            {/* Average Rating Display */}
+            {averageRating && (
               <div style={{ 
-                height: '1px',
-                backgroundColor: 'rgba(184, 197, 209, 0.2)',
-                margin: '15px 0'
-              }}></div>
-
-              {/* Parlay Entry Data - Now using stored data from Firestore */}
-              <div style={{ 
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '5px'
+                backgroundColor: '#243055',
+                borderRadius: '12px',
+                padding: '20px',
+                marginBottom: '20px'
               }}>
-                {/* Entry */}
+                <p style={{ 
+                  color: '#B8C5D1',
+                  fontSize: '15px',
+                  margin: '0 0 10px 0',
+                  fontWeight: '500'
+                }}>
+                  Average Rating
+                </p>
                 <div style={{ 
                   display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '10px'
                 }}>
-                  <span style={{ 
-                    color: '#B8C5D1',
-                    fontSize: '16px',
-                    fontWeight: '600'
+                  <div style={{ 
+                    fontSize: '32px',
+                    fontWeight: 'bold',
+                    color: '#ffc107',
+                    marginRight: '10px'
                   }}>
-                    Bet
-                  </span>
+                    {averageRating.toFixed(1)}
+                  </div>
                   <div style={{ 
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
+                    gap: '2px'
                   }}>
-                    <span style={{ 
-                      fontSize: '18px',
-                      fontWeight: 'bold',
-                      color: '#fff'
-                    }}>
-                      {parlayData.entry}
-                    </span>
-                    <img 
-                      src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/dollar.png?alt=media&token=a1fccb79-e00b-474e-9411-577c0624e81f" 
-                      alt="Coin" 
-                      style={{ width: '18px', height: '18px' }}
-                    />
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        disabled={true}
+                        style={{
+                          backgroundColor: 'transparent',
+                          border: 'none',
+                          fontSize: '20px',
+                          cursor: 'default',
+                          color: star <= Math.round(averageRating) ? '#ffc107' : '#dee2e6',
+                          padding: '2px'
+                        }}
+                      >
+                        ★
+                      </button>
+                    ))}
                   </div>
                 </div>
-
-                {/* Win */}
-                <div style={{ 
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
+                <p style={{ 
+                  color: '#B8C5D1',
+                  fontSize: '15px',
+                  margin: '0',
+                  fontWeight: '500'
                 }}>
-                  <span style={{ 
-                    color: '#B8C5D1',
-                    fontSize: '16px',
-                    fontWeight: '600'
-                  }}>
-                    Win
-                  </span>
-                  <div style={{ 
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}>
-                    <span style={{ 
-                      fontSize: '18px',
-                      fontWeight: 'bold',
-                      color: '#fff'
-                    }}>
-                      {isCorrect ? parlayData.win : 0}
-                    </span>
-                    <img 
-                      src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/dollar.png?alt=media&token=a1fccb79-e00b-474e-9411-577c0624e81f" 
-                      alt="Coin" 
-                      style={{ width: '18px', height: '18px' }}
-                    />
-                  </div>
-                </div>
-
-                {/* Profit - Only show when won */}
-                {isCorrect && (
-                  <div style={{ 
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
-                    <span style={{ 
-                      color: '#B8C5D1',
-                      fontSize: '16px',
-                      fontWeight: '600'
-                    }}>
-                      Profit
-                    </span>
-                    <span style={{ 
-                      fontSize: '18px',
-                      fontWeight: 'bold',
-                      color: '#00FF00'
-                    }}>
-                      +{parlayData.profit}
-                    </span>
-                  </div>
-                )}
+                  {totalRatingsCount} rater{totalRatingsCount !== 1 ? 's' : ''}
+                </p>
               </div>
-            </div>
+            )}
 
-            {/* Continue Button */}
             <button
               onClick={handleContinueClick}
               style={{
@@ -730,12 +519,13 @@ const RatingPage = () => {
                 backgroundColor: '#4169E1',
                 color: 'white',
                 border: 'none',
-                borderRadius: '0px',
+                borderRadius: '0px 0px 12px 12px', // Only round bottom corners to match container
                 fontSize: '18px',
                 fontWeight: 'bold',
                 cursor: 'pointer',
-                width: '100%',
-                marginTop: '10px'
+                width: 'calc(100% + 60px)', // Extend beyond padding
+                marginLeft: '-30px',        // Offset to align with container edge
+                marginTop: '20px'
               }}
             >
               Continue
