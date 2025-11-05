@@ -460,7 +460,7 @@ const RatingPage = () => {
                 <p style={{ 
                   color: '#B8C5D1',
                   fontSize: '15px',
-                  margin: '0 0 10px 0',
+                  margin: '10px 0 10px 0',
                   fontWeight: '500'
                 }}>
                   Average Rating
@@ -501,14 +501,6 @@ const RatingPage = () => {
                     ))}
                   </div>
                 </div>
-                <p style={{ 
-                  color: '#B8C5D1',
-                  fontSize: '15px',
-                  margin: '0',
-                  fontWeight: '500'
-                }}>
-                  {totalRatingsCount} rater{totalRatingsCount !== 1 ? 's' : ''}
-                </p>
               </div>
             )}
 
