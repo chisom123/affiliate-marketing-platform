@@ -281,7 +281,7 @@ const RatingPage = () => {
         linkIdString: linkData.linkId,
         affiliateId: affiliateId,
         rating: finalRating,
-        earnings: 0.50,
+        earnings: 0.25,
         fingerprint: ratingFingerprint,
         userAgent: navigator.userAgent,
         timestamp: serverTimestamp(),
@@ -294,15 +294,15 @@ const RatingPage = () => {
       // Update stats with earnings
       await updateDoc(doc(db, 'rating_links', linkData.id), {
         totalRatings: increment(1),
-        earnings: increment(0.50),
+        earnings: increment(0.25),
         lastRatedAt: serverTimestamp()
       });
       
       // Update affiliate earnings
       await updateDoc(doc(db, 'affiliates', affiliateId), {
         totalRatings: increment(1),
-        totalEarnings: increment(0.50),
-        balance: increment(0.50)
+        totalEarnings: increment(0.25),
+        balance: increment(0.25)
       });
     
       await calculateAverageRating();
