@@ -124,7 +124,7 @@ const handleGetSocialStarClick = async () => {
           )}
           
           <img 
-            src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/screenshot_red.png?alt=media&token=277295e7-f147-4704-9d40-41470c6411e3"
+            src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/fun_screenshot.png?alt=media&token=2baf5836-dc92-42e8-b630-b3d0caa0275f"
             alt="App screenshot"
             onLoad={() => setImageLoading(false)}
             onError={() => setImageLoading(false)}
