@@ -316,16 +316,37 @@ const RatingPage = () => {
     setSubmitting(false);
   };
 
-  // Handle continue button click
-  const handleContinueClick = async () => {
-    window.open('https://apps.apple.com/app/socialstar-app/id6473705189', '_blank');
-
-    // Update link stats
-    if (linkData) {
-      await updateDoc(doc(db, 'rating_links', linkData.id), {
-        totalContinueClicks: increment(1)
-      });
-    }
+  const handleYesClick = async () => {
+    // Start logging
+    const logPromise = linkData ? updateDoc(doc(db, 'rating_links', linkData.id), {
+      totalYesClicks: increment(1),
+      lastYesClickAt: serverTimestamp()
+    }) : Promise.resolve();
+    
+    // Wait max 50ms, then navigate regardless
+    await Promise.race([
+      logPromise,
+      new Promise(resolve => setTimeout(resolve, 50))
+    ]);
+    
+    window.location.href = 'socialstar://home';
+  };
+  
+  
+  const handleNoClick = async () => {
+    // Start logging
+    const logPromise = linkData ? updateDoc(doc(db, 'rating_links', linkData.id), {
+      totalNoClicks: increment(1),
+      lastNoClickAt: serverTimestamp()
+    }) : Promise.resolve();
+    
+    // Wait max 50ms, then navigate regardless
+    await Promise.race([
+      logPromise,
+      new Promise(resolve => setTimeout(resolve, 50))
+    ]);
+    
+    window.location.href = `/info/${affiliateId}/${linkId}`;
   };
 
   if (loading) {
@@ -436,7 +457,7 @@ const RatingPage = () => {
           <div style={{ 
             backgroundColor: '#1A2245',
             borderRadius: '12px',
-            padding: '40px 30px 0px 30px', // Remove bottom padding
+            padding: '30px 0px 0px 0px', // Remove bottom padding
             marginBottom: '30px'
           }}>
             <h2 style={{ 
@@ -446,14 +467,14 @@ const RatingPage = () => {
               fontSize: '22px',
               fontWeight: 'bold'
             }}>
-              Thanks for rating!
+              Thanks for rating
             </h2>
 
             {/* Average Rating Display */}
             {averageRating && (
               <div style={{ 
                 backgroundColor: '#243055',
-                borderRadius: '12px',
+                borderRadius: '0px',
                 padding: '20px',
                 marginBottom: '20px'
               }}>
@@ -490,7 +511,7 @@ const RatingPage = () => {
                         style={{
                           backgroundColor: 'transparent',
                           border: 'none',
-                          fontSize: '20px',
+                          fontSize: '22px',
                           cursor: 'default',
                           color: star <= Math.round(averageRating) ? '#ffc107' : '#dee2e6',
                           padding: '2px'
@@ -504,24 +525,56 @@ const RatingPage = () => {
               </div>
             )}
 
-            <button
-              onClick={handleContinueClick}
-              style={{
-                padding: '23px 30px',
-                backgroundColor: '#4169E1',
-                color: 'white',
-                border: 'none',
-                borderRadius: '0px 0px 12px 12px', // Only round bottom corners to match container
-                fontSize: '18px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                width: 'calc(100% + 60px)', // Extend beyond padding
-                marginLeft: '-30px',        // Offset to align with container edge
-                marginTop: '20px'
-              }}
-            >
-              Continue
-            </button>
+            <p style={{ 
+              color: '#FFF',
+              fontSize: '17px',
+              margin: '30px 0 30px 0',
+              fontWeight: '600'
+            }}>
+              Do you have SocialStar?
+            </p>
+
+            <div style={{ 
+              display: 'flex',
+              gap: '0px',
+              width: '100%',
+              marginTop: '20px'
+            }}>
+              <button
+                onClick={handleYesClick}
+                style={{
+                  padding: '23px 20px',
+                  backgroundColor: '#4169E1', // Blue for Yes
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0px 0px 0px 12px', // Round bottom left
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  flex: '1',
+                  width: '50%'
+                }}
+              >
+                Yes
+              </button>
+              <button
+                onClick={handleNoClick}
+                style={{
+                  padding: '23px 20px',
+                  backgroundColor: '#243055', // Gray for No
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0px 0px 12px 0px', // Round bottom right
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  flex: '1',
+                  width: '50%'
+                }}
+              >
+                No
+              </button>
+            </div>
           </div>
 
           {/* SocialStar Branding - Floated to the left */}

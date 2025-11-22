@@ -84,22 +84,28 @@ const AdminDashboard = () => {
         
         const pageOpens = link.totalPageOpens || 0;
         const totalRatings = link.totalRatings || 0;
-        const continueClicks = link.totalContinueClicks || 0;
+        const yesClicks = link.totalYesClicks || 0;
+        const noClicks = link.totalNoClicks || 0;
+        const getSocialStarClicks = link.totalGetSocialStarClicks || 0;
         
         const ratingConversion = pageOpens > 0 ? ((totalRatings / pageOpens) * 100).toFixed(1) : 0;
-        const continueConversion = totalRatings > 0 ? ((continueClicks / totalRatings) * 100).toFixed(1) : 0;
+        const yesConversion = totalRatings > 0 ? ((yesClicks / totalRatings) * 100).toFixed(1) : 0;
+        const noConversion = totalRatings > 0 ? ((noClicks / totalRatings) * 100).toFixed(1) : 0;
+        const getSocialStarConversion = noClicks > 0 ? ((getSocialStarClicks / noClicks) * 100).toFixed(1) : 0;
         
         analytics[link.id] = {
           avgRating,
           ratingConversion,
-          continueConversion,
+          yesConversion,
+          noConversion,
+          getSocialStarConversion,
           totalRatings: ratings.length
         };
       }
       
       setLinkAnalytics(analytics);
     };
-
+  
     if (ratingLinks.length > 0) {
       calculateLinkAnalytics();
     }
@@ -332,7 +338,14 @@ const AdminDashboard = () => {
     }).length,
     totalAffiliates: affiliates.length,
     totalLinks: ratingLinks.length,
-    activeLinks: ratingLinks.filter(l => !l.expiresAt || l.expiresAt > new Date()).length
+    activeLinks: ratingLinks.filter(l => !l.expiresAt || l.expiresAt > new Date()).length,
+    totalGetSocialStarClicks: ratingLinks.reduce((sum, link) => sum + (link.totalGetSocialStarClicks || 0), 0),
+    totalNoClicks: ratingLinks.reduce((sum, link) => sum + (link.totalNoClicks || 0), 0),
+    getSocialStarConversion: (() => {
+      const noClicks = ratingLinks.reduce((sum, link) => sum + (link.totalNoClicks || 0), 0);
+      const getSocialStarClicks = ratingLinks.reduce((sum, link) => sum + (link.totalGetSocialStarClicks || 0), 0);
+      return noClicks > 0 ? ((getSocialStarClicks / noClicks) * 100).toFixed(1) : 0;
+    })()
   };
 
   if (loading) {
@@ -714,10 +727,24 @@ const AdminDashboard = () => {
                         textAlign: 'center'
                       }}>
                         <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
-                          Continue Clicks
+                          YES Clicks
                         </p>
-                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#6f42c1' }}>
-                          {link.totalContinueClicks || 0}
+                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#4169E1' }}>
+                          {link.totalYesClicks || 0}
+                        </p>
+                      </div>
+
+                      <div style={{ 
+                        backgroundColor: '#f8f9fa',
+                        padding: '15px',
+                        borderRadius: '8px',
+                        textAlign: 'center'
+                      }}>
+                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
+                          NO Clicks
+                        </p>
+                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#243055' }}>
+                          {link.totalNoClicks || 0}
                         </p>
                       </div>
 
@@ -742,49 +769,54 @@ const AdminDashboard = () => {
                         textAlign: 'center'
                       }}>
                         <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
-                          Continue Conv.
+                          YES Conv.
                         </p>
-                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#e83e8c' }}>
-                          {analytics.continueConversion || 0}%
+                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#4169E1' }}>
+                          {analytics.yesConversion || 0}%
                         </p>
                       </div>
-                    </div>
 
-                    <div style={{ 
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      fontSize: '12px',
-                      color: '#6c757d'
-                    }}>
-                      <div>
-                        <p style={{ margin: '0 0 3px 0' }}>
-                          Created: {link.createdAt.toLocaleDateString()}
+                      <div style={{ 
+                        backgroundColor: '#f8f9fa',
+                        padding: '15px',
+                        borderRadius: '8px',
+                        textAlign: 'center'
+                      }}>
+                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
+                          NO Conv.
                         </p>
-                        {link.lastOpenedAt && (
-                          <p style={{ margin: '0 0 3px 0' }}>
-                            Last opened: {link.lastOpenedAt.toLocaleString()}
-                          </p>
-                        )}
-                        {link.lastRatedAt && (
-                          <p style={{ margin: '0' }}>
-                            Last rated: {link.lastRatedAt.toLocaleString()}
-                          </p>
-                        )}
+                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#243055' }}>
+                          {analytics.noConversion || 0}%
+                        </p>
                       </div>
-                      
-                      {link.predictedRating && (
-                        <div style={{ 
-                          backgroundColor: '#e7f3ff',
-                          padding: '8px 12px',
-                          borderRadius: '6px',
-                          fontSize: '13px',
-                          fontWeight: 'bold',
-                          color: '#007bff'
-                        }}>
-                          Predicted: {link.predictedRating} ★
-                        </div>
-                      )}
+
+                      <div style={{ 
+                        backgroundColor: '#f8f9fa',
+                        padding: '15px',
+                        borderRadius: '8px',
+                        textAlign: 'center'
+                      }}>
+                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
+                          Get SocialStar Clicks
+                        </p>
+                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#FFD700' }}>
+                          {link.totalGetSocialStarClicks || 0}
+                        </p>
+                      </div>
+    
+                      <div style={{ 
+                        backgroundColor: '#f8f9fa',
+                        padding: '15px',
+                        borderRadius: '8px',
+                        textAlign: 'center'
+                      }}>
+                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
+                          Get SS Conv.
+                        </p>
+                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#17a2b8' }}>
+                          {analytics.getSocialStarConversion || 0}%
+                        </p>
+                      </div>
                     </div>
                   </div>
                 );
