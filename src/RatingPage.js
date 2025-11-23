@@ -332,21 +332,15 @@ const RatingPage = () => {
     window.location.href = 'socialstar://home';
   };
   
-  
   const handleNoClick = async () => {
-    // Start logging
-    const logPromise = linkData ? updateDoc(doc(db, 'rating_links', linkData.id), {
-      totalNoClicks: increment(1),
-      lastNoClickAt: serverTimestamp()
-    }) : Promise.resolve();
-    
-    // Wait max 50ms, then navigate regardless
-    await Promise.race([
-      logPromise,
-      new Promise(resolve => setTimeout(resolve, 50))
-    ]);
-    
-    window.location.href = `/info/${affiliateId}/${linkId}`;
+    window.open('https://apps.apple.com/app/socialstar-app/id6473705189', '_blank');
+
+    // Update link stats
+    if (linkData) {
+      await updateDoc(doc(db, 'rating_links', linkData.id), {
+        totalNoClicks: increment(1)
+      });
+    }
   };
 
   if (loading) {
