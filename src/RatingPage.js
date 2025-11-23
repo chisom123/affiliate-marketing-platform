@@ -482,7 +482,7 @@ const RatingPage = () => {
                   color: '#B8C5D1',
                   fontSize: '15px',
                   margin: '10px 0 10px 0',
-                  fontWeight: '500'
+                  fontWeight: '600'
                 }}>
                   Average Rating
                 </p>
