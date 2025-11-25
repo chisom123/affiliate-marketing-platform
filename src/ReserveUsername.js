@@ -156,7 +156,7 @@ const ReserveUsername = () => {
                 width: '100%'
               }}
             >
-              Claim Your Username
+              Get SocialStar
             </button>
           </div>
 
