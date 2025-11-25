@@ -156,7 +156,7 @@ const ReserveUsername = () => {
                 width: '100%'
               }}
             >
-              Download SocialStar
+              Claim Your Username
             </button>
           </div>
 
@@ -217,7 +217,7 @@ const ReserveUsername = () => {
             fontSize: '15px',
             fontWeight: '600'
           }}>
-            Claim your username before someone else does
+            Reserve your username before someone else does
           </p>
 
           <form onSubmit={handleSubmit}>
