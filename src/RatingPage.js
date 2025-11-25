@@ -12,7 +12,7 @@ import {
   getDocs,
   serverTimestamp
 } from 'firebase/firestore';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 // Development environment check
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -116,6 +116,7 @@ const isInstagramApp = () => {
 
 const RatingPage = () => {
   const { affiliateId, linkId } = useParams();
+  const navigate = useNavigate();
   const [linkData, setLinkData] = useState(null);
   const [affiliateData, setAffiliateData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -333,14 +334,15 @@ const RatingPage = () => {
   };
   
   const handleNoClick = async () => {
-    window.open('https://apps.apple.com/app/socialstar-app/id6473705189', '_blank');
-
     // Update link stats
     if (linkData) {
       await updateDoc(doc(db, 'rating_links', linkData.id), {
         totalNoClicks: increment(1)
       });
     }
+
+    // Navigate to reserve username page
+    navigate(`/reserve/${affiliateId}/${linkId}`);
   };
 
   if (loading) {
@@ -404,7 +406,7 @@ const RatingPage = () => {
             <p style={{ 
               color: 'rgba(255,255,255,0.8)',
               marginBottom: '30px',
-              fontWeight: 'normal',
+              fontWeight: '600',
               fontSize: '18px',
               lineHeight: '1.5'
             }}>

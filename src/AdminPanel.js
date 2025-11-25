@@ -87,11 +87,15 @@ const AdminDashboard = () => {
         const yesClicks = link.totalYesClicks || 0;
         const noClicks = link.totalNoClicks || 0;
         const getSocialStarClicks = link.totalGetSocialStarClicks || 0;
+        const usernameReservations = link.totalUsernameReservations || 0;
+        const downloadClicks = link.totalDownloadClicks || 0;
         
         const ratingConversion = pageOpens > 0 ? ((totalRatings / pageOpens) * 100).toFixed(1) : 0;
         const yesConversion = totalRatings > 0 ? ((yesClicks / totalRatings) * 100).toFixed(1) : 0;
         const noConversion = totalRatings > 0 ? ((noClicks / totalRatings) * 100).toFixed(1) : 0;
         const getSocialStarConversion = noClicks > 0 ? ((getSocialStarClicks / noClicks) * 100).toFixed(1) : 0;
+        const reserveConversion = noClicks > 0 ? ((usernameReservations / noClicks) * 100).toFixed(1) : 0;
+        const downloadConversion = usernameReservations > 0 ? ((downloadClicks / usernameReservations) * 100).toFixed(1) : 0;
         
         analytics[link.id] = {
           avgRating,
@@ -99,7 +103,11 @@ const AdminDashboard = () => {
           yesConversion,
           noConversion,
           getSocialStarConversion,
-          totalRatings: ratings.length
+          reserveConversion,
+          downloadConversion,
+          totalRatings: ratings.length,
+          usernameReservations,
+          downloadClicks
         };
       }
       
@@ -341,6 +349,8 @@ const AdminDashboard = () => {
     activeLinks: ratingLinks.filter(l => !l.expiresAt || l.expiresAt > new Date()).length,
     totalGetSocialStarClicks: ratingLinks.reduce((sum, link) => sum + (link.totalGetSocialStarClicks || 0), 0),
     totalNoClicks: ratingLinks.reduce((sum, link) => sum + (link.totalNoClicks || 0), 0),
+    totalUsernameReservations: ratingLinks.reduce((sum, link) => sum + (link.totalUsernameReservations || 0), 0),
+    totalDownloadClicks: ratingLinks.reduce((sum, link) => sum + (link.totalDownloadClicks || 0), 0),
     getSocialStarConversion: (() => {
       const noClicks = ratingLinks.reduce((sum, link) => sum + (link.totalNoClicks || 0), 0);
       const getSocialStarClicks = ratingLinks.reduce((sum, link) => sum + (link.totalGetSocialStarClicks || 0), 0);
@@ -791,32 +801,65 @@ const AdminDashboard = () => {
                       </div>
 
                       <div style={{ 
-                        backgroundColor: '#f8f9fa',
+                        backgroundColor: '#fff3e0',
                         padding: '15px',
                         borderRadius: '8px',
-                        textAlign: 'center'
+                        textAlign: 'center',
+                        border: '2px solid #ff9800'
                       }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
-                          Get SocialStar Clicks
+                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#e65100', fontWeight: '600' }}>
+                         Reservations
                         </p>
-                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#FFD700' }}>
-                          {link.totalGetSocialStarClicks || 0}
+                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+                          {link.totalUsernameReservations || 0}
                         </p>
                       </div>
-    
+
                       <div style={{ 
-                        backgroundColor: '#f8f9fa',
+                        backgroundColor: '#e8f5e9',
                         padding: '15px',
                         borderRadius: '8px',
-                        textAlign: 'center'
+                        textAlign: 'center',
+                        border: '2px solid #4caf50'
                       }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
-                          Get SS Conv.
+                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#2e7d32', fontWeight: '600' }}>
+                         App Store
                         </p>
-                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#17a2b8' }}>
-                          {analytics.getSocialStarConversion || 0}%
+                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#4caf50' }}>
+                          {link.totalDownloadClicks || 0}
                         </p>
                       </div>
+
+
+                      <div style={{ 
+                        backgroundColor: '#fff3e0',
+                        padding: '15px',
+                        borderRadius: '8px',
+                        textAlign: 'center',
+                        border: '2px solid #ff9800'
+                      }}>
+                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#e65100', fontWeight: '600' }}>
+                          Reserve Conv.
+                        </p>
+                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+                          {analytics.reserveConversion || 0}%
+                        </p>
+                      </div> 
+
+                      <div style={{ 
+                        backgroundColor: '#e8f5e9',
+                        padding: '15px',
+                        borderRadius: '8px',
+                        textAlign: 'center',
+                        border: '2px solid #4caf50'
+                      }}>
+                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#2e7d32', fontWeight: '600' }}>
+                          App Store Conv.
+                        </p>
+                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#4caf50' }}>
+                          {analytics.downloadConversion || 0}%
+                        </p>
+                      </div>                                         
                     </div>
                   </div>
                 );

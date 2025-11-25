@@ -9,6 +9,7 @@ import AffiliateDashboard from './AffiliateDashboard';
 import RatingPage from './RatingPage';
 import AdminPanel from './AdminPanel';
 import InfoPage from './InfoPage';
+import ReserveUsername from './ReserveUsername';
 
 function App() {
   return (
@@ -22,6 +23,9 @@ function App() {
         
         {/* Rating Page - Public rating interface */}
         <Route path="/rate/:affiliateId/:linkId" element={<RatingPage />} />
+        
+        {/* Reserve Username Page - For users who don't have the app */}
+        <Route path="/reserve/:affiliateId/:linkId" element={<ReserveUsername />} />
         
         {/* Info Page - For users who don't have the app */}
         <Route path="/info/:affiliateId/:linkId" element={<InfoPage />} />
