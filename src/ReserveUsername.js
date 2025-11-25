@@ -204,21 +204,12 @@ const ReserveUsername = () => {
           <h2 style={{ 
             color: '#fff',
             marginTop: '0px',
-            marginBottom: '10px',
+            marginBottom: '30px',
             fontSize: '22px',
             fontWeight: 'bold'
           }}>
             Reserve Your Username
           </h2>
-          
-          <p style={{ 
-            color: '#B8C5D1',
-            marginBottom: '30px',
-            fontSize: '15px',
-            fontWeight: '600'
-          }}>
-            Reserve your username before someone else does
-          </p>
 
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: '20px' }}>
