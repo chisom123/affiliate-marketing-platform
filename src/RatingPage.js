@@ -727,80 +727,69 @@ const RatingPage = () => {
           height: 'calc(100% - 60px)',
           WebkitOverflowScrolling: 'touch'
         }}>
-          {loadingInteractions ? (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              padding: '40px',
-              color: 'rgba(255, 255, 255, 0.5)'
-            }}>
-             
-            </div>
-          ) : (
-            interactions.map((interaction, index) => (
-              <div key={interaction.id}>
+          {interactions.map((interaction, index) => (
+            <div key={interaction.id}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '15px 20px',
+                gap: '12px'
+              }}>
+                <Avatar userName={interaction.userName} size={38} />
+                
+                <span style={{
+                  flex: 1,
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  color: 'white',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {interaction.userName}
+                </span>
+
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  padding: '15px 20px',
-                  gap: '12px'
+                  gap: '6px',
+                  padding: '5px 10px',
+                  backgroundColor: '#DAA520',
+                  borderRadius: '20px'
                 }}>
-                  <Avatar userName={interaction.userName} size={38} />
-                  
                   <span style={{
-                    flex: 1,
                     fontSize: '16px',
                     fontWeight: 'bold',
-                    color: 'white',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
+                    color: 'white'
                   }}>
-                    {interaction.userName}
+                    {interaction.rating}
                   </span>
-
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '5px 10px',
-                    backgroundColor: '#DAA520',
-                    borderRadius: '20px'
-                  }}>
-                    <span style={{
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      color: 'white'
-                    }}>
-                      {interaction.rating}
-                    </span>
-                    <button
-                      disabled
-                      style={{
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        fontSize: '18px',
-                        color: 'white',
-                        padding: 0,
-                        cursor: 'default',
-                        outline: 'none'
-                      }}
-                    >
-                      ★
-                    </button>
-                  </div>
+                  <button
+                    disabled
+                    style={{
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      fontSize: '18px',
+                      color: 'white',
+                      padding: 0,
+                      cursor: 'default',
+                      outline: 'none'
+                    }}
+                  >
+                    ★
+                  </button>
                 </div>
-                
-                {index < interactions.length - 1 && (
-                  <div style={{
-                    height: '0.25px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                    margin: '0'
-                  }}></div>
-                )}
               </div>
-            ))
-          )}
+              
+              {index < interactions.length - 1 && (
+                <div style={{
+                  height: '0.25px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  margin: '0'
+                }}></div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
