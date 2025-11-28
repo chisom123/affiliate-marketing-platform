@@ -675,14 +675,13 @@ const RatingPage = () => {
           bottom: 100,
           left: 0,
           right: 0,
-          height: `${snapPoints[snapState]}px`,
+          height: `${snapPoints[snapState] - dragOffset}px`, // Dynamic height during drag
           backgroundColor: '#1A2245',
           borderTopLeftRadius: '20px',
           borderTopRightRadius: '20px',
           zIndex: 20,
-          transform: `translateY(${dragOffset}px)`,
-          transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
-          willChange: 'transform'
+          transition: isDragging ? 'none' : 'height 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+          willChange: 'height'
         }}
       >
         {/* Handle */}
