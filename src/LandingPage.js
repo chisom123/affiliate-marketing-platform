@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { db } from './firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 const LandingPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [estimatedRatings, setEstimatedRatings] = useState(30);
   const [imageLoading, setImageLoading] = useState({});
+  const [earningsPerRating, setEarningsPerRating] = useState(0.25);
   
   // Define min/max values here - change these to update the slider range
   const minRatings = 10;
@@ -12,6 +15,23 @@ const LandingPage = () => {
   const stepSize = 1;
 
   const navigate = useNavigate();
+
+  // Load dynamic earnings rate from Firestore
+  useEffect(() => {
+    const loadEarningsRate = async () => {
+      try {
+        const configDoc = await getDoc(doc(db, 'app_config', 'affiliate_pricing'));
+        if (configDoc.exists()) {
+          setEarningsPerRating(configDoc.data().earnings_per_rating || 0.25);
+        }
+      } catch (error) {
+        console.error('Error loading earnings rate:', error);
+        // Keep default 0.25 if loading fails
+      }
+    };
+
+    loadEarningsRate();
+  }, []);
 
   // Check for hash on component mount and when hash changes
   useEffect(() => {
@@ -397,7 +417,7 @@ const LandingPage = () => {
                     fontWeight: 'bold', 
                     color: 'white'
                   }}>
-                    ${(estimatedRatings * 0.25).toFixed(2)}
+                    ${(estimatedRatings * earningsPerRating).toFixed(2)}
                   </div>
                 </div>
               </div>
