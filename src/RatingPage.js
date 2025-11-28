@@ -221,11 +221,19 @@ const RatingPage = () => {
     document.body.style.margin = '0';
     document.body.style.padding = '0';
     
+    // Prevent text selection for app-like feel
+    document.body.style.userSelect = 'none';
+    document.body.style.webkitUserSelect = 'none';
+    document.body.style.webkitTouchCallout = 'none';
+    
     return () => {
       document.body.style.overflow = '';
       document.body.style.position = '';
       document.body.style.width = '';
       document.body.style.height = '';
+      document.body.style.userSelect = '';
+      document.body.style.webkitUserSelect = '';
+      document.body.style.webkitTouchCallout = '';
     };
   }, []);
 
