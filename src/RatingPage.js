@@ -660,7 +660,25 @@ const RatingPage = () => {
       }}>
         {hasAlreadyVoted ? (
           <button
-            onClick={() => window.location.href = continueUrl}
+            onClick={async () => {
+              try {
+                // Track download click FIRST
+                if (linkData) {
+                  await updateDoc(doc(db, 'rating_links', linkData.id), {
+                    totalDownloadClicks: increment(1),
+                    lastDownloadClickAt: serverTimestamp()
+                  });
+                  
+                  // Small delay to ensure Firebase write completes
+                  await new Promise(resolve => setTimeout(resolve, 100));
+                }
+              } catch (error) {
+                console.error('Error tracking download click:', error);
+              } finally {
+                // ALWAYS redirect, even if tracking fails
+                window.location.href = continueUrl;
+              }
+            }}
             style={{
               width: '100%',
               display: 'flex',
