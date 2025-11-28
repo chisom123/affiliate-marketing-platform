@@ -170,6 +170,9 @@ const RatingPage = () => {
 
   const [continueUrl, setContinueUrl] = useState('https://apps.apple.com/app/socialstar-app/id6473705189');
   
+  // Dynamic viewport height state
+  const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
+  
   // Bottom sheet drag state - SIMPLIFIED
   const [snapState, setSnapState] = useState('mid');
   const [dragOffset, setDragOffset] = useState(0);
@@ -177,9 +180,58 @@ const RatingPage = () => {
   const [dragStartY, setDragStartY] = useState(0);
   const sheetRef = useRef(null);
 
+  // Handle viewport changes (browser UI collapse/expand)
+  useEffect(() => {
+    const updateViewport = () => {
+      // Use visualViewport for more accurate tracking
+      if (window.visualViewport) {
+        setViewportHeight(window.visualViewport.height);
+      } else {
+        setViewportHeight(window.innerHeight);
+      }
+    };
+
+    // Listen to both resize and visualViewport events
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateViewport);
+      window.visualViewport.addEventListener('scroll', updateViewport);
+    }
+    
+    window.addEventListener('resize', updateViewport);
+    
+    // Initial update
+    updateViewport();
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', updateViewport);
+        window.visualViewport.removeEventListener('scroll', updateViewport);
+      }
+      window.removeEventListener('resize', updateViewport);
+    };
+  }, []);
+
+  // Prevent body scroll
+  useEffect(() => {
+    // Lock body scroll to prevent layout shifts
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+    
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+    };
+  }, []);
+
   // Calculate snap points based on viewport
   const getSnapPoints = () => {
-    const vh = window.innerHeight;
+    const vh = viewportHeight;
     const starFooterHeight = 100;
     const navHeight = 80;
     const bottomPadding = 20;
@@ -562,6 +614,7 @@ const RatingPage = () => {
       left: 0,
       right: 0,
       bottom: 0,
+      height: `${viewportHeight}px`,
       backgroundColor: '#10183C',
       overflow: 'hidden'
     }}>
