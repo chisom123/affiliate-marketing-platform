@@ -161,6 +161,7 @@ const RatingPage = () => {
   const [isValidEnvironment, setIsValidEnvironment] = useState(true);
   const [interactions, setInteractions] = useState([]);
   const [loadingInteractions, setLoadingInteractions] = useState(true);
+  const [earningsPerRating, setEarningsPerRating] = useState(0.25);
   
   // Name modal state
   const [showNameModal, setShowNameModal] = useState(false);
@@ -179,6 +180,23 @@ const RatingPage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartY, setDragStartY] = useState(0);
   const sheetRef = useRef(null);
+
+  // Load dynamic earnings rate
+  useEffect(() => {
+    const loadEarningsRate = async () => {
+      try {
+        const configDoc = await getDoc(doc(db, 'app_config', 'affiliate_pricing'));
+        if (configDoc.exists()) {
+          setEarningsPerRating(configDoc.data().earnings_per_rating || 0.25);
+        }
+      } catch (error) {
+        console.error('Error loading earnings rate:', error);
+        // Keep default 0.25 if loading fails
+      }
+    };
+
+    loadEarningsRate();
+  }, []);
 
   // Handle viewport changes (browser UI collapse/expand)
   useEffect(() => {
@@ -437,7 +455,7 @@ const RatingPage = () => {
       affiliateId: affiliateId,
       rating: stars,
       userName: userName,
-      earnings: 0.25,
+      earnings: earningsPerRating,
       fingerprint: ratingFingerprint,
       userAgent: navigator.userAgent,
       timestamp: serverTimestamp(),
@@ -449,14 +467,14 @@ const RatingPage = () => {
     
     await updateDoc(doc(db, 'rating_links', linkData.id), {
       totalRatings: increment(1),
-      earnings: increment(0.25),
+      earnings: increment(earningsPerRating),
       lastRatedAt: serverTimestamp()
     });
     
     await updateDoc(doc(db, 'affiliates', affiliateId), {
       totalRatings: increment(1),
-      totalEarnings: increment(0.25),
-      balance: increment(0.25)
+      totalEarnings: increment(earningsPerRating),
+      balance: increment(earningsPerRating)
     });
   };
 

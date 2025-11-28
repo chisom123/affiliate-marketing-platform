@@ -358,6 +358,173 @@ const AdminDashboard = () => {
     })()
   };
 
+  const AffiliatePricingControl = () => {
+    const [earningsPerRating, setEarningsPerRating] = useState('');
+    const [currentValue, setCurrentValue] = useState(null);
+    const [updating, setUpdating] = useState(false);
+    const [message, setMessage] = useState(null);
+
+    useEffect(() => {
+      // Load current value
+      const unsubscribe = onSnapshot(
+        doc(db, 'app_config', 'affiliate_pricing'),
+        (doc) => {
+          if (doc.exists()) {
+            const value = doc.data().earnings_per_rating;
+            setCurrentValue(value);
+            setEarningsPerRating(value.toString());
+          }
+        }
+      );
+      return () => unsubscribe();
+    }, []);
+
+    const updatePricing = async () => {
+      const value = parseFloat(earningsPerRating);
+      
+      if (isNaN(value) || value < 0 || value > 10) {
+        setMessage({ type: 'error', text: 'Please enter a value between $0.00 and $10.00' });
+        return;
+      }
+
+      if (!window.confirm(`Change earnings per rating from $${currentValue?.toFixed(2)} to $${value.toFixed(2)}?`)) {
+        return;
+      }
+
+      setUpdating(true);
+      setMessage(null);
+
+      try {
+        await updateDoc(doc(db, 'app_config', 'affiliate_pricing'), {
+          earnings_per_rating: value,
+          updated_at: new Date(),
+          updated_by: 'admin'
+        });
+        
+        setMessage({ 
+          type: 'success', 
+          text: `✅ Successfully updated to $${value.toFixed(2)} per rating. All users will see this change within seconds.` 
+        });
+      } catch (error) {
+        console.error('Error updating pricing:', error);
+        setMessage({ type: 'error', text: `Error: ${error.message}` });
+      } finally {
+        setUpdating(false);
+      }
+    };
+
+    return (
+      <div>
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ 
+            display: 'block', 
+            marginBottom: '8px', 
+            fontWeight: 'bold',
+            color: '#495057'
+          }}>
+            Current Earnings Per Rating
+          </label>
+          <div style={{ 
+            fontSize: '32px', 
+            fontWeight: 'bold', 
+            color: '#28a745',
+            marginBottom: '20px'
+          }}>
+            ${currentValue?.toFixed(2) || '0.25'}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ 
+            display: 'block', 
+            marginBottom: '8px', 
+            fontWeight: '600',
+            color: '#495057'
+          }}>
+            New Earnings Per Rating ($)
+          </label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            max="10"
+            value={earningsPerRating}
+            onChange={(e) => setEarningsPerRating(e.target.value)}
+            placeholder="0.25"
+            style={{
+              width: '200px',
+              padding: '10px',
+              fontSize: '16px',
+              border: '2px solid #dee2e6',
+              borderRadius: '6px',
+              marginRight: '10px'
+            }}
+          />
+          
+          <button
+            onClick={updatePricing}
+            disabled={updating || !earningsPerRating}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: updating ? '#6c757d' : '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: updating || !earningsPerRating ? 'not-allowed' : 'pointer',
+              fontWeight: 'bold',
+              fontSize: '14px'
+            }}
+          >
+            {updating ? '⏳ Updating...' : '💾 Update Pricing'}
+          </button>
+        </div>
+
+        {message && (
+          <div style={{
+            padding: '12px',
+            borderRadius: '6px',
+            backgroundColor: message.type === 'success' ? '#d4edda' : '#f8d7da',
+            border: `1px solid ${message.type === 'success' ? '#c3e6cb' : '#f5c6cb'}`,
+            color: message.type === 'success' ? '#155724' : '#721c24',
+            fontSize: '14px'
+          }}>
+            {message.text}
+          </div>
+        )}
+
+        <div style={{ 
+          marginTop: '20px',
+          padding: '15px',
+          backgroundColor: '#e7f3ff',
+          borderRadius: '6px',
+          fontSize: '13px',
+          color: '#004085'
+        }}>
+          <strong>💡 Common Values:</strong>
+          <div style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            {[0.10, 0.25, 0.50, 0.75, 1.00].map(val => (
+              <button
+                key={val}
+                onClick={() => setEarningsPerRating(val.toString())}
+                style={{
+                  padding: '6px 12px',
+                  backgroundColor: 'white',
+                  border: '1px solid #007bff',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  color: '#007bff'
+                }}
+              >
+                ${val.toFixed(2)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div style={{
@@ -1356,6 +1523,37 @@ const AdminDashboard = () => {
                 <div style={{ fontSize: '14px', marginTop: '5px' }}>
                   Bank details are secured with AES-256-GCM encryption
                 </div>
+              </div>
+            </div>
+
+            {/* Affiliate Pricing Configuration */}
+            <div style={{ 
+              backgroundColor: 'white',
+              padding: '25px',
+              borderRadius: '10px',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+              marginTop: '20px'
+            }}>
+              <h3 style={{ marginBottom: '20px' }}>💰 Affiliate Pricing Control</h3>
+              
+              <div style={{ 
+                backgroundColor: '#f8f9fa',
+                padding: '20px',
+                borderRadius: '8px',
+                marginBottom: '20px'
+              }}>
+                <AffiliatePricingControl />
+              </div>
+              
+              <div style={{ 
+                backgroundColor: '#fff3cd',
+                border: '1px solid #ffeaa7',
+                borderRadius: '8px',
+                padding: '15px',
+                fontSize: '14px',
+                color: '#856404'
+              }}>
+                <strong>⚠️ Note:</strong> Changes take effect immediately for all users. Test with small changes first.
               </div>
             </div>
           </div>
