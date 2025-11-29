@@ -755,7 +755,11 @@ const RatingPage = () => {
               <span style={{
                 color: 'white',
                 fontSize: '19px',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                maxWidth: '200px', 
+                overflow: 'hidden', 
+                textOverflow: 'ellipsis', 
+                whiteSpace: 'nowrap'
               }}>
                 {affiliateFirstName}
               </span>
