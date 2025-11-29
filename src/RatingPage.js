@@ -902,7 +902,8 @@ const RatingPage = () => {
                 display: 'flex',
                 alignItems: 'center',
                 padding: '15px 20px',
-                gap: '12px'
+                gap: '12px',
+                paddingBottom: index === interactions.length - 1 ? '25px' : '15px'
               }}>
                 <Avatar userName={interaction.userName} size={38} />
                 
