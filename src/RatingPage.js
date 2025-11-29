@@ -408,6 +408,15 @@ const RatingPage = () => {
         id: doc.id,
         ...doc.data()
       })).sort((a, b) => {
+        // First, check if either rating belongs to current user
+        const aIsCurrentUser = a.fingerprint === fingerprint;
+        const bIsCurrentUser = b.fingerprint === fingerprint;
+        
+        // If one is current user and other isn't, current user comes first
+        if (aIsCurrentUser && !bIsCurrentUser) return -1;
+        if (!aIsCurrentUser && bIsCurrentUser) return 1;
+        
+        // Otherwise sort by timestamp (newest first)
         const aTime = a.timestamp?.toMillis() || 0;
         const bTime = b.timestamp?.toMillis() || 0;
         return bTime - aTime;
