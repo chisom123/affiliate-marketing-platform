@@ -1,11 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { getFirestore, collection, onSnapshot, query, where, orderBy, doc, updateDoc, getDocs } from 'firebase/firestore';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
 import { decryptBankAccount } from './utils/encryptionUtils'; // Import the encryption utilities
 
 // Use your existing Firebase instance
 const db = getFirestore();
+const auth = getAuth();
+
+const ADMIN_UID = "3wrmp7PRwLenKweORCEKkokpd0u1";
 
 const AdminDashboard = () => {
+  // Authentication state
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [loggingIn, setLoggingIn] = useState(false);
   const [selectedTab, setSelectedTab] = useState('overview');
   const [withdrawals, setWithdrawals] = useState([]);
   const [affiliates, setAffiliates] = useState([]);
@@ -16,8 +27,28 @@ const AdminDashboard = () => {
   const [processingAction, setProcessingAction] = useState(false);
   const [decryptionErrors, setDecryptionErrors] = useState(new Set());
 
+  // Check authentication state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      // Check if user is admin
+      if (currentUser && currentUser.uid !== ADMIN_UID) {
+        // Not admin - sign them out
+        signOut(auth);
+        setLoginError('Access denied. Admin privileges required.');
+        setUser(null);
+      } else {
+        setUser(currentUser);
+      }
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   // Real-time data loading
   useEffect(() => {
+    if (!user) return;
+
     const unsubscribeWithdrawals = onSnapshot(
       query(collection(db, 'withdrawals'), orderBy('requestedAt', 'desc')),
       (snapshot) => {
@@ -64,7 +95,7 @@ const AdminDashboard = () => {
       unsubscribeAffiliates();
       unsubscribeLinks();
     };
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const calculateLinkAnalytics = async () => {
@@ -118,6 +149,37 @@ const AdminDashboard = () => {
       calculateLinkAnalytics();
     }
   }, [ratingLinks]);
+
+  // Handle login
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError('');
+    setLoggingIn(true);
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Check if user is admin
+      if (userCredential.user.uid !== ADMIN_UID) {
+        await signOut(auth);
+        setLoginError('Access denied. Admin privileges required.');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setLoginError(error.message || 'Failed to log in. Please check your credentials.');
+    } finally {
+      setLoggingIn(false);
+    }
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const updateWithdrawalStatus = async (withdrawalId, newStatus, rejectionReason = null) => {
     setProcessingAction(true);
@@ -525,29 +587,159 @@ const AdminDashboard = () => {
     );
   };
 
-  if (loading) {
+  // Show loading while checking auth
+  if (authLoading) {
     return (
       <div style={{
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         height: '100vh',
-        fontSize: '18px'
+        fontSize: '18px',
+        backgroundColor: '#f8f9fa'
       }}>
-        Loading SocialStar Dashboard...
+        Loading...
+      </div>
+    );
+  }
+
+  // Show login screen if not authenticated
+  if (!user) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#f8f9fa',
+        fontFamily: 'Arial, sans-serif'
+      }}>
+        <div style={{
+          backgroundColor: 'white',
+          padding: '40px',
+          borderRadius: '10px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+          width: '100%',
+          maxWidth: '400px'
+        }}>
+          <h1 style={{
+            margin: '0 0 10px 0',
+            fontSize: '24px',
+            fontWeight: 'bold',
+            textAlign: 'center'
+          }}>
+            SocialStar Admin
+          </h1>
+          <p style={{
+            margin: '0 0 30px 0',
+            fontSize: '14px',
+            color: '#6c757d',
+            textAlign: 'center'
+          }}>
+            Sign in to access the dashboard
+          </p>
+
+          <form onSubmit={handleLogin}>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#495057'
+              }}>
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  fontSize: '14px',
+                  border: '1px solid #dee2e6',
+                  borderRadius: '6px',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#495057'
+              }}>
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  fontSize: '14px',
+                  border: '1px solid #dee2e6',
+                  borderRadius: '6px',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            {loginError && (
+              <div style={{
+                padding: '12px',
+                marginBottom: '20px',
+                backgroundColor: '#f8d7da',
+                border: '1px solid #f5c6cb',
+                borderRadius: '6px',
+                color: '#721c24',
+                fontSize: '14px'
+              }}>
+                {loginError}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loggingIn}
+              style={{
+                width: '100%',
+                padding: '12px',
+                backgroundColor: loggingIn ? '#6c757d' : '#007bff',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                cursor: loggingIn ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {loggingIn ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+        </div>
       </div>
     );
   }
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
-      {/* Header */}
-      <header style={{ 
-        backgroundColor: '#2c3e50',
-        color: 'white',
-        padding: '20px'
-      }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <header style={{ 
+      backgroundColor: '#2c3e50',
+      color: 'white',
+      padding: '20px'
+    }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
           <h1 style={{ margin: '0', fontSize: '24px', fontWeight: 'bold' }}>
             SocialStar Admin Dashboard
           </h1>
@@ -555,7 +747,23 @@ const AdminDashboard = () => {
             Withdrawal management & payout processing • 🔒 Bank details encrypted & auto-decrypted
           </p>
         </div>
-      </header>
+        <button
+          onClick={handleLogout}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            color: 'white',
+            border: '1px solid rgba(255,255,255,0.3)',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: '600'
+          }}
+        >
+          Logout
+        </button>
+      </div>
+    </header>
 
       {/* Navigation */}
       <div style={{ backgroundColor: 'white', borderBottom: '1px solid #dee2e6' }}>
