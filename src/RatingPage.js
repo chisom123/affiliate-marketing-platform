@@ -143,6 +143,18 @@ const Avatar = ({ userName, size = 40 }) => {
   );
 };
 
+// Spinner component
+const Spinner = () => (
+  <div style={{
+    width: '40px',
+    height: '40px',
+    border: '3px solid rgba(255, 255, 255, 0.3)',
+    borderTop: '3px solid #FFF',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
+  }} />
+);
+
 const RatingPage = () => {
   const { affiliateId, linkId } = useParams();
   const [linkData, setLinkData] = useState(null);
@@ -162,6 +174,10 @@ const RatingPage = () => {
   const [interactions, setInteractions] = useState([]);
   const [loadingInteractions, setLoadingInteractions] = useState(true);
   const [earningsPerRating, setEarningsPerRating] = useState(0.25);
+  
+  // Image loading states
+  const [profileImageLoading, setProfileImageLoading] = useState(true);
+  const [backgroundImageLoading, setBackgroundImageLoading] = useState(true);
   
   // Name modal state
   const [showNameModal, setShowNameModal] = useState(false);
@@ -563,14 +579,7 @@ const RatingPage = () => {
         height: '100vh',
         backgroundColor: '#10183C'
       }}>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          border: '4px solid #323862',
-          borderTop: '4px solid #fff',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }}></div>
+        <Spinner />
         <style>{`
           @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -654,14 +663,29 @@ const RatingPage = () => {
         zIndex: 1,
         backgroundColor: '#10183C'
       }}>
+        {backgroundImageLoading && photoUrl && (
+          <div style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)'
+          }}>
+            <Spinner />
+          </div>
+        )}
         {photoUrl && (
           <img 
             src={photoUrl}
             alt="Rating"
+            onLoad={() => setBackgroundImageLoading(false)}
+            onError={() => setBackgroundImageLoading(false)}
             style={{
               width: '100%',
               height: '100%',
-              objectFit: 'cover'
+              objectFit: 'cover',
+              display: backgroundImageLoading ? 'none' : 'block'
             }}
           />
         )}
@@ -742,16 +766,52 @@ const RatingPage = () => {
               backgroundColor: 'transparent',
               padding: '5px 16px'
             }}>
-              <img 
-                src={affiliateProfilePic}
-                alt={affiliateFirstName}
-                style={{
-                  width: '35px',
-                  height: '35px',
-                  borderRadius: '50%',
-                  objectFit: 'cover'
-                }}
-              />
+              {/* Profile Image with Placeholder */}
+              <div style={{
+                position: 'relative',
+                width: '35px',
+                height: '35px',
+                borderRadius: '50%',
+                overflow: 'hidden'
+              }}>
+                {profileImageLoading && affiliateProfilePic && (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0
+                  }}>
+                    <div style={{
+                      width: '15px',
+                      height: '15px',
+                      border: '2px solid rgba(255, 255, 255, 0.3)',
+                      borderTop: '2px solid #FFF',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                  </div>
+                )}
+                {affiliateProfilePic && (
+                  <img 
+                    src={affiliateProfilePic}
+                    alt={affiliateFirstName}
+                    onLoad={() => setProfileImageLoading(false)}
+                    onError={() => setProfileImageLoading(false)}
+                    style={{
+                      width: '35px',
+                      height: '35px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      display: profileImageLoading ? 'none' : 'block'
+                    }}
+                  />
+                )}
+              </div>
               <span style={{
                 color: 'white',
                 fontSize: '19px',
@@ -1045,6 +1105,11 @@ const RatingPage = () => {
       )}
 
       <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
         @keyframes modalFadeIn {
           from {
             opacity: 0;
