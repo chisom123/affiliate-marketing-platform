@@ -952,8 +952,8 @@ const RatingPage = () => {
               
               {index < interactions.length - 1 && (
                 <div style={{
-                  height: '0.25px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  height: '1px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
                   margin: '0'
                 }}></div>
               )}
