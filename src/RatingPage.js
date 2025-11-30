@@ -101,7 +101,10 @@ const isInstagramApp = () => {
 // Generate initials from name
 const getInitials = (name) => {
   if (!name) return '?';
-  return name.trim()[0].toUpperCase();
+  const trimmed = name.trim();
+  // Use Array.from to properly handle multi-byte characters like emojis
+  const chars = Array.from(trimmed);
+  return chars[0];
 };
 
 // Generate consistent color from name
