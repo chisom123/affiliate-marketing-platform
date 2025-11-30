@@ -184,6 +184,7 @@ const RatingPage = () => {
   const [pendingRating, setPendingRating] = useState(null);
   const [nameInput, setNameInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   const [continueUrl, setContinueUrl] = useState('https://apps.apple.com/app/socialstar-app/id6473705189');
   
@@ -1014,12 +1015,16 @@ const RatingPage = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          backgroundColor: isInputFocused ? '#10183C' : 'rgba(0, 0, 0, 0.7)',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           zIndex: 100,
-          padding: '20px'
+          padding: '20px',
+          transition: 'background-color 0.2s ease',
+          overflow: 'hidden',
+          overscrollBehavior: 'contain',
+          touchAction: 'none'
         }}>
           {/* Close button in top-right */}
           <button
@@ -1039,7 +1044,8 @@ const RatingPage = () => {
               fontSize: '36px',
               cursor: 'pointer',
               padding: '5px',
-              lineHeight: 1
+              lineHeight: 1,
+              zIndex: 101
             }}
           >
             <X size={33} strokeWidth={3} />
@@ -1068,13 +1074,14 @@ const RatingPage = () => {
               type="text"
               value={nameInput}
               onChange={(e) => setNameInput(e.target.value.slice(0, 15))}
+              onFocus={() => setIsInputFocused(true)}
+              onBlur={() => setIsInputFocused(false)}
               onKeyPress={(e) => {
                 if (e.key === 'Enter' && nameInput.trim().length > 0) {
                   handleNameSubmit();
                 }
               }}
               placeholder="Enter your name"
-              autoFocus
               maxLength={15}
               style={{
                 width: '100%',
