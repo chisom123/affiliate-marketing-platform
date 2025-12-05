@@ -183,9 +183,9 @@ const RatingPage = () => {
   const [profileImageLoading, setProfileImageLoading] = useState(true);
   const [backgroundImageLoading, setBackgroundImageLoading] = useState(true);
   
-  // Name modal state
-  const [showNameModal, setShowNameModal] = useState(false);
-  const [pendingRating, setPendingRating] = useState(null);
+  // Name modal state - NOW FOR PERSONALIZATION AFTER RATING
+  const [showPersonalizeModal, setShowPersonalizeModal] = useState(false);
+  const [submittedRatingId, setSubmittedRatingId] = useState(null);
   const [nameInput, setNameInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -510,42 +510,70 @@ const RatingPage = () => {
     setLoadingInteractions(false);
   };
 
-  const handleStarTap = (stars) => {
+  // NEW: Instant rating on star tap
+  const handleStarTap = async (stars) => {
     if (!isRatingEnabled || hasAlreadyVoted) return;
     
     setRating(stars);
-    setPendingRating(stars);
     setAnimateRating(true);
     
-    setTimeout(() => {
+    // Submit rating IMMEDIATELY as Anonymous
+    try {
+      const ratingId = await submitRating(stars, 'Anonymous');
+      setSubmittedRatingId(ratingId);
+      setHasAlreadyVoted(true);
+      setIsRatingEnabled(false);
+      
+      // Reload interactions to show new rating
+      if (linkData) {
+        await loadInteractions(linkData.id);
+      }
+      
+      // Show personalize modal after brief delay
+      setTimeout(() => {
+        setAnimateRating(false);
+        setShowPersonalizeModal(true);
+      }, 800);
+      
+    } catch (error) {
+      console.error('Error submitting rating:', error);
       setAnimateRating(false);
-      setShowNameModal(true);
-    }, 300);
+      alert('Failed to submit rating. Please try again.');
+    }
   };
 
-  const handleNameSubmit = async () => {
+  // NEW: Handle name personalization (optional)
+  const handlePersonalize = async () => {
     const trimmedName = nameInput.trim();
-    if (trimmedName.length === 0 || isSubmitting) return;
+    if (trimmedName.length === 0 || isSubmitting || !submittedRatingId) return;
     
     setIsSubmitting(true);
     
     try {
-      await submitRating(pendingRating, trimmedName);
-      setShowNameModal(false);
-      setNameInput('');
-      setHasAlreadyVoted(true);
-      setIsRatingEnabled(false);
+      // Update the existing rating with the user's name
+      await updateDoc(doc(db, 'ratings', submittedRatingId), {
+        userName: trimmedName
+      });
       
-      // Reload interactions
+      setShowPersonalizeModal(false);
+      setNameInput('');
+      
+      // Reload interactions to show updated name
       if (linkData) {
         await loadInteractions(linkData.id);
       }
     } catch (error) {
-      console.error('Error submitting rating:', error);
-      alert('Failed to submit rating. Please try again.');
+      console.error('Error personalizing rating:', error);
+      alert('Failed to update name. Please try again.');
     }
     
     setIsSubmitting(false);
+  };
+
+  // NEW: Skip personalization
+  const handleSkipPersonalize = () => {
+    setShowPersonalizeModal(false);
+    setNameInput('');
   };
 
   const submitRating = async (stars, userName) => {
@@ -569,7 +597,7 @@ const RatingPage = () => {
       isDevelopment: isDevelopment
     };
     
-    await addDoc(collection(db, 'ratings'), ratingData);
+    const docRef = await addDoc(collection(db, 'ratings'), ratingData);
     
     await updateDoc(doc(db, 'rating_links', linkData.id), {
       totalRatings: increment(1),
@@ -582,6 +610,8 @@ const RatingPage = () => {
       totalEarnings: increment(earningsPerRating),
       balance: increment(earningsPerRating)
     });
+    
+    return docRef.id; // Return the rating ID for later personalization
   };
 
   // SIMPLIFIED BOTTOM SHEET DRAG
@@ -1076,8 +1106,8 @@ const RatingPage = () => {
         ))}
       </div>
 
-      {/* Name Modal */}
-      {showNameModal && (
+      {/* Personalize Modal - SHOWN AFTER RATING */}
+      {showPersonalizeModal && (
         <div 
         style={{
           position: 'fixed',
@@ -1098,12 +1128,7 @@ const RatingPage = () => {
         }}>
           {/* Close button in top-right */}
           <button
-            onClick={() => {
-              setShowNameModal(false);
-              setNameInput('');
-              setPendingRating(null);
-              setRating(0);
-            }}
+            onClick={handleSkipPersonalize}
             style={{
               position: 'absolute',
               top: '15px',
@@ -1148,7 +1173,7 @@ const RatingPage = () => {
               onBlur={() => setIsInputFocused(false)}
               onKeyPress={(e) => {
                 if (e.key === 'Enter' && nameInput.trim().length > 0) {
-                  handleNameSubmit();
+                  handlePersonalize();
                 }
               }}
               placeholder="Enter your name"
@@ -1170,7 +1195,7 @@ const RatingPage = () => {
             />
 
             <button
-              onClick={handleNameSubmit}
+              onClick={handlePersonalize}
               disabled={nameInput.trim().length === 0 || isSubmitting}
               style={{
                 marginTop: '20px',
@@ -1185,7 +1210,7 @@ const RatingPage = () => {
                 width: '100%'
               }}
             >
-              {isSubmitting ? 'Submitting...' : 'Continue'}
+              {isSubmitting ? 'Saving...' : 'Continue'}
             </button>
           </div>
         </div>
