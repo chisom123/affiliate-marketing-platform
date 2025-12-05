@@ -10,7 +10,8 @@ import {
   query,
   where,
   getDocs,
-  serverTimestamp
+  serverTimestamp,
+  setDoc
 } from 'firebase/firestore';
 import { useParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
@@ -374,14 +375,8 @@ const RatingPage = () => {
           console.log('Development mode: Skipping "already rated" check');
         }
 
-        // Track page open
-        if (!pageOpenTracked) {
-          await updateDoc(doc(db, 'rating_links', linkDoc.id), {
-            totalPageOpens: increment(1),
-            lastOpenedAt: serverTimestamp()
-          });
-          setPageOpenTracked(true);
-        }
+        // Track UNIQUE page open - NON-BLOCKING
+        trackUniquePageOpen(linkData.id, fingerprint);
 
         // Load interactions
         await loadInteractions(linkData.id);
@@ -397,7 +392,89 @@ const RatingPage = () => {
     if (affiliateId && linkId && fingerprint && isValidEnvironment) {
       loadData();
     }
-  }, [affiliateId, linkId, pageOpenTracked, fingerprint, isValidEnvironment]);
+  }, [affiliateId, linkId, fingerprint, isValidEnvironment]);
+
+  // Track unique page open - FAST & NON-BLOCKING
+  const trackUniquePageOpen = async (linkDocId, userFingerprint) => {
+    if (pageOpenTracked) return;
+    
+    setPageOpenTracked(true);
+
+    // Run tracking asynchronously without awaiting
+    (async () => {
+      try {
+        const trackingDocId = `${linkDocId}_${userFingerprint}`;
+        const trackingDocRef = doc(db, 'unique_page_opens', trackingDocId);
+        
+        // Check if this fingerprint has already opened this link
+        const trackingDoc = await getDoc(trackingDocRef);
+        
+        if (!trackingDoc.exists()) {
+          // First time this fingerprint is opening this link
+          // Create tracking document
+          await setDoc(trackingDocRef, {
+            linkId: linkDocId,
+            fingerprint: userFingerprint,
+            firstOpenedAt: serverTimestamp(),
+            openCount: 1
+          });
+
+          // Increment UNIQUE page opens counter
+          await updateDoc(doc(db, 'rating_links', linkDocId), {
+            totalPageOpens: increment(1),
+            lastOpenedAt: serverTimestamp()
+          });
+        } else {
+          // User has opened before - just update their open count
+          await updateDoc(trackingDocRef, {
+            openCount: increment(1),
+            lastOpenedAt: serverTimestamp()
+          });
+        }
+      } catch (error) {
+        console.error('Error tracking unique page open:', error);
+      }
+    })();
+  };
+
+  // Track unique download click - FAST & NON-BLOCKING
+  const trackUniqueDownloadClick = async (linkDocId, userFingerprint) => {
+    // Run tracking asynchronously without awaiting
+    (async () => {
+      try {
+        const trackingDocId = `${linkDocId}_${userFingerprint}`;
+        const trackingDocRef = doc(db, 'unique_download_clicks', trackingDocId);
+        
+        // Check if this fingerprint has already clicked download for this link
+        const trackingDoc = await getDoc(trackingDocRef);
+        
+        if (!trackingDoc.exists()) {
+          // First time this fingerprint is clicking download for this link
+          // Create tracking document
+          await setDoc(trackingDocRef, {
+            linkId: linkDocId,
+            fingerprint: userFingerprint,
+            firstClickedAt: serverTimestamp(),
+            clickCount: 1
+          });
+
+          // Increment UNIQUE download clicks counter
+          await updateDoc(doc(db, 'rating_links', linkDocId), {
+            totalDownloadClicks: increment(1),
+            lastDownloadClickAt: serverTimestamp()
+          });
+        } else {
+          // User has clicked before - just update their click count
+          await updateDoc(trackingDocRef, {
+            clickCount: increment(1),
+            lastClickedAt: serverTimestamp()
+          });
+        }
+      } catch (error) {
+        console.error('Error tracking unique download click:', error);
+      }
+    })();
+  };
 
   const loadInteractions = async (linkDocId) => {
     setLoadingInteractions(true);
@@ -715,24 +792,14 @@ const RatingPage = () => {
       }}>
         {hasAlreadyVoted ? (
           <button
-            onClick={async () => {
-              try {
-                // Track download click FIRST
-                if (linkData) {
-                  await updateDoc(doc(db, 'rating_links', linkData.id), {
-                    totalDownloadClicks: increment(1),
-                    lastDownloadClickAt: serverTimestamp()
-                  });
-                  
-                  // Small delay to ensure Firebase write completes
-                  await new Promise(resolve => setTimeout(resolve, 100));
-                }
-              } catch (error) {
-                console.error('Error tracking download click:', error);
-              } finally {
-                // ALWAYS redirect, even if tracking fails
-                window.location.href = continueUrl;
+            onClick={() => {
+              // Track UNIQUE download click FIRST (non-blocking)
+              if (linkData && fingerprint) {
+                trackUniqueDownloadClick(linkData.id, fingerprint);
               }
+              
+              // IMMEDIATELY redirect - don't wait for Firebase
+              window.location.href = continueUrl;
             }}
             style={{
               width: '100%',
