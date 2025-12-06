@@ -15,7 +15,6 @@ import {
 } from 'firebase/firestore';
 import { useParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { X } from 'lucide-react';
 
 
 // Development environment check
@@ -99,22 +98,13 @@ const isInstagramApp = () => {
   return isInstagram || isIOSInstagram || isAndroidInstagram;
 };
 
-// Generate initials from name
-const getInitials = (name) => {
-  if (!name) return '?';
-  const trimmed = name.trim();
-  // Use Array.from to properly handle multi-byte characters like emojis
-  const chars = Array.from(trimmed);
-  return chars[0];
-};
-
-// Generate consistent color from name
-const getColorFromName = (name) => {
-  if (!name) return '#999';
+// Generate consistent color from fingerprint
+const getColorFromFingerprint = (fingerprint) => {
+  if (!fingerprint) return '#999';
   
   let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  for (let i = 0; i < fingerprint.length; i++) {
+    hash = fingerprint.charCodeAt(i) + ((hash << 5) - hash);
   }
   
   const colors = [
@@ -126,24 +116,16 @@ const getColorFromName = (name) => {
   return colors[Math.abs(hash) % colors.length];
 };
 
-// Avatar component
-const Avatar = ({ userName, size = 40 }) => {
+// Avatar component - simplified to just show colored circle
+const Avatar = ({ fingerprint, size = 40 }) => {
   return (
     <div style={{
       width: `${size}px`,
       height: `${size}px`,
       borderRadius: '50%',
-      backgroundColor: getColorFromName(userName),
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: `${size * 0.4}px`,
-      fontWeight: 'bold',
-      color: 'white',
+      backgroundColor: getColorFromFingerprint(fingerprint),
       flexShrink: 0
-    }}>
-      {getInitials(userName)}
-    </div>
+    }} />
   );
 };
 
@@ -182,13 +164,6 @@ const RatingPage = () => {
   // Image loading states
   const [profileImageLoading, setProfileImageLoading] = useState(true);
   const [backgroundImageLoading, setBackgroundImageLoading] = useState(true);
-  
-  // Name modal state - NOW FOR PERSONALIZATION AFTER RATING
-  const [showPersonalizeModal, setShowPersonalizeModal] = useState(false);
-  const [submittedRatingId, setSubmittedRatingId] = useState(null);
-  const [nameInput, setNameInput] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isInputFocused, setIsInputFocused] = useState(false);
 
   const [continueUrl, setContinueUrl] = useState('https://apps.apple.com/app/socialstar-app/id6473705189');
   
@@ -510,17 +485,16 @@ const RatingPage = () => {
     setLoadingInteractions(false);
   };
 
-  // NEW: Instant rating on star tap
+  // Instant rating on star tap - fully anonymous
   const handleStarTap = async (stars) => {
     if (!isRatingEnabled || hasAlreadyVoted) return;
     
     setRating(stars);
     setAnimateRating(true);
     
-    // Submit rating IMMEDIATELY as Anonymous
+    // Submit rating IMMEDIATELY (no name needed)
     try {
-      const ratingId = await submitRating(stars, 'Anonymous');
-      setSubmittedRatingId(ratingId);
+      await submitRating(stars);
       setHasAlreadyVoted(true);
       setIsRatingEnabled(false);
       
@@ -529,10 +503,9 @@ const RatingPage = () => {
         await loadInteractions(linkData.id);
       }
       
-      // Show personalize modal after brief delay
+      // Reset animation after brief delay
       setTimeout(() => {
         setAnimateRating(false);
-        setShowPersonalizeModal(true);
       }, 800);
       
     } catch (error) {
@@ -542,41 +515,7 @@ const RatingPage = () => {
     }
   };
 
-  // NEW: Handle name personalization (optional)
-  const handlePersonalize = async () => {
-    const trimmedName = nameInput.trim();
-    if (trimmedName.length === 0 || isSubmitting || !submittedRatingId) return;
-    
-    setIsSubmitting(true);
-    
-    try {
-      // Update the existing rating with the user's name
-      await updateDoc(doc(db, 'ratings', submittedRatingId), {
-        userName: trimmedName
-      });
-      
-      setShowPersonalizeModal(false);
-      setNameInput('');
-      
-      // Reload interactions to show updated name
-      if (linkData) {
-        await loadInteractions(linkData.id);
-      }
-    } catch (error) {
-      console.error('Error personalizing rating:', error);
-      alert('Failed to update name. Please try again.');
-    }
-    
-    setIsSubmitting(false);
-  };
-
-  // NEW: Skip personalization
-  const handleSkipPersonalize = () => {
-    setShowPersonalizeModal(false);
-    setNameInput('');
-  };
-
-  const submitRating = async (stars, userName) => {
+  const submitRating = async (stars) => {
     if (!linkData || !fingerprint) return;
 
     const ratingFingerprint = isDevelopment 
@@ -588,7 +527,6 @@ const RatingPage = () => {
       linkIdString: linkData.linkId,
       affiliateId: affiliateId,
       rating: stars,
-      userName: userName,
       earnings: earningsPerRating,
       fingerprint: ratingFingerprint,
       userAgent: navigator.userAgent,
@@ -611,7 +549,7 @@ const RatingPage = () => {
       balance: increment(earningsPerRating)
     });
     
-    return docRef.id; // Return the rating ID for later personalization
+    return docRef.id;
   };
 
   // SIMPLIFIED BOTTOM SHEET DRAG
@@ -946,7 +884,7 @@ const RatingPage = () => {
           bottom: 100,
           left: 0,
           right: 0,
-          height: `${snapPoints[snapState] - dragOffset}px`, // Dynamic height during drag
+          height: `${snapPoints[snapState] - dragOffset}px`,
           backgroundColor: '#1A2245',
           borderTopLeftRadius: '20px',
           borderTopRightRadius: '20px',
@@ -991,7 +929,7 @@ const RatingPage = () => {
           </h3>
         </div>
 
-        {/* Ratings List */}
+        {/* Ratings List - Simplified anonymous display */}
         <div style={{
           overflowY: 'auto',
           height: 'calc(100% - 60px)',
@@ -1002,23 +940,11 @@ const RatingPage = () => {
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'space-between',
                 padding: '15px 20px',
-                gap: '12px',
                 paddingBottom: index === interactions.length - 1 ? '25px' : '15px'
               }}>
-                <Avatar userName={interaction.userName} size={38} />
-                
-                <span style={{
-                  flex: 1,
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  color: 'white',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {interaction.userName}
-                </span>
+                <Avatar fingerprint={interaction.fingerprint} size={38} />
 
                 <div style={{
                   display: 'flex',
@@ -1106,135 +1032,10 @@ const RatingPage = () => {
         ))}
       </div>
 
-      {/* Personalize Modal - SHOWN AFTER RATING */}
-      {showPersonalizeModal && (
-        <div 
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: isInputFocused ? '#10183C' : 'rgba(0, 0, 0, 0.7)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 100,
-          padding: '20px',
-          transition: 'background-color 0.2s ease',
-          overflow: 'hidden',
-          overscrollBehavior: 'contain',
-          touchAction: 'none'
-        }}>
-          {/* Close button in top-right */}
-          <button
-            onClick={handleSkipPersonalize}
-            style={{
-              position: 'absolute',
-              top: '15px',
-              right: '15px',
-              background: 'transparent',
-              border: 'none',
-              color: 'rgba(255, 255, 255)',
-              fontSize: '36px',
-              cursor: 'pointer',
-              padding: '5px',
-              lineHeight: 1,
-              zIndex: 101
-            }}
-          >
-            <X size={33} strokeWidth={3} />
-          </button>
-
-          <div style={{
-            backgroundColor: '#1A2245',
-            borderRadius: '12px',
-            padding: '30px',
-            width: '100%',
-            maxWidth: '400px',
-            animation: 'modalFadeIn 0.2s ease-out',
-          }}>
-
-            <h2 style={{
-              margin: '0 0 20px 0',
-              fontSize: '20px',
-              fontWeight: 'bold',
-              color: 'white',
-              textAlign: 'center'
-            }}>
-              What's your name?
-            </h2>
-
-            <input
-              type="text"
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value.slice(0, 15))}
-              onFocus={() => setIsInputFocused(true)}
-              onBlur={() => setIsInputFocused(false)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && nameInput.trim().length > 0) {
-                  handlePersonalize();
-                }
-              }}
-              placeholder="Enter your name"
-              maxLength={15}
-              style={{
-                width: '100%',
-                padding: '18px 20px',
-                fontSize: '16px',
-                fontWeight: '600',
-                backgroundColor: '#3B4374',
-                border: '0px',
-                borderRadius: '8px',
-                color: '#fff',
-                outline: 'none',
-                boxSizing: 'border-box',
-                transition: 'border-color 0.2s',
-                caretColor: '#fff'
-              }}
-            />
-
-            <button
-              onClick={handlePersonalize}
-              disabled={nameInput.trim().length === 0 || isSubmitting}
-              style={{
-                marginTop: '20px',
-                padding: '17px 32px',
-                backgroundColor: nameInput.trim().length === 0 || isSubmitting  ? 'rgba(65, 105, 225, 0.5)' : '#4169E1',
-                color: 'white',
-                border: 'none',
-                borderRadius: '200px',
-                fontSize: '17px',
-                fontWeight: 'bold',
-                cursor: nameInput.trim().length === 0 || isSubmitting  ? 'not-allowed' : 'pointer',
-                width: '100%'
-              }}
-            >
-              {isSubmitting ? 'Saving...' : 'Continue'}
-            </button>
-          </div>
-        </div>
-      )}
-
       <style>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
-        }
-
-        @keyframes modalFadeIn {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        input::placeholder {
-          color: rgba(255, 255, 255, 0.5);
         }
       `}</style>
     </div>
