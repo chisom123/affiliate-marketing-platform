@@ -787,7 +787,7 @@ const RatingPage = () => {
               fontWeight: 'bold',
               lineHeight: 1
             }}>
-              Continue Playing
+              Continue
             </span>
             <span style={{
               color: 'white',
