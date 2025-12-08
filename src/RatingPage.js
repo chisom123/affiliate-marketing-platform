@@ -810,41 +810,41 @@ const RatingPage = () => {
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '12px',
+              gap: affiliateProfilePic ? '12px' : '0px',
               backgroundColor: 'transparent',
               padding: '5px 16px'
             }}>
-              {/* Profile Image with Placeholder */}
-              <div style={{
-                position: 'relative',
-                width: '35px',
-                height: '35px',
-                borderRadius: '50%',
-                overflow: 'hidden'
-              }}>
-                {profileImageLoading && affiliateProfilePic && (
-                  <div style={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0
-                  }}>
+              {/* Profile Image with Placeholder - Only render if URL exists */}
+              {affiliateProfilePic && (
+                <div style={{
+                  position: 'relative',
+                  width: '35px',
+                  height: '35px',
+                  borderRadius: '50%',
+                  overflow: 'hidden'
+                }}>
+                  {profileImageLoading && (
                     <div style={{
-                      width: '15px',
-                      height: '15px',
-                      border: '2px solid rgba(255, 255, 255, 0.3)',
-                      borderTop: '2px solid #FFF',
-                      borderRadius: '50%',
-                      animation: 'spin 1s linear infinite'
-                    }} />
-                  </div>
-                )}
-                {affiliateProfilePic && (
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0
+                    }}>
+                      <div style={{
+                        width: '15px',
+                        height: '15px',
+                        border: '2px solid rgba(255, 255, 255, 0.3)',
+                        borderTop: '2px solid #FFF',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite'
+                      }} />
+                    </div>
+                  )}
                   <img 
                     src={affiliateProfilePic}
                     alt={affiliateFirstName}
@@ -858,8 +858,8 @@ const RatingPage = () => {
                       display: profileImageLoading ? 'none' : 'block'
                     }}
                   />
-                )}
-              </div>
+                </div>
+              )}
               <span style={{
                 color: 'white',
                 fontSize: '19px',
