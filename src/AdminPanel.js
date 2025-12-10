@@ -1489,42 +1489,108 @@ const AdminDashboard = () => {
                       Total Earned
                     </th>
                     <th style={{ padding: '15px', textAlign: 'center', borderBottom: '1px solid #dee2e6' }}>
+                      Link Creation
+                    </th>
+                    <th style={{ padding: '15px', textAlign: 'center', borderBottom: '1px solid #dee2e6' }}>
                       Joined
+                    </th>
+                    <th style={{ padding: '15px', textAlign: 'center', borderBottom: '1px solid #dee2e6' }}>
+                      Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {affiliates.map((affiliate) => (
-                    <tr key={affiliate.id} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '15px' }}>
-                        <div>
-                          <p style={{ margin: '0', fontWeight: 'bold' }}>
-                            {affiliate.firstName} {affiliate.lastName}
+                  {affiliates.map((affiliate) => {
+                    const canCreateLinks = affiliate.canCreateLinks !== false; // Defaults to true if undefined
+                    
+                    return (
+                      <tr key={affiliate.id} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={{ padding: '15px' }}>
+                          <div>
+                            <p style={{ margin: '0', fontWeight: 'bold' }}>
+                              {affiliate.firstName} {affiliate.lastName}
+                            </p>
+                          </div>
+                        </td>
+                        <td style={{ padding: '15px' }}>
+                          <p style={{ margin: '0', fontSize: '14px' }}>
+                            {affiliate.email}
                           </p>
-                        </div>
-                      </td>
-                      <td style={{ padding: '15px' }}>
-                        <p style={{ margin: '0', fontSize: '14px' }}>
-                          {affiliate.email}
-                        </p>
-                      </td>
-                      <td style={{ padding: '15px', textAlign: 'center' }}>
-                        <strong style={{ color: '#28a745' }}>
-                          ${(affiliate.balance || 0).toFixed(2)}
-                        </strong>
-                      </td>
-                      <td style={{ padding: '15px', textAlign: 'center' }}>
-                        <span style={{ color: '#6c757d' }}>
-                          ${(affiliate.totalEarnings || 0).toFixed(2)}
-                        </span>
-                      </td>
-                      <td style={{ padding: '15px', textAlign: 'center' }}>
-                        <span style={{ fontSize: '12px', color: '#6c757d' }}>
-                          {affiliate.createdAt.toLocaleDateString()}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td style={{ padding: '15px', textAlign: 'center' }}>
+                          <strong style={{ color: '#28a745' }}>
+                            ${(affiliate.balance || 0).toFixed(2)}
+                          </strong>
+                        </td>
+                        <td style={{ padding: '15px', textAlign: 'center' }}>
+                          <span style={{ color: '#6c757d' }}>
+                            ${(affiliate.totalEarnings || 0).toFixed(2)}
+                          </span>
+                        </td>
+                        <td style={{ padding: '15px', textAlign: 'center' }}>
+                          <span style={{
+                            padding: '4px 12px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            backgroundColor: canCreateLinks ? '#d4edda' : '#f8d7da',
+                            color: canCreateLinks ? '#155724' : '#721c24'
+                          }}>
+                            {canCreateLinks ? '✅ Enabled' : '🚫 Blocked'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '15px', textAlign: 'center' }}>
+                          <span style={{ fontSize: '12px', color: '#6c757d' }}>
+                            {affiliate.createdAt.toLocaleDateString()}
+                          </span>
+                        </td>
+                        <td style={{ padding: '15px', textAlign: 'center' }}>
+                          <button
+                            onClick={async () => {
+                              const action = canCreateLinks ? 'block' : 'unblock';
+                              const confirmMessage = canCreateLinks 
+                                ? `Block ${affiliate.firstName} ${affiliate.lastName} from creating new links?`
+                                : `Unblock ${affiliate.firstName} ${affiliate.lastName} and allow them to create new links?`;
+                              
+                              if (!window.confirm(confirmMessage)) {
+                                return;
+                              }
+                              
+                              setProcessingAction(true);
+                              
+                              try {
+                                await updateDoc(doc(db, 'affiliates', affiliate.id), {
+                                  canCreateLinks: !canCreateLinks,
+                                  linkCreationUpdatedAt: new Date(),
+                                  linkCreationUpdatedBy: 'admin'
+                                });
+                                
+                                alert(`✅ Successfully ${action}ed ${affiliate.firstName} ${affiliate.lastName}`);
+                              } catch (error) {
+                                console.error('Error updating link creation permission:', error);
+                                alert(`Error: ${error.message}`);
+                              } finally {
+                                setProcessingAction(false);
+                              }
+                            }}
+                            disabled={processingAction}
+                            style={{
+                              padding: '6px 16px',
+                              backgroundColor: canCreateLinks ? '#dc3545' : '#28a745',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: processingAction ? 'not-allowed' : 'pointer',
+                              fontSize: '12px',
+                              fontWeight: 'bold'
+                            }}
+                          >
+                            {canCreateLinks ? '🚫 Block' : '✅ Unblock'}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
               
