@@ -14,7 +14,7 @@ import {
   setDoc
 } from 'firebase/firestore';
 import { useParams } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { X } from 'lucide-react';
 
 
 // Development environment check
@@ -176,6 +176,9 @@ const RatingPage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartY, setDragStartY] = useState(0);
   const sheetRef = useRef(null);
+  
+  // Modal state
+  const [showModal, setShowModal] = useState(false);
 
   // Load dynamic earnings rate
   useEffect(() => {
@@ -193,6 +196,15 @@ const RatingPage = () => {
 
     loadEarningsRate();
   }, []);
+
+  // Show modal when user has voted (with delay for animation)
+  useEffect(() => {
+    if (hasAlreadyVoted) {
+      setTimeout(() => {
+        setShowModal(true);
+      }, 1000);
+    }
+  }, [hasAlreadyVoted]);
 
   // Handle viewport changes (browser UI collapse/expand)
   useEffect(() => {
@@ -552,6 +564,17 @@ const RatingPage = () => {
     return docRef.id;
   };
 
+  // Handle Start Playing button click
+  const handleStartPlaying = () => {
+    // Track UNIQUE download click FIRST (non-blocking)
+    if (linkData && fingerprint) {
+      trackUniqueDownloadClick(linkData.id, fingerprint);
+    }
+    
+    // IMMEDIATELY redirect - don't wait for Firebase
+    window.location.href = continueUrl;
+  };
+
   // SIMPLIFIED BOTTOM SHEET DRAG
   const handlePointerDown = (e) => {
     e.preventDefault();
@@ -749,7 +772,7 @@ const RatingPage = () => {
         )}
       </div>
 
-      {/* Navigation Bar / Continue Button */}
+      {/* Navigation Bar - Always show */}
       <div style={{
         position: 'absolute',
         top: 0,
@@ -758,123 +781,303 @@ const RatingPage = () => {
         zIndex: 10,
         padding: '0px'
       }}>
-        {hasAlreadyVoted ? (
-          <button
-            onClick={() => {
-              // Track UNIQUE download click FIRST (non-blocking)
-              if (linkData && fingerprint) {
-                trackUniqueDownloadClick(linkData.id, fingerprint);
-              }
-              
-              // IMMEDIATELY redirect - don't wait for Firebase
-              window.location.href = continueUrl;
-            }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              backgroundColor: '#4169E1',
-              border: 'none',
-              borderRadius: '0px',
-              padding: '16px 20px',
-              cursor: 'pointer'
-            }}
-          >
-            <span style={{
-              color: 'white',
-              fontSize: '18px',
-              fontWeight: 'bold',
-              lineHeight: 1
-            }}>
-              Continue
-            </span>
-            <span style={{
-              color: 'white',
-              fontSize: '20px',
-              fontWeight: 'bold',
-              lineHeight: 1,
-              display: 'flex',
-              alignItems: 'center'
-            }}>
-              <ArrowRight size={30} strokeWidth={2.5} />
-            </span>
-          </button>
-        ) : (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '20px'
+        }}>
           <div style={{
             display: 'flex',
-            justifyContent: 'center',
             alignItems: 'center',
-            padding: '20px'
+            gap: affiliateProfilePic ? '12px' : '0px',
+            backgroundColor: 'transparent',
+            padding: '5px 16px'
           }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: affiliateProfilePic ? '12px' : '0px',
-              backgroundColor: 'transparent',
-              padding: '5px 16px'
+            {/* Profile Image with Placeholder - Only render if URL exists */}
+            {affiliateProfilePic && (
+              <div style={{
+                position: 'relative',
+                width: '35px',
+                height: '35px',
+                borderRadius: '50%',
+                overflow: 'hidden'
+              }}>
+                {profileImageLoading && (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0
+                  }}>
+                    <div style={{
+                      width: '15px',
+                      height: '15px',
+                      border: '2px solid rgba(255, 255, 255, 0.3)',
+                      borderTop: '2px solid #FFF',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                  </div>
+                )}
+                <img 
+                  src={affiliateProfilePic}
+                  alt={affiliateFirstName}
+                  onLoad={() => setProfileImageLoading(false)}
+                  onError={() => setProfileImageLoading(false)}
+                  style={{
+                    width: '35px',
+                    height: '35px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    display: profileImageLoading ? 'none' : 'block'
+                  }}
+                />
+              </div>
+            )}
+            <span style={{
+              color: 'white',
+              fontSize: '19px',
+              fontWeight: 'bold',
+              maxWidth: '200px', 
+              overflow: 'hidden', 
+              textOverflow: 'ellipsis', 
+              whiteSpace: 'nowrap'
             }}>
-              {/* Profile Image with Placeholder - Only render if URL exists */}
-              {affiliateProfilePic && (
+              {affiliateFirstName}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal Overlay */}
+      {showModal && (
+        <>
+          {/* Backdrop */}
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              zIndex: 40,
+              animation: 'fadeIn 0.3s ease-out'
+            }}
+            onClick={() => setShowModal(false)}
+          />
+
+          {/* Close Button - Simple X in top right of screen */}
+          <button
+            onClick={() => setShowModal(false)}
+            style={{
+              position: 'fixed',
+              top: '20px',
+              right: '20px',
+              zIndex: 51,
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '8px'
+            }}
+          >
+            <X size={32} color="white" strokeWidth={2.5} />
+          </button>
+
+          {/* Modal Sheet */}
+          <div
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              backgroundColor: '#1A2245',
+              borderTopLeftRadius: '24px',
+              borderTopRightRadius: '24px',
+              zIndex: 50,
+              padding: '24px',
+              animation: 'slideUp 0.3s ease-out',
+              maxHeight: '80vh',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            {/* Modal Content */}
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              padding: '20px 0',
+              overflowY: 'auto'
+            }}>
+              {/* Mock Leaderboard */}
+              <div style={{
+                width: '100%',
+                maxWidth: '380px',
+                marginBottom: '24px'
+              }}>
                 <div style={{
-                  position: 'relative',
-                  width: '35px',
-                  height: '35px',
-                  borderRadius: '50%',
+                  backgroundColor: '#2A3255',
+                  borderRadius: '10px',
                   overflow: 'hidden'
                 }}>
-                  {profileImageLoading && (
-                    <div style={{
-                      width: '100%',
-                      height: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                      position: 'absolute',
-                      top: 0,
-                      left: 0
-                    }}>
+                  {[
+                    { rank: 1, name: 'Me', stars: 47, color: '#FF6B6B', isCurrentUser: true, profileUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/ffdb2764778f0f35c846ec597955c5c1.jpg?alt=media&token=3c1b808f-8345-4276-a9c5-ca4964c13498' },
+                    { rank: 2, name: 'Emma', stars: 42, color: '#4ECDC4', isCurrentUser: false, profileUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/00e95ee3819ad001f7455d3e34e085c6.jpg?alt=media&token=57f04e4f-d6c7-4877-a538-fadec3886285' },
+                    { rank: 3, name: 'Jake', stars: 38, color: '#45B7D1', isCurrentUser: false, profileUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/9f0efe5a61c7e766838c49e18d70dfd0.jpg?alt=media&token=19aca0b0-f779-4c4e-a60f-9a839c88d69c' }
+                  ].map((user, index) => (
+                    <div key={index}>
                       <div style={{
-                        width: '15px',
-                        height: '15px',
-                        border: '2px solid rgba(255, 255, 255, 0.3)',
-                        borderTop: '2px solid #FFF',
-                        borderRadius: '50%',
-                        animation: 'spin 1s linear infinite'
-                      }} />
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '20px 20px',
+                        backgroundColor: user.isCurrentUser ? '#343e69' : 'transparent'
+                      }}>
+                        <span style={{
+                          color: 'white',
+                          fontSize: '16px',
+                          fontWeight: 'bold',
+                          width: '30px',
+                          marginRight: '15px'
+                        }}>
+                          {user.rank}
+                        </span>
+                        
+                        {/* Profile Picture - either real image or colored circle */}
+                        {user.profileUrl ? (
+                          <div style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            marginRight: '15px',
+                            flexShrink: 0,
+                            overflow: 'hidden',
+                            backgroundColor: '#3B4374'
+                          }}>
+                            <img 
+                              src={user.profileUrl}
+                              alt={user.name}
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover'
+                              }}
+                              onError={(e) => {
+                                // Fallback to colored circle if image fails to load
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.parentElement.style.backgroundColor = '#3B4374';
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            backgroundColor: '#3B4374',
+                            marginRight: '15px',
+                            flexShrink: 0
+                          }} />
+                        )}
+                        
+                        <span style={{
+                          color: 'white',
+                          fontSize: '16px',
+                          fontWeight: 'bold',
+                          flex: 1
+                        }}>
+                          {user.name}
+                        </span>
+                        
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '5px 12px',
+                          backgroundColor: '#DAA520',
+                          borderRadius: '20px'
+                        }}>
+                          <span style={{
+                            fontSize: '16px',
+                            fontWeight: 'bold',
+                            color: 'white'
+                          }}>
+                            {user.stars}
+                          </span>
+                          <span style={{
+                            fontSize: '18px',
+                            color: 'white'
+                          }}>
+                            ★
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {index < 2 && (
+                        <div style={{
+                          height: '1px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                        }} />
+                      )}
                     </div>
-                  )}
-                  <img 
-                    src={affiliateProfilePic}
-                    alt={affiliateFirstName}
-                    onLoad={() => setProfileImageLoading(false)}
-                    onError={() => setProfileImageLoading(false)}
-                    style={{
-                      width: '35px',
-                      height: '35px',
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      display: profileImageLoading ? 'none' : 'block'
-                    }}
-                  />
+                  ))}
                 </div>
-              )}
-              <span style={{
+              </div>
+
+              <h2 style={{
                 color: 'white',
-                fontSize: '19px',
+                fontSize: '24px',
                 fontWeight: 'bold',
-                maxWidth: '200px', 
-                overflow: 'hidden', 
-                textOverflow: 'ellipsis', 
-                whiteSpace: 'nowrap'
+                marginBottom: '32px',
+                lineHeight: '1.3',
+                textAlign: 'center',
+                padding: '0 20px'
               }}>
-                {affiliateFirstName}
-              </span>
+                Start a Photo Competition with Your Friends!
+              </h2>
+
+              <button
+                onClick={handleStartPlaying}
+                style={{
+                  width: '100%',
+                  maxWidth: '320px',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor: '#4169E1',
+                  border: 'none',
+                  borderRadius: '200px',
+                  padding: '18px 32px',
+                  cursor: 'pointer',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  color: 'white',
+                  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                  boxShadow: '0 4px 12px rgba(65, 105, 225, 0.4)'
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = 'scale(0.95)';
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                Start Playing
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {/* Bottom Sheet */}
       <div
@@ -1036,6 +1239,24 @@ const RatingPage = () => {
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        
+        @keyframes slideUp {
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
         }
       `}</style>
     </div>
