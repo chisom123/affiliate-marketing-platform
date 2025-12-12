@@ -501,6 +501,9 @@ const RatingPage = () => {
   const handleStarTap = async (stars) => {
     if (!isRatingEnabled || hasAlreadyVoted) return;
     
+    // DISABLE IMMEDIATELY to prevent spam
+    setIsRatingEnabled(false);
+    
     setRating(stars);
     setAnimateRating(true);
     
@@ -508,7 +511,6 @@ const RatingPage = () => {
     try {
       await submitRating(stars);
       setHasAlreadyVoted(true);
-      setIsRatingEnabled(false);
       
       // Reload interactions to show new rating
       if (linkData) {
@@ -523,6 +525,8 @@ const RatingPage = () => {
     } catch (error) {
       console.error('Error submitting rating:', error);
       setAnimateRating(false);
+      // RE-ENABLE on error so user can retry
+      setIsRatingEnabled(true);
       alert('Failed to submit rating. Please try again.');
     }
   };
