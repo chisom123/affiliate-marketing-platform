@@ -1076,7 +1076,7 @@ const RatingPage = () => {
                   e.currentTarget.style.transform = 'scale(1)';
                 }}
               >
-                Start Playing
+                Get Started
               </button>
             </div>
           </div>
