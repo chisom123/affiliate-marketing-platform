@@ -776,89 +776,6 @@ const RatingPage = () => {
         )}
       </div>
 
-      {/* Navigation Bar - Always show */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 10,
-        padding: '0px'
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: '20px'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: affiliateProfilePic ? '12px' : '0px',
-            backgroundColor: 'transparent',
-            padding: '5px 16px'
-          }}>
-            {/* Profile Image with Placeholder - Only render if URL exists */}
-            {affiliateProfilePic && (
-              <div style={{
-                position: 'relative',
-                width: '35px',
-                height: '35px',
-                borderRadius: '50%',
-                overflow: 'hidden'
-              }}>
-                {profileImageLoading && (
-                  <div style={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0
-                  }}>
-                    <div style={{
-                      width: '15px',
-                      height: '15px',
-                      border: '2px solid rgba(255, 255, 255, 0.3)',
-                      borderTop: '2px solid #FFF',
-                      borderRadius: '50%',
-                      animation: 'spin 1s linear infinite'
-                    }} />
-                  </div>
-                )}
-                <img 
-                  src={affiliateProfilePic}
-                  alt={affiliateFirstName}
-                  onLoad={() => setProfileImageLoading(false)}
-                  onError={() => setProfileImageLoading(false)}
-                  style={{
-                    width: '35px',
-                    height: '35px',
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    display: profileImageLoading ? 'none' : 'block'
-                  }}
-                />
-              </div>
-            )}
-            <span style={{
-              color: 'white',
-              fontSize: '19px',
-              fontWeight: 'bold',
-              maxWidth: '200px', 
-              overflow: 'hidden', 
-              textOverflow: 'ellipsis', 
-              whiteSpace: 'nowrap'
-            }}>
-              {affiliateFirstName}
-            </span>
-          </div>
-        </div>
-      </div>
-
       {/* Modal Overlay */}
       {showModal && (
         <>
@@ -1055,16 +972,15 @@ const RatingPage = () => {
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
-                  backgroundColor: '#4169E1',
+                  backgroundColor: '#FFD700',
                   border: 'none',
                   borderRadius: '200px',
                   padding: '18px 32px',
                   cursor: 'pointer',
                   fontSize: '18px',
                   fontWeight: 'bold',
-                  color: 'white',
-                  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                  boxShadow: '0 4px 12px rgba(65, 105, 225, 0.4)'
+                  color: '#000',
+                  transition: 'transform 0.2s ease, box-shadow 0.2s ease'
                 }}
                 onMouseDown={(e) => {
                   e.currentTarget.style.transform = 'scale(0.95)';
