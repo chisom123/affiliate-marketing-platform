@@ -781,13 +781,13 @@ const RatingPage = () => {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              backgroundColor: '#FFD700',
+              backgroundColor: '#4169E1',
               border: 'none',
               padding: '16px 24px',
               cursor: 'pointer',
               fontSize: '18px',
               fontWeight: 'bold',
-              color: '#000',
+              color: '#FFF',
               transition: 'transform 0.2s ease'
             }}
             onMouseDown={(e) => {
