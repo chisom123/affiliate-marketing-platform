@@ -14,7 +14,7 @@ import {
   setDoc
 } from 'firebase/firestore';
 import { useParams } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 
 // Development environment check
@@ -176,9 +176,6 @@ const RatingPage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartY, setDragStartY] = useState(0);
   const sheetRef = useRef(null);
-  
-  // Modal state
-  const [showModal, setShowModal] = useState(false);
 
   // Load dynamic earnings rate
   useEffect(() => {
@@ -196,15 +193,6 @@ const RatingPage = () => {
 
     loadEarningsRate();
   }, []);
-
-  // Show modal when user has voted (with delay for animation)
-  useEffect(() => {
-    if (hasAlreadyVoted) {
-      setTimeout(() => {
-        setShowModal(true);
-      }, 1000);
-    }
-  }, [hasAlreadyVoted]);
 
   // Handle viewport changes (browser UI collapse/expand)
   useEffect(() => {
@@ -568,8 +556,8 @@ const RatingPage = () => {
     return docRef.id;
   };
 
-  // Handle Start Playing button click
-  const handleStartPlaying = () => {
+  // Handle Continue Playing button click
+  const handleContinuePlaying = () => {
     // Track UNIQUE download click FIRST (non-blocking)
     if (linkData && fingerprint) {
       trackUniqueDownloadClick(linkData.id, fingerprint);
@@ -776,227 +764,46 @@ const RatingPage = () => {
         )}
       </div>
 
-      {/* Modal Overlay */}
-      {showModal && (
-        <>
-          {/* Backdrop */}
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.7)',
-              zIndex: 40,
-              animation: 'fadeIn 0.3s ease-out'
-            }}
-            onClick={() => setShowModal(false)}
-          />
-
-          {/* Close Button - Simple X in top right of screen */}
+      {/* Continue Playing Banner - shown after voting */}
+      {hasAlreadyVoted && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 40,
+          animation: 'slideDown 0.3s ease-out'
+        }}>
           <button
-            onClick={() => setShowModal(false)}
+            onClick={handleContinuePlaying}
             style={{
-              position: 'fixed',
-              top: '20px',
-              right: '20px',
-              zIndex: 51,
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '8px'
-            }}
-          >
-            <X size={32} color="white" strokeWidth={2.5} />
-          </button>
-
-          {/* Modal Sheet */}
-          <div
-            style={{
-              position: 'fixed',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              backgroundColor: '#1A2245',
-              borderTopLeftRadius: '24px',
-              borderTopRightRadius: '24px',
-              zIndex: 50,
-              padding: '24px',
-              animation: 'slideUp 0.3s ease-out',
-              maxHeight: '80vh',
+              width: '100%',
               display: 'flex',
-              flexDirection: 'column'
-            }}
-          >
-            {/* Modal Content */}
-            <div style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
+              justifyContent: 'space-between',
               alignItems: 'center',
-              padding: '20px 0',
-              overflowY: 'auto'
-            }}>
-              {/* Mock Leaderboard */}
-              <div style={{
-                width: '100%',
-                maxWidth: '380px',
-                marginBottom: '24px'
-              }}>
-                <div style={{
-                  backgroundColor: '#2A3255',
-                  borderRadius: '10px',
-                  overflow: 'hidden'
-                }}>
-                  {[
-                    { rank: 1, name: 'Me', stars: 47, color: '#FF6B6B', isCurrentUser: true, profileUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/ffdb2764778f0f35c846ec597955c5c1.jpg?alt=media&token=3c1b808f-8345-4276-a9c5-ca4964c13498' },
-                    { rank: 2, name: 'Emma', stars: 42, color: '#4ECDC4', isCurrentUser: false, profileUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/00e95ee3819ad001f7455d3e34e085c6.jpg?alt=media&token=57f04e4f-d6c7-4877-a538-fadec3886285' },
-                    { rank: 3, name: 'Jake', stars: 38, color: '#45B7D1', isCurrentUser: false, profileUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/9f0efe5a61c7e766838c49e18d70dfd0.jpg?alt=media&token=19aca0b0-f779-4c4e-a60f-9a839c88d69c' }
-                  ].map((user, index) => (
-                    <div key={index}>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '20px 20px',
-                        backgroundColor: user.isCurrentUser ? '#343e69' : 'transparent'
-                      }}>
-                        <span style={{
-                          color: 'white',
-                          fontSize: '16px',
-                          fontWeight: 'bold',
-                          width: '30px',
-                          marginRight: '15px'
-                        }}>
-                          {user.rank}
-                        </span>
-                        
-                        {/* Profile Picture - either real image or colored circle */}
-                        {user.profileUrl ? (
-                          <div style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '50%',
-                            marginRight: '15px',
-                            flexShrink: 0,
-                            overflow: 'hidden',
-                            backgroundColor: '#3B4374'
-                          }}>
-                            <img 
-                              src={user.profileUrl}
-                              alt={user.name}
-                              style={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover'
-                              }}
-                              onError={(e) => {
-                                // Fallback to colored circle if image fails to load
-                                e.currentTarget.style.display = 'none';
-                                e.currentTarget.parentElement.style.backgroundColor = '#3B4374';
-                              }}
-                            />
-                          </div>
-                        ) : (
-                          <div style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '50%',
-                            backgroundColor: '#3B4374',
-                            marginRight: '15px',
-                            flexShrink: 0
-                          }} />
-                        )}
-                        
-                        <span style={{
-                          color: 'white',
-                          fontSize: '16px',
-                          fontWeight: 'bold',
-                          flex: 1
-                        }}>
-                          {user.name}
-                        </span>
-                        
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          padding: '5px 12px',
-                          backgroundColor: '#DAA520',
-                          borderRadius: '20px'
-                        }}>
-                          <span style={{
-                            fontSize: '16px',
-                            fontWeight: 'bold',
-                            color: 'white'
-                          }}>
-                            {user.stars}
-                          </span>
-                          <span style={{
-                            fontSize: '18px',
-                            color: 'white'
-                          }}>
-                            ★
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {index < 2 && (
-                        <div style={{
-                          height: '1px',
-                          backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                        }} />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <h2 style={{
-                color: 'white',
-                fontSize: '24px',
-                fontWeight: 'bold',
-                marginBottom: '32px',
-                lineHeight: '1.3',
-                textAlign: 'center',
-                padding: '0 20px'
-              }}>
-                Start a Photo Competition with Your Friends!
-              </h2>
-
-              <button
-                onClick={handleStartPlaying}
-                style={{
-                  width: '100%',
-                  maxWidth: '320px',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  backgroundColor: '#FFD700',
-                  border: 'none',
-                  borderRadius: '200px',
-                  padding: '18px 32px',
-                  cursor: 'pointer',
-                  fontSize: '18px',
-                  fontWeight: 'bold',
-                  color: '#000',
-                  transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-                }}
-                onMouseDown={(e) => {
-                  e.currentTarget.style.transform = 'scale(0.95)';
-                }}
-                onMouseUp={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                }}
-              >
-                Get Started
-              </button>
-            </div>
-          </div>
-        </>
+              backgroundColor: '#FFD700',
+              border: 'none',
+              padding: '16px 24px',
+              cursor: 'pointer',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              color: '#000',
+              transition: 'transform 0.2s ease'
+            }}
+            onMouseDown={(e) => {
+              e.currentTarget.style.transform = 'scale(0.98)';
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            <span>Continue Playing</span>
+            <ArrowRight size={30} strokeWidth={2.5} />
+          </button>
+        </div>
       )}
 
       {/* Bottom Sheet */}
@@ -1161,18 +968,9 @@ const RatingPage = () => {
           100% { transform: rotate(360deg); }
         }
         
-        @keyframes fadeIn {
+        @keyframes slideDown {
           from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-        
-        @keyframes slideUp {
-          from {
-            transform: translateY(100%);
+            transform: translateY(-100%);
           }
           to {
             transform: translateY(0);
