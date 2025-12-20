@@ -764,15 +764,97 @@ const RatingPage = () => {
         )}
       </div>
 
-      {/* Continue Playing Banner - shown after voting */}
-      {hasAlreadyVoted && (
+      {/* Navigation Bar - Show when not voted, replaced by Continue Playing when voted */}
+      {!hasAlreadyVoted ? (
         <div style={{
-          position: 'fixed',
+          position: 'absolute',
           top: 0,
           left: 0,
           right: 0,
-          zIndex: 40,
-          animation: 'slideDown 0.3s ease-out'
+          zIndex: 10,
+          padding: '0px'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: '20px'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: affiliateProfilePic ? '12px' : '0px',
+              backgroundColor: 'transparent',
+              padding: '5px 16px'
+            }}>
+              {/* Profile Image with Placeholder - Only render if URL exists */}
+              {affiliateProfilePic && (
+                <div style={{
+                  position: 'relative',
+                  width: '35px',
+                  height: '35px',
+                  borderRadius: '50%',
+                  overflow: 'hidden'
+                }}>
+                  {profileImageLoading && (
+                    <div style={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0
+                    }}>
+                      <div style={{
+                        width: '15px',
+                        height: '15px',
+                        border: '2px solid rgba(255, 255, 255, 0.3)',
+                        borderTop: '2px solid #FFF',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite'
+                      }} />
+                    </div>
+                  )}
+                  <img 
+                    src={affiliateProfilePic}
+                    alt={affiliateFirstName}
+                    onLoad={() => setProfileImageLoading(false)}
+                    onError={() => setProfileImageLoading(false)}
+                    style={{
+                      width: '35px',
+                      height: '35px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      display: profileImageLoading ? 'none' : 'block'
+                    }}
+                  />
+                </div>
+              )}
+              <span style={{
+                color: 'white',
+                fontSize: '19px',
+                fontWeight: 'bold',
+                maxWidth: '200px', 
+                overflow: 'hidden', 
+                textOverflow: 'ellipsis', 
+                whiteSpace: 'nowrap'
+              }}>
+                {affiliateFirstName}
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Continue Playing Banner - shown after voting, replaces navigation */
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10
         }}>
           <button
             onClick={handleContinuePlaying}
@@ -966,15 +1048,6 @@ const RatingPage = () => {
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes slideDown {
-          from {
-            transform: translateY(-100%);
-          }
-          to {
-            transform: translateY(0);
-          }
         }
       `}</style>
     </div>
