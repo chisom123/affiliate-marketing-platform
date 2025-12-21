@@ -751,127 +751,86 @@ const RatingPage = () => {
         )}
       </div>
 
-      {/* Navigation Bar - Show when not voted, replaced by Continue Playing when voted */}
-      {!hasAlreadyVoted ? (
+      {/* Navigation Bar - Always show */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 10,
+        padding: '0px'
+      }}>
         <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 10,
-          padding: '0px'
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '20px'
         }}>
           <div style={{
             display: 'flex',
-            justifyContent: 'center',
             alignItems: 'center',
-            padding: '20px'
+            gap: '12px',
+            backgroundColor: 'transparent',
+            padding: '5px 16px'
           }}>
+            {/* Profile Image with static URL */}
             <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              backgroundColor: 'transparent',
-              padding: '5px 16px'
+              position: 'relative',
+              width: '35px',
+              height: '35px',
+              borderRadius: '50%',
+              overflow: 'hidden'
             }}>
-              {/* Profile Image with static URL */}
-              <div style={{
-                position: 'relative',
-                width: '35px',
-                height: '35px',
-                borderRadius: '50%',
-                overflow: 'hidden'
-              }}>
-                {profileImageLoading && (
+              {profileImageLoading && (
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0
+                }}>
                   <div style={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0
-                  }}>
-                    <div style={{
-                      width: '15px',
-                      height: '15px',
-                      border: '2px solid rgba(255, 255, 255, 0.3)',
-                      borderTop: '2px solid #FFF',
-                      borderRadius: '50%',
-                      animation: 'spin 1s linear infinite'
-                    }} />
-                  </div>
-                )}
-                <img 
-                  src={affiliateProfilePic}
-                  alt="SocialStar"
-                  onLoad={() => setProfileImageLoading(false)}
-                  onError={() => setProfileImageLoading(false)}
-                  style={{
-                    width: '35px',
-                    height: '35px',
+                    width: '15px',
+                    height: '15px',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    borderTop: '2px solid #FFF',
                     borderRadius: '50%',
-                    objectFit: 'cover',
-                    display: profileImageLoading ? 'none' : 'block'
-                  }}
-                />
-              </div>
-              <span style={{
-                color: 'white',
-                fontSize: '19px',
-                fontWeight: 'bold',
-                maxWidth: '200px', 
-                overflow: 'hidden', 
-                textOverflow: 'ellipsis', 
-                whiteSpace: 'nowrap'
-              }}>
-                SocialStar
-              </span>
+                    animation: 'spin 1s linear infinite'
+                  }} />
+                </div>
+              )}
+              <img 
+                src={affiliateProfilePic}
+                alt="SocialStar"
+                onLoad={() => setProfileImageLoading(false)}
+                onError={() => setProfileImageLoading(false)}
+                style={{
+                  width: '35px',
+                  height: '35px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  display: profileImageLoading ? 'none' : 'block'
+                }}
+              />
             </div>
+            <span style={{
+              color: 'white',
+              fontSize: '19px',
+              fontWeight: 'bold',
+              maxWidth: '200px', 
+              overflow: 'hidden', 
+              textOverflow: 'ellipsis', 
+              whiteSpace: 'nowrap'
+            }}>
+              SocialStar
+            </span>
           </div>
         </div>
-      ) : (
-        /* Continue Playing Banner - shown after voting, replaces navigation */
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 10
-        }}>
-          <button
-            onClick={handleContinuePlaying}
-            style={{
-              width: '100%',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              backgroundColor: '#4169E1',
-              border: 'none',
-              padding: '16px 24px',
-              cursor: 'pointer',
-              fontSize: '18px',
-              fontWeight: 'bold',
-              color: '#FFF',
-              transition: 'transform 0.2s ease'
-            }}
-            onMouseDown={(e) => {
-              e.currentTarget.style.transform = 'scale(0.98)';
-            }}
-            onMouseUp={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-          >
-            <span>Continue Playing</span>
-            <ArrowRight size={30} strokeWidth={2.5} />
-          </button>
-        </div>
-      )}
+      </div>
 
       {/* Bottom Sheet */}
       <div
@@ -987,47 +946,89 @@ const RatingPage = () => {
         </div>
       </div>
 
-      {/* Star Rating Footer */}
-      <div style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: '100px',
-        backgroundColor: hasAlreadyVoted ? '#A9A9A9' : '#10183C',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 30,
-        gap: '12px'
-      }}>
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            onClick={() => handleStarTap(star)}
-            onMouseEnter={() => !hasAlreadyVoted && setHoveredStar(star)}
-            onMouseLeave={() => setHoveredStar(0)}
-            disabled={hasAlreadyVoted || !isRatingEnabled}
-            style={{
-              backgroundColor: 'transparent',
-              border: 'none',
-              fontSize: '40px',
-              cursor: hasAlreadyVoted ? 'not-allowed' : 'pointer',
-              color: hasAlreadyVoted 
-                ? '#c2c2c2' 
-                : (hoveredStar >= star || rating >= star) 
+      {/* Footer - Star Rating or Continue Playing Button */}
+      {!hasAlreadyVoted ? (
+        /* Star Rating Footer - shown before voting */
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '100px',
+          backgroundColor: '#10183C',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 30,
+          gap: '12px'
+        }}>
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button
+              key={star}
+              onClick={() => handleStarTap(star)}
+              onMouseEnter={() => !hasAlreadyVoted && setHoveredStar(star)}
+              onMouseLeave={() => setHoveredStar(0)}
+              disabled={hasAlreadyVoted || !isRatingEnabled}
+              style={{
+                backgroundColor: 'transparent',
+                border: 'none',
+                fontSize: '40px',
+                cursor: hasAlreadyVoted ? 'not-allowed' : 'pointer',
+                color: (hoveredStar >= star || rating >= star) 
                   ? '#FFD700' 
                   : 'white',
-              padding: '5px',
-              transition: 'all 0.2s',
-              transform: (animateRating && star <= rating) ? 'scale(1.3)' : 'scale(1)',
-              outline: 'none'
+                padding: '5px',
+                transition: 'all 0.2s',
+                transform: (animateRating && star <= rating) ? 'scale(1.3)' : 'scale(1)',
+                outline: 'none'
+              }}
+            >
+              ★
+            </button>
+          ))}
+        </div>
+      ) : (
+        /* Continue Playing Footer - shown after voting, replaces star rating */
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '100px',
+          zIndex: 30
+        }}>
+          <button
+            onClick={handleContinuePlaying}
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              backgroundColor: '#4169E1',
+              border: 'none',
+              padding: '0 24px',
+              cursor: 'pointer',
+              fontSize: '20px',
+              fontWeight: 'bold',
+              color: '#FFF',
+              transition: 'transform 0.2s ease'
+            }}
+            onMouseDown={(e) => {
+              e.currentTarget.style.transform = 'scale(0.98)';
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
             }}
           >
-            ★
+            <span>Continue Playing</span>
+            <ArrowRight size={32} strokeWidth={2.5} />
           </button>
-        ))}
-      </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes spin {
