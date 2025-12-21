@@ -448,7 +448,7 @@ const RatingPage = () => {
         // Reset flag after a short delay to allow legitimate re-clicks if needed
         setTimeout(() => {
           setDownloadClickInProgress(false);
-        }, 1000);
+        }, 1500);
       }
     })();
   };
@@ -590,7 +590,7 @@ const RatingPage = () => {
       if (!appOpened) {
         window.location.href = appStoreUrl;
       }
-    }, 1000);
+    }, 1500);
   };
 
   // SIMPLIFIED BOTTOM SHEET DRAG
