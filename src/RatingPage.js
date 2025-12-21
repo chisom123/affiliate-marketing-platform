@@ -159,6 +159,7 @@ const RatingPage = () => {
   const [interactions, setInteractions] = useState([]);
   const [loadingInteractions, setLoadingInteractions] = useState(true);
   const [earningsPerRating, setEarningsPerRating] = useState(0.25);
+  const [downloadClickInProgress, setDownloadClickInProgress] = useState(false);
   
   // Image loading states
   const [profileImageLoading, setProfileImageLoading] = useState(true);
@@ -399,8 +400,17 @@ const RatingPage = () => {
     })();
   };
 
-  // Track unique download click - FAST & NON-BLOCKING
+  // Track unique download click - FAST & NON-BLOCKING with spam prevention
   const trackUniqueDownloadClick = async (linkDocId, userFingerprint) => {
+    // PREVENT SPAM - if already in progress, ignore this call
+    if (downloadClickInProgress) {
+      console.log('Download click already in progress, ignoring duplicate');
+      return;
+    }
+    
+    // SET FLAG IMMEDIATELY to prevent duplicate calls
+    setDownloadClickInProgress(true);
+    
     // Run tracking asynchronously without awaiting
     (async () => {
       try {
@@ -434,6 +444,11 @@ const RatingPage = () => {
         }
       } catch (error) {
         console.error('Error tracking unique download click:', error);
+      } finally {
+        // Reset flag after a short delay to allow legitimate re-clicks if needed
+        setTimeout(() => {
+          setDownloadClickInProgress(false);
+        }, 1000);
       }
     })();
   };
@@ -545,7 +560,7 @@ const RatingPage = () => {
 
   // Handle Continue Playing button click
   const handleContinuePlaying = () => {
-    // Track UNIQUE download click FIRST (non-blocking)
+    // Track UNIQUE download click FIRST (non-blocking with spam prevention)
     if (linkData && fingerprint) {
       trackUniqueDownloadClick(linkData.id, fingerprint);
     }
