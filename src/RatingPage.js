@@ -160,6 +160,7 @@ const RatingPage = () => {
   const [loadingInteractions, setLoadingInteractions] = useState(true);
   const [earningsPerRating, setEarningsPerRating] = useState(0.25);
   const [downloadClickInProgress, setDownloadClickInProgress] = useState(false);
+  const [continuePlayingLoading, setContinuePlayingLoading] = useState(false);
   
   // Image loading states
   const [profileImageLoading, setProfileImageLoading] = useState(true);
@@ -560,6 +561,14 @@ const RatingPage = () => {
 
   // Handle Continue Playing button click
   const handleContinuePlaying = () => {
+    // Set loading state immediately
+    setContinuePlayingLoading(true);
+    
+    // Stop spinner after 2 seconds
+    setTimeout(() => {
+      setContinuePlayingLoading(false);
+    }, 2000);
+    
     // Track UNIQUE download click FIRST (non-blocking with spam prevention)
     if (linkData && fingerprint) {
       trackUniqueDownloadClick(linkData.id, fingerprint);
@@ -584,7 +593,7 @@ const RatingPage = () => {
     window.location.href = deepLinkUrl;
     
     // Fallback to App Store if app is not installed
-    // After 1 second, if the app didn't open (page didn't become hidden), redirect to App Store
+    // After 1.5 seconds, if the app didn't open (page didn't become hidden), redirect to App Store
     setTimeout(() => {
       document.removeEventListener('visibilitychange', visibilityHandler);
       if (!appOpened) {
@@ -1038,23 +1047,26 @@ const RatingPage = () => {
         }}>
           <button
             onClick={handleContinuePlaying}
+            disabled={continuePlayingLoading}
             style={{
               width: '100%',
               height: '100%',
               display: 'flex',
-              justifyContent: 'space-between',
+              justifyContent: 'center',
               alignItems: 'center',
               backgroundColor: '#4169E1',
               border: 'none',
               padding: '0 24px',
-              cursor: 'pointer',
+              cursor: continuePlayingLoading ? 'default' : 'pointer',
               fontSize: '20px',
               fontWeight: 'bold',
               color: '#FFF',
               transition: 'transform 0.2s ease'
             }}
             onMouseDown={(e) => {
-              e.currentTarget.style.transform = 'scale(0.98)';
+              if (!continuePlayingLoading) {
+                e.currentTarget.style.transform = 'scale(0.98)';
+              }
             }}
             onMouseUp={(e) => {
               e.currentTarget.style.transform = 'scale(1)';
@@ -1063,8 +1075,21 @@ const RatingPage = () => {
               e.currentTarget.style.transform = 'scale(1)';
             }}
           >
-            <span>Continue Playing</span>
-            <ArrowRight size={32} strokeWidth={2.5} />
+            {continuePlayingLoading ? (
+              <div style={{
+                width: '32px',
+                height: '32px',
+                border: '3px solid rgba(255, 255, 255, 0.3)',
+                borderTop: '3px solid #FFF',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }} />
+            ) : (
+              <>
+                <span>Continue Playing</span>
+                <ArrowRight size={32} strokeWidth={2.5} style={{ marginLeft: 'auto' }} />
+              </>
+            )}
           </button>
         </div>
       )}
