@@ -550,8 +550,32 @@ const RatingPage = () => {
       trackUniqueDownloadClick(linkData.id, fingerprint);
     }
     
-    // IMMEDIATELY redirect - don't wait for Firebase
-    window.location.href = continueUrl;
+    // Construct deep link URL - format: socialstar://rating/affiliateId/linkId
+    const deepLinkUrl = `socialstar://rating/${affiliateId}/${linkId}`;
+    const appStoreUrl = 'https://apps.apple.com/app/socialstar-app/id6473705189';
+    
+    // Track if the page becomes hidden (app opened successfully)
+    let appOpened = false;
+    
+    const visibilityHandler = () => {
+      if (document.hidden) {
+        appOpened = true;
+      }
+    };
+    
+    document.addEventListener('visibilitychange', visibilityHandler);
+    
+    // Attempt to open the app via deep link
+    window.location.href = deepLinkUrl;
+    
+    // Fallback to App Store if app is not installed
+    // After 1 second, if the app didn't open (page didn't become hidden), redirect to App Store
+    setTimeout(() => {
+      document.removeEventListener('visibilitychange', visibilityHandler);
+      if (!appOpened) {
+        window.location.href = appStoreUrl;
+      }
+    }, 1000);
   };
 
   // SIMPLIFIED BOTTOM SHEET DRAG
