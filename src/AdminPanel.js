@@ -115,29 +115,17 @@ const AdminDashboard = () => {
         
         const pageOpens = link.totalPageOpens || 0;
         const totalRatings = link.totalRatings || 0;
-        const yesClicks = link.totalYesClicks || 0;
-        const noClicks = link.totalNoClicks || 0;
-        const getSocialStarClicks = link.totalGetSocialStarClicks || 0;
-        const usernameReservations = link.totalUsernameReservations || 0;
         const downloadClicks = link.totalDownloadClicks || 0;
         
+        // Conversion calculations
         const ratingConversion = pageOpens > 0 ? ((totalRatings / pageOpens) * 100).toFixed(1) : 0;
-        const yesConversion = totalRatings > 0 ? ((yesClicks / totalRatings) * 100).toFixed(1) : 0;
-        const noConversion = totalRatings > 0 ? ((noClicks / totalRatings) * 100).toFixed(1) : 0;
-        const getSocialStarConversion = noClicks > 0 ? ((getSocialStarClicks / noClicks) * 100).toFixed(1) : 0;
-        const reserveConversion = noClicks > 0 ? ((usernameReservations / noClicks) * 100).toFixed(1) : 0;
-        const downloadConversion = usernameReservations > 0 ? ((downloadClicks / usernameReservations) * 100).toFixed(1) : 0;
+        const downloadConversion = totalRatings > 0 ? ((downloadClicks / totalRatings) * 100).toFixed(1) : 0;
         
         analytics[link.id] = {
           avgRating,
           ratingConversion,
-          yesConversion,
-          noConversion,
-          getSocialStarConversion,
-          reserveConversion,
           downloadConversion,
           totalRatings: ratings.length,
-          usernameReservations,
           downloadClicks
         };
       }
@@ -408,16 +396,7 @@ const AdminDashboard = () => {
     }).length,
     totalAffiliates: affiliates.length,
     totalLinks: ratingLinks.length,
-    activeLinks: ratingLinks.filter(l => !l.expiresAt || l.expiresAt > new Date()).length,
-    totalGetSocialStarClicks: ratingLinks.reduce((sum, link) => sum + (link.totalGetSocialStarClicks || 0), 0),
-    totalNoClicks: ratingLinks.reduce((sum, link) => sum + (link.totalNoClicks || 0), 0),
-    totalUsernameReservations: ratingLinks.reduce((sum, link) => sum + (link.totalUsernameReservations || 0), 0),
-    totalDownloadClicks: ratingLinks.reduce((sum, link) => sum + (link.totalDownloadClicks || 0), 0),
-    getSocialStarConversion: (() => {
-      const noClicks = ratingLinks.reduce((sum, link) => sum + (link.totalNoClicks || 0), 0);
-      const getSocialStarClicks = ratingLinks.reduce((sum, link) => sum + (link.totalGetSocialStarClicks || 0), 0);
-      return noClicks > 0 ? ((getSocialStarClicks / noClicks) * 100).toFixed(1) : 0;
-    })()
+    activeLinks: ratingLinks.filter(l => !l.expiresAt || l.expiresAt > new Date()).length
   };
 
   const AffiliatePricingControl = () => {
@@ -1011,7 +990,7 @@ const AdminDashboard = () => {
               alignItems: 'center',
               marginBottom: '20px'
             }}>
-              <h2 style={{ margin: '0', color: '#495057' }}>Rating Links & Analytics</h2>
+              <h2 style={{ margin: '0', color: '#495057' }}>Rating Links - Conversion Funnel</h2>
             </div>
 
             <div style={{ 
@@ -1027,214 +1006,200 @@ const AdminDashboard = () => {
                 
                 return (
                   <div key={link.id} style={{ 
-                    padding: '20px',
+                    padding: '25px',
                     borderBottom: '1px solid #eee'
                   }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
+                    {/* Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
                       <div style={{ flex: 1 }}>
-                        <h4 style={{ margin: '0 0 5px 0', fontSize: '16px', fontWeight: 'bold' }}>
+                        <h4 style={{ margin: '0 0 5px 0', fontSize: '18px', fontWeight: 'bold' }}>
                           {affiliate?.firstName} {affiliate?.lastName}
                         </h4>
-                        <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#6c757d' }}>
+                        <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#6c757d' }}>
                           {affiliate?.email}
                         </p>
-                        <p style={{ margin: '0', fontSize: '12px', color: '#6c757d', fontFamily: 'monospace' }}>
+                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontFamily: 'monospace' }}>
                           Link ID: {link.linkId}
+                        </p>
+                        <p style={{ margin: '0', fontSize: '12px', color: '#6c757d', fontFamily: 'monospace' }}>
+                          Created: {link.createdAt.toLocaleString()}
                         </p>
                       </div>
                       
                       <div style={{ textAlign: 'right' }}>
-                        <span style={{
-                          padding: '6px 12px',
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          fontWeight: 'bold',
-                          backgroundColor: isExpired ? '#f8d7da' : '#d4edda',
-                          color: isExpired ? '#721c24' : '#155724'
-                        }}>
-                          {isExpired ? 'EXPIRED' : 'ACTIVE'}
-                        </span>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                          <span style={{
+                            padding: '6px 12px',
+                            borderRadius: '200px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            backgroundColor: isExpired ? '#f8d7da' : '#d4edda',
+                            color: isExpired ? '#721c24' : '#155724',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            {isExpired ? 'EXPIRED' : 'ACTIVE'}
+                          </span>
+                          <span style={{
+                            padding: '6px 12px',
+                            borderRadius: '200px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            backgroundColor: '#fff3e0',
+                            color: '#e65100',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            {analytics.avgRating || '0.00'} ★
+                          </span>
+                        </div>
                       </div>
                     </div>
 
+                    {/* Conversion Funnel */}
                     <div style={{ 
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                      display: 'flex',
+                      alignItems: 'center',
                       gap: '15px',
-                      marginBottom: '15px'
+                      overflowX: 'auto',
+                      paddingBottom: '10px'
                     }}>
+                      {/* Step 1: Page Opens */}
                       <div style={{ 
-                        backgroundColor: '#f8f9fa',
-                        padding: '15px',
+                        minWidth: '140px',
+                        backgroundColor: '#e3f2fd',
+                        padding: '20px 15px',
                         borderRadius: '8px',
-                        textAlign: 'center'
+                        textAlign: 'center',
+                        border: '2px solid #2196f3'
                       }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
+                        <p style={{ margin: '0 0 5px 0', fontSize: '11px', color: '#1976d2', fontWeight: '600', textTransform: 'uppercase' }}>
                           Page Opens
                         </p>
-                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#007bff' }}>
+                        <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: '#1565c0' }}>
                           {link.totalPageOpens || 0}
                         </p>
+                        <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#1976d2', fontWeight: 'bold' }}>
+                          100%
+                        </p>
                       </div>
 
+                      {/* Arrow */}
+                      <div style={{ fontSize: '24px', color: '#bbb' }}>→</div>
+
+                      {/* Step 2: Ratings */}
                       <div style={{ 
-                        backgroundColor: '#f8f9fa',
-                        padding: '15px',
+                        minWidth: '140px',
+                        backgroundColor: '#e8f5e9',
+                        padding: '20px 15px',
                         borderRadius: '8px',
-                        textAlign: 'center'
+                        textAlign: 'center',
+                        border: '2px solid #4caf50'
                       }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
+                        <p style={{ margin: '0 0 5px 0', fontSize: '11px', color: '#2e7d32', fontWeight: '600', textTransform: 'uppercase' }}>
                           Ratings
                         </p>
-                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#28a745' }}>
+                        <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: '#1b5e20' }}>
                           {link.totalRatings || 0}
                         </p>
-                      </div>
-
-                      <div style={{ 
-                        backgroundColor: '#f8f9fa',
-                        padding: '15px',
-                        borderRadius: '8px',
-                        textAlign: 'center'
-                      }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
-                          Avg Rating
-                        </p>
-                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#ffc107' }}>
-                          {analytics.avgRating || '0.00'} ★
+                        <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#388e3c', fontWeight: 'bold' }}>
+                          {((link.totalPageOpens || 0) > 0 ? (((link.totalRatings || 0) / link.totalPageOpens) * 100).toFixed(1) : 0)}%
                         </p>
                       </div>
 
-                      <div style={{ 
-                        backgroundColor: '#f8f9fa',
-                        padding: '15px',
-                        borderRadius: '8px',
-                        textAlign: 'center'
-                      }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
-                          YES Clicks
-                        </p>
-                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#4169E1' }}>
-                          {link.totalYesClicks || 0}
-                        </p>
-                      </div>
+                      {/* Arrow */}
+                      <div style={{ fontSize: '24px', color: '#bbb' }}>→</div>
 
+                      {/* Step 3: Continue Playing */}
                       <div style={{ 
-                        backgroundColor: '#f8f9fa',
-                        padding: '15px',
-                        borderRadius: '8px',
-                        textAlign: 'center'
-                      }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
-                          NO Clicks
-                        </p>
-                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#243055' }}>
-                          {link.totalNoClicks || 0}
-                        </p>
-                      </div>
-
-                      <div style={{ 
-                        backgroundColor: '#f8f9fa',
-                        padding: '15px',
-                        borderRadius: '8px',
-                        textAlign: 'center'
-                      }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
-                          Rating Conv.
-                        </p>
-                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#17a2b8' }}>
-                          {analytics.ratingConversion || 0}%
-                        </p>
-                      </div>
-
-                      <div style={{ 
-                        backgroundColor: '#f8f9fa',
-                        padding: '15px',
-                        borderRadius: '8px',
-                        textAlign: 'center'
-                      }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
-                          YES Conv.
-                        </p>
-                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#4169E1' }}>
-                          {analytics.yesConversion || 0}%
-                        </p>
-                      </div>
-
-                      <div style={{ 
-                        backgroundColor: '#f8f9fa',
-                        padding: '15px',
-                        borderRadius: '8px',
-                        textAlign: 'center'
-                      }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontWeight: '600' }}>
-                          NO Conv.
-                        </p>
-                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#243055' }}>
-                          {analytics.noConversion || 0}%
-                        </p>
-                      </div>
-
-                      <div style={{ 
+                        minWidth: '140px',
                         backgroundColor: '#fff3e0',
-                        padding: '15px',
+                        padding: '20px 15px',
                         borderRadius: '8px',
                         textAlign: 'center',
                         border: '2px solid #ff9800'
                       }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#e65100', fontWeight: '600' }}>
-                         Reservations
+                        <p style={{ margin: '0 0 5px 0', fontSize: '11px', color: '#e65100', fontWeight: '600', textTransform: 'uppercase' }}>
+                          Continue Taps
                         </p>
-                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
-                          {link.totalUsernameReservations || 0}
-                        </p>
-                      </div>
-
-                      <div style={{ 
-                        backgroundColor: '#e8f5e9',
-                        padding: '15px',
-                        borderRadius: '8px',
-                        textAlign: 'center',
-                        border: '2px solid #4caf50'
-                      }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#2e7d32', fontWeight: '600' }}>
-                         App Store
-                        </p>
-                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#4caf50' }}>
+                        <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: '#ef6c00' }}>
                           {link.totalDownloadClicks || 0}
                         </p>
+                        <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#f57c00', fontWeight: 'bold' }}>
+                          {((link.totalRatings || 0) > 0 ? (((link.totalDownloadClicks || 0) / link.totalRatings) * 100).toFixed(1) : 0)}%
+                        </p>
                       </div>
 
+                      {/* Arrow */}
+                      <div style={{ fontSize: '24px', color: '#bbb' }}>→</div>
 
+                      {/* Step 4: Info Step 0 */}
                       <div style={{ 
-                        backgroundColor: '#fff3e0',
-                        padding: '15px',
+                        minWidth: '140px',
+                        backgroundColor: '#f3e5f5',
+                        padding: '20px 15px',
                         borderRadius: '8px',
                         textAlign: 'center',
-                        border: '2px solid #ff9800'
+                        border: '2px solid #9c27b0'
                       }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#e65100', fontWeight: '600' }}>
-                          Reserve Conv.
+                        <p style={{ margin: '0 0 5px 0', fontSize: '11px', color: '#6a1b9a', fontWeight: '600', textTransform: 'uppercase' }}>
+                          Name Entry
                         </p>
-                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
-                          {analytics.reserveConversion || 0}%
+                        <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: '#7b1fa2' }}>
+                          {link.totalInfoContinueClicksStep0 || 0}
                         </p>
-                      </div> 
+                        <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#8e24aa', fontWeight: 'bold' }}>
+                          {(link.totalDownloadClicks > 0 ? ((link.totalInfoContinueClicksStep0 || 0) / link.totalDownloadClicks * 100).toFixed(1) : 0)}%
+                        </p>
+                      </div>
 
+                      {/* Arrow */}
+                      <div style={{ fontSize: '24px', color: '#bbb' }}>→</div>
+
+                      {/* Step 5: Info Step 1 */}
                       <div style={{ 
-                        backgroundColor: '#e8f5e9',
-                        padding: '15px',
+                        minWidth: '140px',
+                        backgroundColor: '#fce4ec',
+                        padding: '20px 15px',
                         borderRadius: '8px',
                         textAlign: 'center',
-                        border: '2px solid #4caf50'
+                        border: '2px solid #e91e63'
                       }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#2e7d32', fontWeight: '600' }}>
-                          App Store Conv.
+                        <p style={{ margin: '0 0 5px 0', fontSize: '11px', color: '#ad1457', fontWeight: '600', textTransform: 'uppercase' }}>
+                          Phone Entry
                         </p>
-                        <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#4caf50' }}>
-                          {analytics.downloadConversion || 0}%
+                        <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: '#c2185b' }}>
+                          {link.totalInfoContinueClicksStep1 || 0}
                         </p>
-                      </div>                                         
+                        <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#d81b60', fontWeight: 'bold' }}>
+                          {((link.totalInfoContinueClicksStep0 || 0) > 0 ? ((link.totalInfoContinueClicksStep1 || 0) / link.totalInfoContinueClicksStep0 * 100).toFixed(1) : 0)}%
+                        </p>
+                      </div>
+
+                      {/* Arrow */}
+                      <div style={{ fontSize: '24px', color: '#bbb' }}>→</div>
+
+                      {/* Step 6: Info Step 2 */}
+                      <div style={{ 
+                        minWidth: '140px',
+                        backgroundColor: '#e0f2f1',
+                        padding: '20px 15px',
+                        borderRadius: '8px',
+                        textAlign: 'center',
+                        border: '2px solid #009688'
+                      }}>
+                        <p style={{ margin: '0 0 5px 0', fontSize: '11px', color: '#00695c', fontWeight: '600', textTransform: 'uppercase' }}>
+                          App Store Open
+                        </p>
+                        <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: '#00796b' }}>
+                          {link.totalInfoContinueClicksStep2 || 0}
+                        </p>
+                        <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#00897b', fontWeight: 'bold' }}>
+                          {((link.totalInfoContinueClicksStep1 || 0) > 0 ? ((link.totalInfoContinueClicksStep2 || 0) / link.totalInfoContinueClicksStep1 * 100).toFixed(1) : 0)}%
+                        </p>
+                      </div>
                     </div>
                   </div>
                 );

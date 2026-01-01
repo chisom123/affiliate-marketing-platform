@@ -576,7 +576,7 @@ const RatingPage = () => {
     
     // Construct deep link URL - format: socialstar://rating/affiliateId/linkId
     const deepLinkUrl = `socialstar://rating/${affiliateId}/${linkId}`;
-    const appStoreUrl = 'https://apps.apple.com/app/socialstar-app/id6473705189';
+    const infoPageUrl = `/info/${affiliateId}/${linkId}`;
     
     // Track if the page becomes hidden (app opened successfully)
     let appOpened = false;
@@ -592,12 +592,12 @@ const RatingPage = () => {
     // Attempt to open the app via deep link
     window.location.href = deepLinkUrl;
     
-    // Fallback to App Store if app is not installed
-    // After 1.5 seconds, if the app didn't open (page didn't become hidden), redirect to App Store
+    // Fallback to Info Page if app is not installed
+    // After 1.5 seconds, if the app didn't open (page didn't become hidden), redirect to Info Page
     setTimeout(() => {
       document.removeEventListener('visibilitychange', visibilityHandler);
       if (!appOpened) {
-        window.location.href = appStoreUrl;
+        window.location.href = infoPageUrl;
       }
     }, 1500);
   };
@@ -1086,7 +1086,7 @@ const RatingPage = () => {
               }} />
             ) : (
               <>
-                <span>Continue Playing</span>
+                <span>Continue</span>
                 <ArrowRight size={32} strokeWidth={2.5} style={{ marginLeft: 'auto' }} />
               </>
             )}
