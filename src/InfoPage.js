@@ -621,7 +621,7 @@ const InfoPage = () => {
               lineHeight: '1.5',
               textAlign: 'center'
             }}>
-              Compete with friends in photo challenges and climb the leaderboard
+              Start playing with friends
             </p>
           </div>
 
