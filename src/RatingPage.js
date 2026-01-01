@@ -564,10 +564,10 @@ const RatingPage = () => {
     // Set loading state immediately
     setContinuePlayingLoading(true);
     
-    // Stop spinner after 3 seconds
+    // Stop spinner after 1.5 seconds
     setTimeout(() => {
       setContinuePlayingLoading(false);
-    }, 3000);
+    }, 1500);
     
     // Track UNIQUE download click FIRST (non-blocking with spam prevention)
     if (linkData && fingerprint) {
