@@ -1135,53 +1135,7 @@ const AdminDashboard = () => {
                       {/* Arrow */}
                       <div style={{ fontSize: '24px', color: '#bbb' }}>→</div>
 
-                      {/* Step 4: Info Step 0 */}
-                      <div style={{ 
-                        minWidth: '140px',
-                        backgroundColor: '#f3e5f5',
-                        padding: '20px 15px',
-                        borderRadius: '8px',
-                        textAlign: 'center',
-                        border: '2px solid #9c27b0'
-                      }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '11px', color: '#6a1b9a', fontWeight: '600', textTransform: 'uppercase' }}>
-                          Name Entry
-                        </p>
-                        <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: '#7b1fa2' }}>
-                          {link.totalInfoContinueClicksStep0 || 0}
-                        </p>
-                        <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#8e24aa', fontWeight: 'bold' }}>
-                          {(link.totalDownloadClicks > 0 ? ((link.totalInfoContinueClicksStep0 || 0) / link.totalDownloadClicks * 100).toFixed(1) : 0)}%
-                        </p>
-                      </div>
-
-                      {/* Arrow */}
-                      <div style={{ fontSize: '24px', color: '#bbb' }}>→</div>
-
-                      {/* Step 5: Info Step 1 */}
-                      <div style={{ 
-                        minWidth: '140px',
-                        backgroundColor: '#fce4ec',
-                        padding: '20px 15px',
-                        borderRadius: '8px',
-                        textAlign: 'center',
-                        border: '2px solid #e91e63'
-                      }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '11px', color: '#ad1457', fontWeight: '600', textTransform: 'uppercase' }}>
-                          Phone Entry
-                        </p>
-                        <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: '#c2185b' }}>
-                          {link.totalInfoContinueClicksStep1 || 0}
-                        </p>
-                        <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#d81b60', fontWeight: 'bold' }}>
-                          {((link.totalInfoContinueClicksStep0 || 0) > 0 ? ((link.totalInfoContinueClicksStep1 || 0) / link.totalInfoContinueClicksStep0 * 100).toFixed(1) : 0)}%
-                        </p>
-                      </div>
-
-                      {/* Arrow */}
-                      <div style={{ fontSize: '24px', color: '#bbb' }}>→</div>
-
-                      {/* Step 6: Info Step 2 */}
+                      {/* Step 4: App Store Open */}
                       <div style={{ 
                         minWidth: '140px',
                         backgroundColor: '#e0f2f1',
@@ -1194,10 +1148,10 @@ const AdminDashboard = () => {
                           App Store Open
                         </p>
                         <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: '#00796b' }}>
-                          {link.totalInfoContinueClicksStep2 || 0}
+                          {link.totalInfoContinueClicksDownload || 0}
                         </p>
                         <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#00897b', fontWeight: 'bold' }}>
-                          {((link.totalInfoContinueClicksStep1 || 0) > 0 ? ((link.totalInfoContinueClicksStep2 || 0) / link.totalInfoContinueClicksStep1 * 100).toFixed(1) : 0)}%
+                          {((link.totalDownloadClicks || 0) > 0 ? (((link.totalInfoContinueClicksDownload || 0) / link.totalDownloadClicks) * 100).toFixed(1) : 0)}%
                         </p>
                       </div>
                     </div>
