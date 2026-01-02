@@ -526,6 +526,26 @@ const InfoPage = () => {
               Continue
             </button>
           </div>
+
+          {/* SocialStar Branding */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '10px', 
+            justifyContent: 'flex-start',
+            marginTop: '30px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img 
+                src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a" 
+                alt="Star icon" 
+                style={{ width: '22px', height: '22px' }} 
+              />
+            </div>
+            <span style={{ fontSize: '18px', color: 'white', fontWeight: 'bold' }}>
+              SocialStar
+            </span>
+          </div>
         </div>
       </div>
     </div>
