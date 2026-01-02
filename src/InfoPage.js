@@ -472,7 +472,7 @@ const InfoPage = () => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    padding: '5px 12px',
+                    padding: '5px 10px',
                     backgroundColor: '#DAA520',
                     borderRadius: '20px'
                   }}>
@@ -483,12 +483,20 @@ const InfoPage = () => {
                     }}>
                       {user.stars}
                     </span>
-                    <span style={{
-                      fontSize: '18px',
-                      color: 'white'
-                    }}>
+                    <button
+                      disabled
+                      style={{
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        fontSize: '18px',
+                        color: 'white',
+                        padding: 0,
+                        cursor: 'default',
+                        outline: 'none'
+                      }}
+                    >
                       ★
-                    </span>
+                    </button>
                   </div>
                 </div>
                 
