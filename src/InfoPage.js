@@ -73,12 +73,6 @@ const generateFingerprint = async () => {
   return Math.abs(hash).toString(36);
 };
 
-// Capitalize first letter of a string
-const capitalizeFirstLetter = (str) => {
-  if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1);
-};
-
 // Spinner component
 const Spinner = () => (
   <div style={{
@@ -97,11 +91,6 @@ const InfoPage = () => {
   const [continueClickInProgress, setContinueClickInProgress] = useState(false);
   const [loading, setLoading] = useState(true);
   
-  // Affiliate data
-  const [affiliateFirstName, setAffiliateFirstName] = useState(null);
-  const [affiliateProfilePic, setAffiliateProfilePic] = useState(null);
-  const [affiliateTotalStars, setAffiliateTotalStars] = useState(0);
-  const [affiliateImageLoading, setAffiliateImageLoading] = useState(true);
   const [meImageLoading, setMeImageLoading] = useState(true);
 
   // Initialize fingerprint on component mount
@@ -122,65 +111,10 @@ const InfoPage = () => {
     initializeFingerprint();
   }, [linkId]);
 
-  // Load affiliate data and ratings
+  // Set loading to false after initialization
   useEffect(() => {
-    const loadData = async () => {
-      if (!affiliateId || !linkId) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        // First, get the link document to get the actual doc ID
-        const linksQuery = query(
-          collection(db, 'rating_links'),
-          where('linkId', '==', linkId)
-        );
-        const linkSnapshot = await getDocs(linksQuery);
-        
-        let linkDocId = null;
-        if (!linkSnapshot.empty) {
-          linkDocId = linkSnapshot.docs[0].id;
-        }
-
-        // Fetch affiliate data
-        const affiliateDoc = await getDoc(doc(db, 'affiliates', affiliateId));
-        if (affiliateDoc.exists()) {
-          const affiliateData = affiliateDoc.data();
-          if (affiliateData.firstName) {
-            setAffiliateFirstName(capitalizeFirstLetter(affiliateData.firstName));
-          }
-          if (affiliateData.profilePictureUrl) {
-            setAffiliateProfilePic(affiliateData.profilePictureUrl);
-          }
-        }
-
-        // Calculate total stars from ratings for this link
-        if (linkDocId) {
-          const ratingsQuery = query(
-            collection(db, 'ratings'),
-            where('linkId', '==', linkDocId)
-          );
-          const ratingsSnapshot = await getDocs(ratingsQuery);
-          
-          let totalStars = 0;
-          ratingsSnapshot.docs.forEach(doc => {
-            const ratingData = doc.data();
-            totalStars += ratingData.rating || 0;
-          });
-          
-          setAffiliateTotalStars(totalStars);
-        }
-
-      } catch (error) {
-        console.error('Error loading data:', error);
-      }
-      
-      setLoading(false);
-    };
-
-    loadData();
-  }, [affiliateId, linkId]);
+    setLoading(false);
+  }, []);
 
   // Track unique continue button click - FAST & NON-BLOCKING with spam prevention
   const trackUniqueContinueClick = async (stepName) => {
@@ -260,42 +194,26 @@ const InfoPage = () => {
   const leaderboardData = [
     { 
       rank: 1, 
-      name: affiliateFirstName || 'Loading...', 
-      stars: affiliateTotalStars, 
-      isCurrentUser: false, 
-      isAffiliate: true,
-      profileUrl: affiliateProfilePic 
+      name: null, 
+      stars: null, 
+      isCurrentUser: false,
+      profileUrl: null
     },
     { 
       rank: 2, 
-      name: 'Me', 
-      stars: 0, 
-      isCurrentUser: true,
-      isAffiliate: false,
-      profileUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/ffdb2764778f0f35c846ec597955c5c1.jpg?alt=media&token=3c1b808f-8345-4276-a9c5-ca4964c13498' 
+      name: null, 
+      stars: null, 
+      isCurrentUser: false,
+      profileUrl: null 
     },
     { 
       rank: 3, 
       name: null, 
-      stars: 0, 
+      stars: null, 
       isCurrentUser: false,
-      isAffiliate: false,
       profileUrl: null 
     }
   ];
-
-  // Get image loading state for a user
-  const getImageLoading = (user) => {
-    if (user.isAffiliate) return affiliateImageLoading;
-    if (user.isCurrentUser) return meImageLoading;
-    return false;
-  };
-
-  // Set image loading state for a user
-  const setImageLoading = (user, loading) => {
-    if (user.isAffiliate) setAffiliateImageLoading(loading);
-    if (user.isCurrentUser) setMeImageLoading(loading);
-  };
 
   if (loading) {
     return (
@@ -352,18 +270,36 @@ const InfoPage = () => {
           }}>
             {/* Title */}
             <div style={{
-              padding: '30px 20px 20px 20px'
+              padding: '30px 20px 30px 20px',
+              textAlign: 'center'
             }}>
               <h1 style={{
                 color: 'white',
                 fontSize: 'clamp(1.5rem, 5vw, 2rem)',
                 fontWeight: 'bold',
                 margin: '0',
-                lineHeight: '1.3',
-                textAlign: 'center'
+                lineHeight: '1.3'
               }}>
-                Leaderboard
+                Start a photo competition with friends
               </h1>
+            </div>
+
+            {/* Win $100 Green Box - Full Width */}
+            <div style={{
+              width: '100%',
+              backgroundColor: '#22C55E',
+              padding: '15px 0',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}>
+              <span style={{
+                color: 'white',
+                fontSize: '1.5rem',
+                fontWeight: 'bold'
+              }}>
+                Win $100
+              </span>
             </div>
 
             {/* Leaderboard Rows */}
@@ -397,7 +333,7 @@ const InfoPage = () => {
                       backgroundColor: '#3B4374',
                       position: 'relative'
                     }}>
-                      {getImageLoading(user) && (
+                      {meImageLoading && user.isCurrentUser && (
                         <div style={{
                           width: '100%',
                           height: '100%',
@@ -422,9 +358,11 @@ const InfoPage = () => {
                       <img 
                         src={user.profileUrl}
                         alt={user.name || 'User'}
-                        onLoad={() => setImageLoading(user, false)}
+                        onLoad={() => {
+                          if (user.isCurrentUser) setMeImageLoading(false);
+                        }}
                         onError={(e) => {
-                          setImageLoading(user, false);
+                          if (user.isCurrentUser) setMeImageLoading(false);
                           e.currentTarget.style.display = 'none';
                           e.currentTarget.parentElement.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
                         }}
@@ -432,7 +370,7 @@ const InfoPage = () => {
                           width: '100%',
                           height: '100%',
                           objectFit: 'cover',
-                          display: getImageLoading(user) ? 'none' : 'block'
+                          display: (meImageLoading && user.isCurrentUser) ? 'none' : 'block'
                         }}
                       />
                     </div>
@@ -476,20 +414,29 @@ const InfoPage = () => {
                     backgroundColor: '#DAA520',
                     borderRadius: '20px'
                   }}>
-                    <span style={{
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      color: 'white'
-                    }}>
-                      {user.stars}
-                    </span>
+                    {user.stars ? (
+                      <span style={{
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                        color: 'white'
+                      }}>
+                        {user.stars}
+                      </span>
+                    ) : (
+                      <div style={{
+                        height: '16px',
+                        width: '35px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                        borderRadius: '8px'
+                      }} />
+                    )}
                     <button
                       disabled
                       style={{
                         backgroundColor: 'transparent',
                         border: 'none',
                         fontSize: '18px',
-                        color: 'white',
+                        color: 'rgba(255, 255, 255, 0.5)',
                         padding: 0,
                         cursor: 'default',
                         outline: 'none'
