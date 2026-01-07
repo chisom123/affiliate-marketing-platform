@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { db } from './firebase';
+import { ArrowRight } from 'lucide-react';
 import { 
   doc, 
   getDoc, 
@@ -194,24 +195,24 @@ const InfoPage = () => {
   const leaderboardData = [
     { 
       rank: 1, 
-      name: null, 
-      stars: null, 
+      name: "Sophia", 
+      stars: 275, 
       isCurrentUser: false,
-      profileUrl: null
+      profileUrl: "https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/compress%2F00e95ee3819ad001f7455d3e34e085c6-2-min.jpg?alt=media&token=3f34b56d-03b0-442c-abcc-6b6bd907e94e"
     },
     { 
       rank: 2, 
-      name: null, 
-      stars: null, 
+      name: "Emma", 
+      stars: 190, 
       isCurrentUser: false,
-      profileUrl: null 
+      profileUrl: "https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/compress%2F97509ae7fcd7ffedfbe7c010f1602d0c-min.jpg?alt=media&token=fe79998e-8a9f-45f2-8d42-c2f9677131fb" 
     },
     { 
       rank: 3, 
-      name: null, 
-      stars: null, 
+      name: "Jake", 
+      stars: 130, 
       isCurrentUser: false,
-      profileUrl: null 
+      profileUrl: "https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/compress%2F9f0efe5a61c7e766838c49e18d70dfd0-2-min.jpg?alt=media&token=72aaa156-75f9-4117-84f1-6f969bb3e657" 
     }
   ];
 
@@ -270,7 +271,7 @@ const InfoPage = () => {
           }}>
             {/* Title */}
             <div style={{
-              padding: '30px 20px 30px 20px',
+              padding: '30px 20px',
               textAlign: 'center'
             }}>
               <h1 style={{
@@ -278,29 +279,16 @@ const InfoPage = () => {
                 fontSize: 'clamp(1.5rem, 5vw, 2rem)',
                 fontWeight: 'bold',
                 margin: '0',
-                lineHeight: '1.3'
+                lineHeight: '1.25'
               }}>
                 Start a photo competition with friends
               </h1>
             </div>
 
-            {/* Win $100 Green Box - Full Width */}
             <div style={{
-              width: '100%',
-              backgroundColor: '#22C55E',
-              padding: '15px 0',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}>
-              <span style={{
-                color: 'white',
-                fontSize: '1.5rem',
-                fontWeight: 'bold'
-              }}>
-                Win $100
-              </span>
-            </div>
+              height: '1px',
+              backgroundColor: 'rgba(255, 255, 255, 0.1)'
+            }} />
 
             {/* Leaderboard Rows */}
             {leaderboardData.map((user, index) => (
@@ -436,7 +424,7 @@ const InfoPage = () => {
                         backgroundColor: 'transparent',
                         border: 'none',
                         fontSize: '18px',
-                        color: 'rgba(255, 255, 255, 0.5)',
+                        color: 'rgba(255, 255, 255, 1)',
                         padding: 0,
                         cursor: 'default',
                         outline: 'none'
@@ -456,6 +444,24 @@ const InfoPage = () => {
               </div>
             ))}
 
+            {/* Win $100 Green Box - Full Width */}
+            <div style={{
+              width: '100%',
+              backgroundColor: '#22C55E',
+              padding: '15px 0',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}>
+              <span style={{
+                color: 'white',
+                fontSize: '1.5rem',
+                fontWeight: 'bold'
+              }}>
+                Win $100
+              </span>
+            </div>
+
             {/* Integrated Download Button */}
             <button
               onClick={() => {
@@ -466,19 +472,19 @@ const InfoPage = () => {
                 width: '100%',
                 backgroundColor: '#4169E1',
                 color: 'white',
-                padding: '25px 0',
-                fontSize: '1.2rem',
+                padding: '24px 20px',
+                fontSize: '20px',
                 fontWeight: 'bold',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
+                justifyContent: 'space-between',
                 border: 'none',
                 borderRadius: '0',
-                cursor: 'pointer',
-                marginTop: '1px'
+                cursor: 'pointer'
               }}
             >
-              Continue
+              <span>Continue</span>
+              <ArrowRight size={32} strokeWidth={2.5} style={{ marginLeft: 'auto' }} />
             </button>
           </div>
 

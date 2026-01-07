@@ -494,40 +494,21 @@ const RatingPage = () => {
     setLoadingInteractions(false);
   };
 
-  // Instant rating on star tap - fully anonymous
-  const handleStarTap = async (stars) => {
-    if (!isRatingEnabled || hasAlreadyVoted) return;
-    
-    // DISABLE IMMEDIATELY to prevent spam
-    setIsRatingEnabled(false);
-    
-    setRating(stars);
-    setAnimateRating(true);
-    
-    // Submit rating IMMEDIATELY (no name needed)
+  // Get recruiter ID
+  const getRecruiterId = async (affiliateId) => {
     try {
-      await submitRating(stars);
-      setHasAlreadyVoted(true);
-      
-      // Reload interactions to show new rating
-      if (linkData) {
-        await loadInteractions(linkData.id);
+      const affiliateDoc = await getDoc(doc(db, 'affiliates', affiliateId));
+      if (!affiliateDoc.exists()) {
+        return null;
       }
-      
-      // Reset animation after brief delay
-      setTimeout(() => {
-        setAnimateRating(false);
-      }, 800);
-      
+      return affiliateDoc.data()?.recruitedBy;
     } catch (error) {
-      console.error('Error submitting rating:', error);
-      setAnimateRating(false);
-      // RE-ENABLE on error so user can retry
-      setIsRatingEnabled(true);
-      alert('Failed to submit rating. Please try again.');
+      console.error('Error getting recruiter ID:', error);
+      return null;
     }
   };
 
+  // Fast rating submission with recruiter payments
   const submitRating = async (stars) => {
     if (!linkData || !fingerprint) return;
 
@@ -548,21 +529,123 @@ const RatingPage = () => {
       isDevelopment: isDevelopment
     };
     
-    const docRef = await addDoc(collection(db, 'ratings'), ratingData);
+    try {
+      // Create rating document first
+      const ratingDocRef = await addDoc(collection(db, 'ratings'), ratingData);
+      
+      // Get recruiter ID
+      const recruiterId = await getRecruiterId(affiliateId);
+      
+      // Prepare all updates to run in parallel
+      const updates = [];
+      
+      // 1. Update rating link
+      updates.push(updateDoc(doc(db, 'rating_links', linkData.id), {
+        totalRatings: increment(1),
+        earnings: increment(earningsPerRating),
+        lastRatedAt: serverTimestamp()
+      }));
+      
+      // 2. Update affiliate balance (always happens)
+      updates.push(updateDoc(doc(db, 'affiliates', affiliateId), {
+        totalRatings: increment(1),
+        totalEarnings: increment(earningsPerRating),
+        balance: increment(earningsPerRating)
+      }));
+      
+      // 3. If affiliate has a recruiter, update recruiter earnings
+      if (recruiterId) {
+        const recruiterEarnings = 0.05; // Recruiter gets $0.05 per rating
+        
+        // Update recruiter's main balance and recruiterEarnings
+        updates.push(updateDoc(doc(db, 'affiliates', recruiterId), {
+          balance: increment(recruiterEarnings),
+          totalEarnings: increment(recruiterEarnings),
+          recruiterEarnings: increment(recruiterEarnings)
+        }));
+        
+        // Update recruiter's recruit subcollection for this specific recruit
+        updates.push(updateDoc(doc(db, 'affiliates', recruiterId, 'recruits', affiliateId), {
+          recruiterEarnings: increment(recruiterEarnings),
+          totalRatings: increment(1),
+          lastRatingAt: serverTimestamp()
+        }));
+        
+        // Also create a transaction record for recruiter earnings tracking (non-blocking)
+        setTimeout(async () => {
+          try {
+            const recruiterTransaction = {
+              type: 'recruiter_earnings',
+              amount: recruiterEarnings,
+              recruitId: affiliateId,
+              ratingId: ratingDocRef.id,
+              linkId: linkData.id,
+              timestamp: serverTimestamp(),
+              createdAt: serverTimestamp()
+            };
+            
+            await addDoc(collection(db, 'affiliates', recruiterId, 'transactions'), recruiterTransaction);
+          } catch (err) {
+            console.error('Error creating recruiter transaction:', err);
+          }
+        }, 0);
+      }
+      
+      // Execute all updates in parallel for maximum speed
+      await Promise.all(updates);
+      
+      return ratingDocRef.id;
+      
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+      throw error;
+    }
+  };
+
+  // Instant rating on star tap - with optimistic updates
+  const handleStarTap = async (stars) => {
+    if (!isRatingEnabled || hasAlreadyVoted) return;
     
-    await updateDoc(doc(db, 'rating_links', linkData.id), {
-      totalRatings: increment(1),
-      earnings: increment(earningsPerRating),
-      lastRatedAt: serverTimestamp()
-    });
+    // DISABLE IMMEDIATELY to prevent spam
+    setIsRatingEnabled(false);
+    setRating(stars);
+    setAnimateRating(true);
     
-    await updateDoc(doc(db, 'affiliates', affiliateId), {
-      totalRatings: increment(1),
-      totalEarnings: increment(earningsPerRating),
-      balance: increment(earningsPerRating)
-    });
+    // OPTIMISTIC UPDATE: Add rating to interactions list immediately
+    const optimisticInteraction = {
+      id: `temp_${Date.now()}`,
+      rating: stars,
+      fingerprint: fingerprint,
+      timestamp: { toDate: () => new Date() }
+    };
     
-    return docRef.id;
+    setInteractions(prev => [optimisticInteraction, ...prev]);
+    
+    // Submit rating in background
+    try {
+      await submitRating(stars);
+      setHasAlreadyVoted(true);
+      
+      // Remove temp interaction and reload actual data
+      setTimeout(() => {
+        setInteractions(prev => prev.filter(i => !i.id.startsWith('temp_')));
+        if (linkData) {
+          loadInteractions(linkData.id);
+        }
+        setAnimateRating(false);
+      }, 500);
+      
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+      
+      // ROLLBACK optimistic update on error
+      setInteractions(prev => prev.filter(i => !i.id.startsWith('temp_')));
+      setAnimateRating(false);
+      
+      // RE-ENABLE on error so user can retry
+      setIsRatingEnabled(true);
+      alert('Failed to submit rating. Please try again.');
+    }
   };
 
   // Handle Continue Playing button click
