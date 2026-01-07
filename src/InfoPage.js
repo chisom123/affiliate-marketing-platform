@@ -269,6 +269,24 @@ const InfoPage = () => {
             borderRadius: '10px',
             overflow: 'hidden'
           }}>
+            {/* Win $100 Green Box - Full Width */}
+            <div style={{
+              width: '100%',
+              backgroundColor: '#22C55E',
+              padding: '15px 0',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}>
+              <span style={{
+                color: 'white',
+                fontSize: '1.5rem',
+                fontWeight: 'bold'
+              }}>
+                Win $100
+              </span>
+            </div>
+
             {/* Title */}
             <div style={{
               padding: '30px 20px',
@@ -443,24 +461,6 @@ const InfoPage = () => {
                 )}
               </div>
             ))}
-
-            {/* Win $100 Green Box - Full Width */}
-            <div style={{
-              width: '100%',
-              backgroundColor: '#22C55E',
-              padding: '15px 0',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}>
-              <span style={{
-                color: 'white',
-                fontSize: '1.5rem',
-                fontWeight: 'bold'
-              }}>
-                Win $100
-              </span>
-            </div>
 
             {/* Integrated Download Button */}
             <button
