@@ -465,7 +465,7 @@ const InfoPage = () => {
                 cursor: 'pointer'
               }}
             >
-              <span>Win $25</span>
+              <span>Win $100</span>
               <ArrowRight size={32} strokeWidth={2.5} style={{ marginLeft: 'auto' }} />
             </button>
           </div>
