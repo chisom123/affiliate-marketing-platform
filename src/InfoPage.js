@@ -269,24 +269,6 @@ const InfoPage = () => {
             borderRadius: '10px',
             overflow: 'hidden'
           }}>
-            {/* Win $100 Green Box - Full Width */}
-            <div style={{
-              width: '100%',
-              backgroundColor: '#22C55E',
-              padding: '15px 0',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}>
-              <span style={{
-                color: 'white',
-                fontSize: '1.5rem',
-                fontWeight: 'bold'
-              }}>
-                Win $100
-              </span>
-            </div>
-
             {/* Title */}
             <div style={{
               padding: '30px 20px',
@@ -470,7 +452,7 @@ const InfoPage = () => {
               }}
               style={{
                 width: '100%',
-                backgroundColor: '#4169E1',
+                backgroundColor: '#22C55E',
                 color: 'white',
                 padding: '24px 20px',
                 fontSize: '20px',
@@ -483,7 +465,7 @@ const InfoPage = () => {
                 cursor: 'pointer'
               }}
             >
-              <span>Continue</span>
+              <span>Win $25</span>
               <ArrowRight size={32} strokeWidth={2.5} style={{ marginLeft: 'auto' }} />
             </button>
           </div>
