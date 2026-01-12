@@ -602,7 +602,7 @@ const RatingPage = () => {
     }
   };
 
-  // Instant rating on star tap - with optimistic updates
+  // Instant rating on star tap - with optimistic updates (FIXED - no flash)
   const handleStarTap = async (stars) => {
     if (!isRatingEnabled || hasAlreadyVoted) return;
     
@@ -626,14 +626,13 @@ const RatingPage = () => {
       await submitRating(stars);
       setHasAlreadyVoted(true);
       
-      // Remove temp interaction and reload actual data
-      setTimeout(() => {
-        setInteractions(prev => prev.filter(i => !i.id.startsWith('temp_')));
-        if (linkData) {
-          loadInteractions(linkData.id);
-        }
-        setAnimateRating(false);
-      }, 500);
+      // Reload actual data smoothly - the new data will naturally replace the temp interaction
+      if (linkData) {
+        await loadInteractions(linkData.id);
+      }
+      
+      // Stop animation after data is loaded
+      setAnimateRating(false);
       
     } catch (error) {
       console.error('Error submitting rating:', error);
