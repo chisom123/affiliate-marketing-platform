@@ -454,8 +454,8 @@ const InfoPage = () => {
                 width: '100%',
                 backgroundColor: '#22C55E',
                 color: 'white',
-                padding: '24px 20px',
-                fontSize: '20px',
+                padding: '30px 20px',
+                fontSize: '22px',
                 fontWeight: 'bold',
                 display: 'flex',
                 alignItems: 'center',
@@ -466,7 +466,7 @@ const InfoPage = () => {
               }}
             >
               <span>Win $100</span>
-              <ArrowRight size={32} strokeWidth={2.5} style={{ marginLeft: 'auto' }} />
+              <ArrowRight size={34} strokeWidth={2.5} style={{ marginLeft: 'auto' }} />
             </button>
           </div>
 

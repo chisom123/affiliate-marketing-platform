@@ -652,10 +652,10 @@ const RatingPage = () => {
     // Set loading state immediately
     setContinuePlayingLoading(true);
     
-    // Stop spinner after 1.5 seconds
+    // Stop spinner after 2 seconds
     setTimeout(() => {
       setContinuePlayingLoading(false);
-    }, 1500);
+    }, 2000);
     
     // Track UNIQUE download click FIRST (non-blocking with spam prevention)
     if (linkData && fingerprint) {
@@ -1146,7 +1146,7 @@ const RatingPage = () => {
               border: 'none',
               padding: '0 24px',
               cursor: continuePlayingLoading ? 'default' : 'pointer',
-              fontSize: '20px',
+              fontSize: '22px',
               fontWeight: 'bold',
               color: '#FFF',
               transition: 'transform 0.2s ease'
@@ -1175,7 +1175,7 @@ const RatingPage = () => {
             ) : (
               <>
                 <span>Continue</span>
-                <ArrowRight size={32} strokeWidth={2.5} style={{ marginLeft: 'auto' }} />
+                <ArrowRight size={34} strokeWidth={2.5} style={{ marginLeft: 'auto' }} />
               </>
             )}
           </button>
