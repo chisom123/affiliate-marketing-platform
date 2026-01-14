@@ -285,10 +285,23 @@ const InfoPage = () => {
               </h1>
             </div>
 
+            {/* Win $100 Green Box - Full Width */}
             <div style={{
-              height: '1px',
-              backgroundColor: 'rgba(255, 255, 255, 0.1)'
-            }} />
+              width: '100%',
+              backgroundColor: '#22C55E',
+              padding: '15px 0',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}>
+              <span style={{
+                color: 'white',
+                fontSize: '1.5rem',
+                fontWeight: 'bold'
+              }}>
+                Win $100
+              </span>
+            </div>
 
             {/* Leaderboard Rows */}
             {leaderboardData.map((user, index) => (
@@ -452,7 +465,7 @@ const InfoPage = () => {
               }}
               style={{
                 width: '100%',
-                backgroundColor: '#22C55E',
+                backgroundColor: '#4169E1',
                 color: 'white',
                 padding: '30px 20px',
                 fontSize: '22px',
@@ -465,7 +478,7 @@ const InfoPage = () => {
                 cursor: 'pointer'
               }}
             >
-              <span>Win $100</span>
+              <span>Continue</span>
               <ArrowRight size={34} strokeWidth={2.5} style={{ marginLeft: 'auto' }} />
             </button>
           </div>
