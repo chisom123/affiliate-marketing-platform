@@ -281,7 +281,7 @@ const InfoPage = () => {
                 margin: '0',
                 lineHeight: '1.25'
               }}>
-                Start a photo competition with friends
+                Photo Competition with Friends!
               </h1>
             </div>
 
