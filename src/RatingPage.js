@@ -555,7 +555,7 @@ const RatingPage = () => {
       
       // 3. If affiliate has a recruiter, update recruiter earnings
       if (recruiterId) {
-        const recruiterEarnings = 0.05; // Recruiter gets $0.05 per rating
+        const recruiterEarnings = 0.10; // Recruiter gets $0.10 per rating
         
         // Update recruiter's main balance and recruiterEarnings
         updates.push(updateDoc(doc(db, 'affiliates', recruiterId), {
