@@ -341,7 +341,7 @@ const RecruitSignup = () => {
                 onMouseEnter={() => setHoverStates(prev => ({ ...prev, downloadButton: true }))}
                 onMouseLeave={() => setHoverStates(prev => ({ ...prev, downloadButton: false }))}
               >
-                Download App
+                Continue
               </a>
             </div>
             
