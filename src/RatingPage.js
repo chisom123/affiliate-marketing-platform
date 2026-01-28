@@ -98,12 +98,6 @@ const isInstagramApp = () => {
   return isInstagram || isIOSInstagram || isAndroidInstagram;
 };
 
-// Capitalize first letter of a string
-const capitalizeFirstLetter = (str) => {
-  if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1);
-};
-
 // Generate consistent color from fingerprint
 const getColorFromFingerprint = (fingerprint) => {
   if (!fingerprint) return '#999';
@@ -150,7 +144,8 @@ const Spinner = () => (
 const RatingPage = () => {
   const { affiliateId, linkId } = useParams();
   const [linkData, setLinkData] = useState(null);
-  const [affiliateProfilePic, setAffiliateProfilePic] = useState('https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/bold.png?alt=media&token=6ec7b1e4-a3d1-44da-a36c-c9ab227e15a7');
+  const [affiliateFirstName, setAffiliateFirstName] = useState(null);
+  const [affiliateProfilePic, setAffiliateProfilePic] = useState(null);
   const [photoUrl, setPhotoUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -325,6 +320,18 @@ const RatingPage = () => {
         // Set photo URL from link data
         if (linkData.photoUrl) {
           setPhotoUrl(linkData.photoUrl);
+        }
+
+        // Fetch affiliate first name and profile picture
+        const affiliateDoc = await getDoc(doc(db, 'affiliates', affiliateId));
+        if (affiliateDoc.exists()) {
+          const affiliateData = affiliateDoc.data();
+          if (affiliateData.firstName) {
+            setAffiliateFirstName(affiliateData.firstName);
+          }
+          if (affiliateData.profilePictureUrl) {
+            setAffiliateProfilePic(affiliateData.profilePictureUrl);
+          }
         }
 
         // Check if already rated (only in production)
@@ -872,54 +879,56 @@ const RatingPage = () => {
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
+            gap: affiliateProfilePic ? '12px' : '0px',
             backgroundColor: 'transparent',
             padding: '5px 16px'
           }}>
-            {/* Profile Image with static SocialStar logo */}
-            <div style={{
-              position: 'relative',
-              width: '35px',
-              height: '35px',
-              borderRadius: '50%',
-              overflow: 'hidden'
-            }}>
-              {profileImageLoading && (
-                <div style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0
-                }}>
+            {/* Profile Image - Only render if URL exists */}
+            {affiliateProfilePic && (
+              <div style={{
+                position: 'relative',
+                width: '35px',
+                height: '35px',
+                borderRadius: '50%',
+                overflow: 'hidden'
+              }}>
+                {profileImageLoading && (
                   <div style={{
-                    width: '15px',
-                    height: '15px',
-                    border: '2px solid rgba(255, 255, 255, 0.3)',
-                    borderTop: '2px solid #FFF',
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0
+                  }}>
+                    <div style={{
+                      width: '15px',
+                      height: '15px',
+                      border: '2px solid rgba(255, 255, 255, 0.3)',
+                      borderTop: '2px solid #FFF',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                  </div>
+                )}
+                <img 
+                  src={affiliateProfilePic}
+                  alt={affiliateFirstName}
+                  onLoad={() => setProfileImageLoading(false)}
+                  onError={() => setProfileImageLoading(false)}
+                  style={{
+                    width: '35px',
+                    height: '35px',
                     borderRadius: '50%',
-                    animation: 'spin 1s linear infinite'
-                  }} />
-                </div>
-              )}
-              <img 
-                src={affiliateProfilePic}
-                alt="SocialStar"
-                onLoad={() => setProfileImageLoading(false)}
-                onError={() => setProfileImageLoading(false)}
-                style={{
-                  width: '35px',
-                  height: '35px',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  display: profileImageLoading ? 'none' : 'block'
-                }}
-              />
-            </div>
+                    objectFit: 'cover',
+                    display: profileImageLoading ? 'none' : 'block'
+                  }}
+                />
+              </div>
+            )}
             <span style={{
               color: 'white',
               fontSize: '19px',
@@ -929,7 +938,7 @@ const RatingPage = () => {
               textOverflow: 'ellipsis', 
               whiteSpace: 'nowrap'
             }}>
-              SocialStar
+              {affiliateFirstName}
             </span>
           </div>
         </div>
