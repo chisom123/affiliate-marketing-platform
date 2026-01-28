@@ -1022,7 +1022,7 @@ const RatingPage = () => {
               marginBottom: '20px',
               fontWeight: '500'
             }}>
-              You're trying a <span style={{ color: '#4169E1', fontWeight: 'bold' }}>preview</span> of SocialStar – the photo competition app where friends compete and vote.
+              This is a <span style={{ color: '#4169E1', fontWeight: 'bold' }}>preview</span> of SocialStar – The photo competition app for friends.
             </p>
 
             <p style={{
@@ -1031,7 +1031,7 @@ const RatingPage = () => {
               lineHeight: '1.5',
               marginBottom: '28px'
             }}>
-              Rate <span style={{ color: 'white', fontWeight: '600' }}>{affiliateFirstName}'s</span> photo below, then download the full app to start your own competitions!
+              Rate <span style={{ color: 'white', fontWeight: '600' }}>{affiliateFirstName}'s</span> photo and try out the full app!
             </p>
 
             {/* CTA Button */}
