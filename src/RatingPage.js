@@ -14,7 +14,7 @@ import {
   setDoc
 } from 'firebase/firestore';
 import { useParams } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, X } from 'lucide-react';
 
 
 // Development environment check
@@ -153,8 +153,8 @@ const ThemeBadge = ({ themeName }) => {
       padding: '5px 10px',
       backgroundColor: '#4169E1',
       borderRadius: '20px',
-      flexShrink: 1,      // Changed from 0 - allows it to shrink when needed
-      minWidth: 0         // Allows flex item to shrink below content size
+      flexShrink: 1,
+      minWidth: 0
     }}>
       <svg 
         width="19" 
@@ -178,7 +178,7 @@ const ThemeBadge = ({ themeName }) => {
         whiteSpace: 'nowrap',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
-        minWidth: 0  // Allows text to shrink
+        minWidth: 0
       }}>
         {themeName}
       </span>
@@ -207,6 +207,9 @@ const RatingPage = () => {
   const [earningsPerRating, setEarningsPerRating] = useState(0.25);
   const [downloadClickInProgress, setDownloadClickInProgress] = useState(false);
   
+  // Intro modal state
+  const [showIntroModal, setShowIntroModal] = useState(false);
+  
   // Image loading states
   const [profileImageLoading, setProfileImageLoading] = useState(true);
   const [backgroundImageLoading, setBackgroundImageLoading] = useState(true);
@@ -233,7 +236,6 @@ const RatingPage = () => {
         }
       } catch (error) {
         console.error('Error loading earnings rate:', error);
-        // Keep default 0.25 if loading fails
       }
     };
 
@@ -243,7 +245,6 @@ const RatingPage = () => {
   // Handle viewport changes (browser UI collapse/expand)
   useEffect(() => {
     const updateViewport = () => {
-      // Use visualViewport for more accurate tracking
       if (window.visualViewport) {
         setViewportHeight(window.visualViewport.height);
       } else {
@@ -251,7 +252,6 @@ const RatingPage = () => {
       }
     };
 
-    // Listen to both resize and visualViewport events
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', updateViewport);
       window.visualViewport.addEventListener('scroll', updateViewport);
@@ -259,7 +259,6 @@ const RatingPage = () => {
     
     window.addEventListener('resize', updateViewport);
     
-    // Initial update
     updateViewport();
 
     return () => {
@@ -273,7 +272,6 @@ const RatingPage = () => {
 
   // Prevent body scroll
   useEffect(() => {
-    // Lock body scroll to prevent layout shifts
     document.body.style.overflow = 'hidden';
     document.body.style.position = 'fixed';
     document.body.style.width = '100%';
@@ -281,7 +279,6 @@ const RatingPage = () => {
     document.body.style.margin = '0';
     document.body.style.padding = '0';
     
-    // Prevent text selection for app-like feel
     document.body.style.userSelect = 'none';
     document.body.style.webkitUserSelect = 'none';
     document.body.style.webkitTouchCallout = 'none';
@@ -362,12 +359,10 @@ const RatingPage = () => {
         const linkData = { id: linkDoc.id, ...linkDoc.data() };
         setLinkData(linkData);
 
-        // Set photo URL from link data
         if (linkData.photoUrl) {
           setPhotoUrl(linkData.photoUrl);
         }
 
-        // Fetch affiliate first name and profile picture
         const affiliateDoc = await getDoc(doc(db, 'affiliates', affiliateId));
         if (affiliateDoc.exists()) {
           const affiliateData = affiliateDoc.data();
@@ -379,14 +374,14 @@ const RatingPage = () => {
           }
         }
 
-        // Check if already rated (only in production)
+        let existingRatings = null;
         if (!isDevelopment) {
           const existingRatingQuery = query(
             collection(db, 'ratings'),
             where('linkId', '==', linkData.id),
             where('fingerprint', '==', fingerprint)
           );
-          const existingRatings = await getDocs(existingRatingQuery);
+          existingRatings = await getDocs(existingRatingQuery);
           
           if (!existingRatings.empty) {
             setHasAlreadyVoted(true);
@@ -396,11 +391,20 @@ const RatingPage = () => {
           console.log('Development mode: Skipping "already rated" check');
         }
 
-        // Track UNIQUE page open - NON-BLOCKING
         trackUniquePageOpen(linkData.id, fingerprint);
-
-        // Load interactions
         await loadInteractions(linkData.id);
+
+        // Show intro modal after everything loads (only if haven't voted)
+        // PRODUCTION: Uncomment the next 3 lines to show modal only once per story
+        // const hasSeenIntro = localStorage.getItem(`intro_seen_${linkId}`);
+        // if (!hasSeenIntro && (existingRatings === null || existingRatings.empty)) {
+        //   setShowIntroModal(true);
+        // }
+        
+        // TESTING: Remove these 2 lines before production - shows modal on every load
+        if (existingRatings === null || existingRatings.empty) {
+          setShowIntroModal(true);
+        }
 
       } catch (error) {
         console.error('Error loading data:', error);
@@ -415,24 +419,19 @@ const RatingPage = () => {
     }
   }, [affiliateId, linkId, fingerprint, isValidEnvironment]);
 
-  // Track unique page open - FAST & NON-BLOCKING
   const trackUniquePageOpen = async (linkDocId, userFingerprint) => {
     if (pageOpenTracked) return;
     
     setPageOpenTracked(true);
 
-    // Run tracking asynchronously without awaiting
     (async () => {
       try {
         const trackingDocId = `${linkDocId}_${userFingerprint}`;
         const trackingDocRef = doc(db, 'unique_page_opens', trackingDocId);
         
-        // Check if this fingerprint has already opened this link
         const trackingDoc = await getDoc(trackingDocRef);
         
         if (!trackingDoc.exists()) {
-          // First time this fingerprint is opening this link
-          // Create tracking document
           await setDoc(trackingDocRef, {
             linkId: linkDocId,
             fingerprint: userFingerprint,
@@ -440,13 +439,11 @@ const RatingPage = () => {
             openCount: 1
           });
 
-          // Increment UNIQUE page opens counter
           await updateDoc(doc(db, 'rating_links', linkDocId), {
             totalPageOpens: increment(1),
             lastOpenedAt: serverTimestamp()
           });
         } else {
-          // User has opened before - just update their open count
           await updateDoc(trackingDocRef, {
             openCount: increment(1),
             lastOpenedAt: serverTimestamp()
@@ -458,29 +455,22 @@ const RatingPage = () => {
     })();
   };
 
-  // Track unique download click - FAST & NON-BLOCKING with spam prevention
   const trackUniqueDownloadClick = async (linkDocId, userFingerprint) => {
-    // PREVENT SPAM - if already in progress, ignore this call
     if (downloadClickInProgress) {
       console.log('Download click already in progress, ignoring duplicate');
       return;
     }
     
-    // SET FLAG IMMEDIATELY to prevent duplicate calls
     setDownloadClickInProgress(true);
     
-    // Run tracking asynchronously without awaiting
     (async () => {
       try {
         const trackingDocId = `${linkDocId}_${userFingerprint}`;
         const trackingDocRef = doc(db, 'unique_download_clicks', trackingDocId);
         
-        // Check if this fingerprint has already clicked download for this link
         const trackingDoc = await getDoc(trackingDocRef);
         
         if (!trackingDoc.exists()) {
-          // First time this fingerprint is clicking download for this link
-          // Create tracking document
           await setDoc(trackingDocRef, {
             linkId: linkDocId,
             fingerprint: userFingerprint,
@@ -488,13 +478,11 @@ const RatingPage = () => {
             clickCount: 1
           });
 
-          // Increment UNIQUE download clicks counter
           await updateDoc(doc(db, 'rating_links', linkDocId), {
             totalDownloadClicks: increment(1),
             lastDownloadClickAt: serverTimestamp()
           });
         } else {
-          // User has clicked before - just update their click count
           await updateDoc(trackingDocRef, {
             clickCount: increment(1),
             lastClickedAt: serverTimestamp()
@@ -503,7 +491,6 @@ const RatingPage = () => {
       } catch (error) {
         console.error('Error tracking unique download click:', error);
       } finally {
-        // Reset flag after a short delay to allow legitimate re-clicks if needed
         setTimeout(() => {
           setDownloadClickInProgress(false);
         }, 1500);
@@ -524,15 +511,12 @@ const RatingPage = () => {
         id: doc.id,
         ...doc.data()
       })).sort((a, b) => {
-        // First, check if either rating belongs to current user
         const aIsCurrentUser = a.fingerprint === fingerprint;
         const bIsCurrentUser = b.fingerprint === fingerprint;
         
-        // If one is current user and other isn't, current user comes first
         if (aIsCurrentUser && !bIsCurrentUser) return -1;
         if (!aIsCurrentUser && bIsCurrentUser) return 1;
         
-        // Otherwise sort by timestamp (newest first)
         const aTime = a.timestamp?.toMillis() || 0;
         const bTime = b.timestamp?.toMillis() || 0;
         return bTime - aTime;
@@ -545,7 +529,6 @@ const RatingPage = () => {
     setLoadingInteractions(false);
   };
 
-  // Get recruiter ID
   const getRecruiterId = async (affiliateId) => {
     try {
       const affiliateDoc = await getDoc(doc(db, 'affiliates', affiliateId));
@@ -559,7 +542,6 @@ const RatingPage = () => {
     }
   };
 
-  // Fast rating submission with recruiter payments
   const submitRating = async (stars) => {
     if (!linkData || !fingerprint) return;
 
@@ -581,48 +563,39 @@ const RatingPage = () => {
     };
     
     try {
-      // Create rating document first
       const ratingDocRef = await addDoc(collection(db, 'ratings'), ratingData);
       
-      // Get recruiter ID
       const recruiterId = await getRecruiterId(affiliateId);
       
-      // Prepare all updates to run in parallel
       const updates = [];
       
-      // 1. Update rating link
       updates.push(updateDoc(doc(db, 'rating_links', linkData.id), {
         totalRatings: increment(1),
         earnings: increment(earningsPerRating),
         lastRatedAt: serverTimestamp()
       }));
       
-      // 2. Update affiliate balance (always happens)
       updates.push(updateDoc(doc(db, 'affiliates', affiliateId), {
         totalRatings: increment(1),
         totalEarnings: increment(earningsPerRating),
         balance: increment(earningsPerRating)
       }));
       
-      // 3. If affiliate has a recruiter, update recruiter earnings
       if (recruiterId) {
-        const recruiterEarnings = 0.10; // Recruiter gets $0.10 per rating
+        const recruiterEarnings = 0.10;
         
-        // Update recruiter's main balance and recruiterEarnings
         updates.push(updateDoc(doc(db, 'affiliates', recruiterId), {
           balance: increment(recruiterEarnings),
           totalEarnings: increment(recruiterEarnings),
           recruiterEarnings: increment(recruiterEarnings)
         }));
         
-        // Update recruiter's recruit subcollection for this specific recruit
         updates.push(updateDoc(doc(db, 'affiliates', recruiterId, 'recruits', affiliateId), {
           recruiterEarnings: increment(recruiterEarnings),
           totalRatings: increment(1),
           lastRatingAt: serverTimestamp()
         }));
         
-        // Also create a transaction record for recruiter earnings tracking (non-blocking)
         setTimeout(async () => {
           try {
             const recruiterTransaction = {
@@ -642,7 +615,6 @@ const RatingPage = () => {
         }, 0);
       }
       
-      // Execute all updates in parallel for maximum speed
       await Promise.all(updates);
       
       return ratingDocRef.id;
@@ -653,16 +625,13 @@ const RatingPage = () => {
     }
   };
 
-  // Instant rating on star tap - with optimistic updates (FIXED - no flash)
   const handleStarTap = async (stars) => {
     if (!isRatingEnabled || hasAlreadyVoted) return;
     
-    // DISABLE IMMEDIATELY to prevent spam
     setIsRatingEnabled(false);
     setRating(stars);
     setAnimateRating(true);
     
-    // OPTIMISTIC UPDATE: Add rating to interactions list immediately
     const optimisticInteraction = {
       id: `temp_${Date.now()}`,
       rating: stars,
@@ -672,44 +641,41 @@ const RatingPage = () => {
     
     setInteractions(prev => [optimisticInteraction, ...prev]);
     
-    // Submit rating in background
     try {
       await submitRating(stars);
       setHasAlreadyVoted(true);
       
-      // Reload actual data smoothly - the new data will naturally replace the temp interaction
       if (linkData) {
         await loadInteractions(linkData.id);
       }
       
-      // Stop animation after data is loaded
       setAnimateRating(false);
       
     } catch (error) {
       console.error('Error submitting rating:', error);
       
-      // ROLLBACK optimistic update on error
       setInteractions(prev => prev.filter(i => !i.id.startsWith('temp_')));
       setAnimateRating(false);
       
-      // RE-ENABLE on error so user can retry
       setIsRatingEnabled(true);
       alert('Failed to submit rating. Please try again.');
     }
   };
 
-  // Handle Continue Playing button click
   const handleContinuePlaying = () => {
-    // Track UNIQUE download click FIRST (non-blocking with spam prevention)
     if (linkData && fingerprint) {
       trackUniqueDownloadClick(linkData.id, fingerprint);
     }
     
-    // Redirect directly to App Store
     window.location.href = 'https://apps.apple.com/app/socialstar-app/id6473705189';
   };
 
-  // SIMPLIFIED BOTTOM SHEET DRAG
+  // Handle intro modal dismiss
+  const handleDismissIntro = () => {
+    setShowIntroModal(false);
+    localStorage.setItem(`intro_seen_${linkId}`, 'true');
+  };
+
   const handlePointerDown = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -721,7 +687,6 @@ const RatingPage = () => {
     
     const deltaY = e.clientY - dragStartY;
     
-    // Calculate bounds based on current snap state
     let maxDragUp = 0;
     let maxDragDown = 0;
     
@@ -748,11 +713,9 @@ const RatingPage = () => {
     
     if (Math.abs(dragOffset) > dragThreshold) {
       if (dragOffset < 0) {
-        // Dragged up
         if (snapState === 'min') newSnapState = 'mid';
         else if (snapState === 'mid') newSnapState = 'max';
       } else {
-        // Dragged down
         if (snapState === 'max') newSnapState = 'mid';
         else if (snapState === 'mid') newSnapState = 'min';
       }
@@ -764,7 +727,6 @@ const RatingPage = () => {
     setDragStartY(0);
   };
 
-  // Add global pointer move/up listeners when dragging
   useEffect(() => {
     if (!isDragging) return;
 
@@ -837,7 +799,6 @@ const RatingPage = () => {
             </p>
           </div>
       
-          {/* SocialStar Branding - Added under error container */}
           <a href="https://apps.apple.com/gb/app/socialstar-app/id6473705189" target="_blank" style={{ textDecoration: 'none', cursor: 'pointer' }}>
             <div style={{ 
               display: 'flex', 
@@ -906,7 +867,7 @@ const RatingPage = () => {
         )}
       </div>
 
-      {/* Navigation Bar - Always show */}
+      {/* Navigation Bar */}
       <div style={{
         position: 'absolute',
         top: 0,
@@ -930,7 +891,6 @@ const RatingPage = () => {
             flexWrap: 'nowrap',
             overflow: 'hidden'
           }}>
-            {/* Profile Image - Only render if URL exists */}
             {affiliateProfilePic && (
               <div style={{
                 position: 'relative',
@@ -982,22 +942,132 @@ const RatingPage = () => {
               color: 'white',
               fontSize: '19px',
               fontWeight: 'bold',
-              maxWidth: '200px',  // Keep this as is
+              maxWidth: '200px',
               overflow: 'hidden', 
               textOverflow: 'ellipsis', 
               whiteSpace: 'nowrap',
-              flexShrink: 1  // Changed from 1 - both name and badge can shrink
+              flexShrink: 1
             }}>
               {affiliateFirstName}
             </span>
             
-            {/* Theme Badge */}
             {linkData?.theme && (
               <ThemeBadge themeName={linkData.theme} />
             )}
           </div>
         </div>
       </div>
+
+      {/* Intro Modal */}
+      {showIntroModal && (
+        <>
+          {/* Backdrop */}
+          <div 
+            onClick={handleDismissIntro}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              zIndex: 100,
+              animation: 'fadeIn 0.2s ease-out'
+            }}
+          />
+          
+          {/* Modal Sheet */}
+          <div style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            maxHeight: '55vh',
+            backgroundColor: '#1A2245',
+            borderTopLeftRadius: '20px',
+            borderTopRightRadius: '20px',
+            zIndex: 101,
+            padding: '30px 24px',
+            animation: 'slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+            boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.3)'
+          }}>
+            {/* SocialStar Logo/Brand */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '10px', 
+              marginBottom: '24px'
+            }}>
+              <img 
+                src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a" 
+                alt="Star icon" 
+                style={{ width: '24px', height: '24px' }} 
+              />
+              <h1 style={{ 
+                margin: 0, 
+                fontSize: '20px', 
+                color: 'white',
+                marginTop: '2px',
+                fontWeight: 'bold'
+              }}>
+                SocialStar
+              </h1>
+            </div>
+
+            {/* Content */}
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: '17px',
+              lineHeight: '1.5',
+              marginBottom: '20px',
+              fontWeight: '500'
+            }}>
+              You're trying a <span style={{ color: '#4169E1', fontWeight: 'bold' }}>preview</span> of SocialStar – the photo competition app where friends compete and vote.
+            </p>
+
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.75)',
+              fontSize: '16px',
+              lineHeight: '1.5',
+              marginBottom: '28px'
+            }}>
+              Rate <span style={{ color: 'white', fontWeight: '600' }}>{affiliateFirstName}'s</span> photo below, then download the full app to start your own competitions!
+            </p>
+
+            {/* CTA Button */}
+            <button
+              onClick={handleDismissIntro}
+              style={{
+                width: '100%',
+                padding: '16px',
+                backgroundColor: '#4169E1',
+                border: 'none',
+                borderRadius: '200px',
+                color: 'white',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: '0 4px 12px rgba(65, 105, 225, 0.3)'
+              }}
+              onMouseDown={(e) => {
+                e.currentTarget.style.transform = 'scale(0.98)';
+                e.currentTarget.style.backgroundColor = '#3557C1';
+              }}
+              onMouseUp={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.backgroundColor = '#4169E1';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.backgroundColor = '#4169E1';
+              }}
+            >
+              Got it, let's rate!
+            </button>
+          </div>
+        </>
+      )}
 
       {/* Bottom Sheet */}
       <div
@@ -1052,7 +1122,7 @@ const RatingPage = () => {
           </h3>
         </div>
 
-        {/* Ratings List - Simplified anonymous display */}
+        {/* Ratings List */}
         <div style={{
           overflowY: 'auto',
           height: 'calc(100% - 60px)',
@@ -1115,7 +1185,6 @@ const RatingPage = () => {
 
       {/* Footer - Star Rating or Continue Playing Button */}
       {!hasAlreadyVoted ? (
-        /* Star Rating Footer - shown before voting */
         <div style={{
           position: 'absolute',
           bottom: 0,
@@ -1133,8 +1202,17 @@ const RatingPage = () => {
             <button
               key={star}
               onClick={() => handleStarTap(star)}
-              onMouseEnter={() => !hasAlreadyVoted && setHoveredStar(star)}
-              onMouseLeave={() => setHoveredStar(0)}
+              onMouseEnter={() => {
+                // Only apply hover on non-touch devices
+                if (!hasAlreadyVoted && window.matchMedia && window.matchMedia('(hover: hover)').matches) {
+                  setHoveredStar(star);
+                }
+              }}
+              onMouseLeave={() => {
+                if (window.matchMedia && window.matchMedia('(hover: hover)').matches) {
+                  setHoveredStar(0);
+                }
+              }}
               disabled={hasAlreadyVoted || !isRatingEnabled}
               style={{
                 backgroundColor: 'transparent',
@@ -1155,7 +1233,6 @@ const RatingPage = () => {
           ))}
         </div>
       ) : (
-        /* Continue Playing Footer - shown after voting, replaces star rating */
         <div style={{
           position: 'absolute',
           bottom: 0,
@@ -1201,6 +1278,22 @@ const RatingPage = () => {
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+          from { 
+            transform: translateY(100%);
+            opacity: 0;
+          }
+          to { 
+            transform: translateY(0);
+            opacity: 1;
+          }
         }
       `}</style>
     </div>
