@@ -1063,7 +1063,7 @@ const RatingPage = () => {
                 e.currentTarget.style.backgroundColor = '#4169E1';
               }}
             >
-              Got it, let's rate!
+              OK
             </button>
           </div>
         </>
