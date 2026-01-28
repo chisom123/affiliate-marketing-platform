@@ -166,7 +166,6 @@ const RatingPage = () => {
   const [loadingInteractions, setLoadingInteractions] = useState(true);
   const [earningsPerRating, setEarningsPerRating] = useState(0.25);
   const [downloadClickInProgress, setDownloadClickInProgress] = useState(false);
-  const [continuePlayingLoading, setContinuePlayingLoading] = useState(false);
   
   // Image loading states
   const [profileImageLoading, setProfileImageLoading] = useState(true);
@@ -649,45 +648,13 @@ const RatingPage = () => {
 
   // Handle Continue Playing button click
   const handleContinuePlaying = () => {
-    // Set loading state immediately
-    setContinuePlayingLoading(true);
-    
-    // Stop spinner after 2 seconds
-    setTimeout(() => {
-      setContinuePlayingLoading(false);
-    }, 2000);
-    
     // Track UNIQUE download click FIRST (non-blocking with spam prevention)
     if (linkData && fingerprint) {
       trackUniqueDownloadClick(linkData.id, fingerprint);
     }
     
-    // Construct deep link URL - format: socialstar://rating/affiliateId/linkId
-    const deepLinkUrl = `socialstar://rating/${affiliateId}/${linkId}`;
-    const infoPageUrl = `/info/${affiliateId}/${linkId}`;
-    
-    // Track if the page becomes hidden (app opened successfully)
-    let appOpened = false;
-    
-    const visibilityHandler = () => {
-      if (document.hidden) {
-        appOpened = true;
-      }
-    };
-    
-    document.addEventListener('visibilitychange', visibilityHandler);
-    
-    // Attempt to open the app via deep link
-    window.location.href = deepLinkUrl;
-    
-    // Fallback to Info Page if app is not installed
-    // After 1.5 seconds, if the app didn't open (page didn't become hidden), redirect to Info Page
-    setTimeout(() => {
-      document.removeEventListener('visibilitychange', visibilityHandler);
-      if (!appOpened) {
-        window.location.href = infoPageUrl;
-      }
-    }, 1500);
+    // Redirect directly to App Store
+    window.location.href = 'https://apps.apple.com/app/socialstar-app/id6473705189';
   };
 
   // SIMPLIFIED BOTTOM SHEET DRAG
@@ -1135,7 +1102,6 @@ const RatingPage = () => {
         }}>
           <button
             onClick={handleContinuePlaying}
-            disabled={continuePlayingLoading}
             style={{
               width: '100%',
               height: '100%',
@@ -1145,16 +1111,14 @@ const RatingPage = () => {
               backgroundColor: '#4169E1',
               border: 'none',
               padding: '0 24px',
-              cursor: continuePlayingLoading ? 'default' : 'pointer',
+              cursor: 'pointer',
               fontSize: '22px',
               fontWeight: 'bold',
               color: '#FFF',
               transition: 'transform 0.2s ease'
             }}
             onMouseDown={(e) => {
-              if (!continuePlayingLoading) {
-                e.currentTarget.style.transform = 'scale(0.98)';
-              }
+              e.currentTarget.style.transform = 'scale(0.98)';
             }}
             onMouseUp={(e) => {
               e.currentTarget.style.transform = 'scale(1)';
@@ -1163,21 +1127,8 @@ const RatingPage = () => {
               e.currentTarget.style.transform = 'scale(1)';
             }}
           >
-            {continuePlayingLoading ? (
-              <div style={{
-                width: '32px',
-                height: '32px',
-                border: '3px solid rgba(255, 255, 255, 0.3)',
-                borderTop: '3px solid #FFF',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite'
-              }} />
-            ) : (
-              <>
-                <span>Continue</span>
-                <ArrowRight size={34} strokeWidth={2.5} style={{ marginLeft: 'auto' }} />
-              </>
-            )}
+            <span>Continue</span>
+            <ArrowRight size={34} strokeWidth={2.5} style={{ marginLeft: 'auto' }} />
           </button>
         </div>
       )}
