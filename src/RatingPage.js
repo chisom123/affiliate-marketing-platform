@@ -1022,7 +1022,7 @@ const RatingPage = () => {
               marginBottom: '20px',
               fontWeight: '500'
             }}>
-              This is a <span style={{ color: '#4169E1', fontWeight: 'bold' }}>preview</span> of SocialStar – The photo competition app for friends.
+              This is a <span style={{ color: '#FFF', fontWeight: 'bold' }}>preview</span> of SocialStar – The photo competition app for friends.
             </p>
 
             <p style={{
