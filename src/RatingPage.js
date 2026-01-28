@@ -141,6 +141,51 @@ const Spinner = () => (
   }} />
 );
 
+// ThemeBadge component - flexible width with dynamic ellipsis
+const ThemeBadge = ({ themeName }) => {
+  if (!themeName) return null;
+  
+  return (
+    <div style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px',
+      padding: '5px 10px',
+      backgroundColor: '#4169E1',
+      borderRadius: '20px',
+      flexShrink: 1,      // Changed from 0 - allows it to shrink when needed
+      minWidth: 0         // Allows flex item to shrink below content size
+    }}>
+      <svg 
+        width="18" 
+        height="18" 
+        viewBox="0 0 16 16" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ flexShrink: 0, transform: 'scaleX(-1)' }}
+      >
+        <path 
+          d="M2 3.5C2 2.67157 2.67157 2 3.5 2H7.58579C7.851 2 8.10536 2.10536 8.29289 2.29289L13.7071 7.70711C14.0976 8.09763 14.0976 8.73079 13.7071 9.12132L9.12132 13.7071C8.73079 14.0976 8.09763 14.0976 7.70711 13.7071L2.29289 8.29289C2.10536 8.10536 2 7.851 2 7.58579V3.5Z" 
+          fill="white"
+        />
+        <circle cx="5.5" cy="5.5" r="1" fill="#4169E1"/>
+      </svg>
+      
+      <span style={{
+        color: 'white',
+        fontSize: '16px',
+        fontWeight: 'bold',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        minWidth: 0  // Allows text to shrink
+      }}>
+        {themeName}
+      </span>
+    </div>
+  );
+};
+
 const RatingPage = () => {
   const { affiliateId, linkId } = useParams();
   const [linkData, setLinkData] = useState(null);
@@ -879,9 +924,11 @@ const RatingPage = () => {
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: affiliateProfilePic ? '12px' : '0px',
+            gap: '15px',
             backgroundColor: 'transparent',
-            padding: '5px 16px'
+            padding: '5px 16px',
+            flexWrap: 'nowrap',
+            overflow: 'hidden'
           }}>
             {/* Profile Image - Only render if URL exists */}
             {affiliateProfilePic && (
@@ -890,7 +937,8 @@ const RatingPage = () => {
                 width: '35px',
                 height: '35px',
                 borderRadius: '50%',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                flexShrink: 0
               }}>
                 {profileImageLoading && (
                   <div style={{
@@ -929,17 +977,24 @@ const RatingPage = () => {
                 />
               </div>
             )}
+            
             <span style={{
               color: 'white',
               fontSize: '19px',
               fontWeight: 'bold',
-              maxWidth: '200px', 
+              maxWidth: '200px',  // Keep this as is
               overflow: 'hidden', 
               textOverflow: 'ellipsis', 
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              flexShrink: 1  // Changed from 1 - both name and badge can shrink
             }}>
               {affiliateFirstName}
             </span>
+            
+            {/* Theme Badge */}
+            {linkData?.theme && (
+              <ThemeBadge themeName={linkData.theme} />
+            )}
           </div>
         </div>
       </div>
