@@ -1275,6 +1275,7 @@ const RatingPage = () => {
           >
             <RefreshCw 
               size={22} 
+              strokeWidth={2.5}
               style={{ 
                 animation: isSpinning ? 'spin 0.8s linear infinite' : 'none'
               }} 
