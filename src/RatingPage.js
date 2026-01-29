@@ -1001,11 +1001,11 @@ const RatingPage = () => {
               <img 
                 src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a" 
                 alt="Star icon" 
-                style={{ width: '24px', height: '24px' }} 
+                style={{ width: '22px', height: '22px' }} 
               />
               <h1 style={{ 
                 margin: 0, 
-                fontSize: '20px', 
+                fontSize: '18px', 
                 color: 'white',
                 marginTop: '2px',
                 fontWeight: 'bold'
@@ -1022,16 +1022,7 @@ const RatingPage = () => {
               marginBottom: '20px',
               fontWeight: '500'
             }}>
-              This is a <span style={{ color: '#FFF', fontWeight: 'bold' }}>preview</span> of SocialStar – The photo competition app for friends.
-            </p>
-
-            <p style={{
-              color: 'rgba(255, 255, 255, 0.75)',
-              fontSize: '16px',
-              lineHeight: '1.5',
-              marginBottom: '28px'
-            }}>
-              Rate <span style={{ color: 'white', fontWeight: '600' }}>{affiliateFirstName}'s</span> photo and try out the full app!
+              This is a preview of SocialStar – The photo competition app for friends.
             </p>
 
             {/* CTA Button */}
