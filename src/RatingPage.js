@@ -14,7 +14,7 @@ import {
   setDoc
 } from 'firebase/firestore';
 import { useParams } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, RefreshCw } from 'lucide-react';
 
 
 // Development environment check
@@ -194,11 +194,7 @@ const RatingPage = () => {
   const [photoUrl, setPhotoUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [rating, setRating] = useState(0);
-  const [hoveredStar, setHoveredStar] = useState(0);
   const [hasAlreadyVoted, setHasAlreadyVoted] = useState(false);
-  const [isRatingEnabled, setIsRatingEnabled] = useState(true);
-  const [animateRating, setAnimateRating] = useState(false);
   const [pageOpenTracked, setPageOpenTracked] = useState(false);
   const [fingerprint, setFingerprint] = useState(null);
   const [isValidEnvironment, setIsValidEnvironment] = useState(true);
@@ -211,12 +207,17 @@ const RatingPage = () => {
   const [profileImageLoading, setProfileImageLoading] = useState(true);
   const [backgroundImageLoading, setBackgroundImageLoading] = useState(true);
 
-  const [continueUrl, setContinueUrl] = useState('https://apps.apple.com/app/socialstar-app/id6473705189');
+  // Slot machine states
+  const [spins, setSpins] = useState([]);
+  const [spinsRemaining, setSpinsRemaining] = useState(3);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [selectedRatingIndex, setSelectedRatingIndex] = useState(null);
+  const [showRatingsList, setShowRatingsList] = useState(false);
   
   // Dynamic viewport height state
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
   
-  // Bottom sheet drag state - SIMPLIFIED
+  // Bottom sheet drag state
   const [snapState, setSnapState] = useState('mid');
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -381,13 +382,17 @@ const RatingPage = () => {
           
           if (!existingRatings.empty) {
             setHasAlreadyVoted(true);
-            setIsRatingEnabled(false);
+            setShowRatingsList(true);
           }
         } else {
           console.log('Development mode: Skipping "already rated" check');
         }
 
         trackUniquePageOpen(linkData.id, fingerprint);
+        
+        // Check if user has already spun
+        const hasSpun = await checkAndLoadSpinState(linkData.id, fingerprint);
+        
         await loadInteractions(linkData.id);
 
       } catch (error) {
@@ -437,6 +442,61 @@ const RatingPage = () => {
         console.error('Error tracking unique page open:', error);
       }
     })();
+  };
+
+  const checkAndLoadSpinState = async (linkDocId, userFingerprint) => {
+    if (isDevelopment) {
+      console.log('Development mode: Skipping spin state check');
+      return false;
+    }
+    
+    try {
+      const spinStateDocId = `${linkDocId}_${userFingerprint}`;
+      const spinStateDocRef = doc(db, 'spin_states', spinStateDocId);
+      
+      const spinStateDoc = await getDoc(spinStateDocRef);
+      
+      if (spinStateDoc.exists()) {
+        const data = spinStateDoc.data();
+        // User has already spun, restore their state
+        const savedSpins = data.spins || [];
+        setSpins(savedSpins);
+        
+        // Calculate remaining spins based on how many they've already done
+        const spinsUsed = savedSpins.filter(s => s !== undefined && s !== null).length;
+        const remaining = 3 - spinsUsed;
+        setSpinsRemaining(remaining);
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error checking spin state:', error);
+      return false;
+    }
+  };
+
+  const saveSpinState = async (linkDocId, userFingerprint, spinsArray) => {
+    if (isDevelopment) {
+      console.log('Development mode: Skipping spin state save');
+      return;
+    }
+    
+    try {
+      const spinStateDocId = `${linkDocId}_${userFingerprint}`;
+      const spinStateDocRef = doc(db, 'spin_states', spinStateDocId);
+      
+      await setDoc(spinStateDocRef, {
+        linkId: linkDocId,
+        fingerprint: userFingerprint,
+        spins: spinsArray,
+        createdAt: serverTimestamp(),
+        lastUpdatedAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error('Error saving spin state:', error);
+    }
   };
 
   const trackUniqueDownloadClick = async (linkDocId, userFingerprint) => {
@@ -609,39 +669,85 @@ const RatingPage = () => {
     }
   };
 
-  const handleStarTap = async (stars) => {
-    if (!isRatingEnabled || hasAlreadyVoted) return;
+  const handleSpin = () => {
+    if (isSpinning || spinsRemaining <= 0 || hasAlreadyVoted) return;
     
-    setIsRatingEnabled(false);
-    setRating(stars);
-    setAnimateRating(true);
+    setIsSpinning(true);
+    
+    // Get already used ratings
+    const usedRatings = spins.filter(r => r !== undefined && r !== null);
+    
+    // Simulate spinning animation with random numbers
+    let spinCount = 0;
+    const spinInterval = setInterval(() => {
+      const randomRating = Math.floor(Math.random() * 5) + 1;
+      setSpins(prev => {
+        const newSpins = [...prev];
+        newSpins[3 - spinsRemaining] = randomRating;
+        return newSpins;
+      });
+      
+      spinCount++;
+      if (spinCount >= 10) {
+        clearInterval(spinInterval);
+        
+        // Final rating - ensure it's not a duplicate
+        let finalRating;
+        let attempts = 0;
+        do {
+          finalRating = Math.floor(Math.random() * 5) + 1;
+          attempts++;
+        } while (usedRatings.includes(finalRating) && attempts < 100);
+        
+        setSpins(prev => {
+          const newSpins = [...prev];
+          newSpins[3 - spinsRemaining] = finalRating;
+          
+          // Save spin state to Firestore after updating
+          if (linkData && fingerprint) {
+            saveSpinState(linkData.id, fingerprint, newSpins);
+          }
+          
+          return newSpins;
+        });
+        setSpinsRemaining(prev => prev - 1);
+        setIsSpinning(false);
+      }
+    }, 100);
+  };
+
+  const handleSelectRating = async (index, rating) => {
+    if (selectedRatingIndex !== null || hasAlreadyVoted) return;
+    
+    setSelectedRatingIndex(index);
     
     const optimisticInteraction = {
       id: `temp_${Date.now()}`,
-      rating: stars,
+      rating: rating,
       fingerprint: fingerprint,
       timestamp: { toDate: () => new Date() }
     };
     
     setInteractions(prev => [optimisticInteraction, ...prev]);
     
+    // Show ratings list immediately without delay
+    setShowRatingsList(true);
+    
     try {
-      await submitRating(stars);
+      await submitRating(rating);
       setHasAlreadyVoted(true);
       
       if (linkData) {
         await loadInteractions(linkData.id);
       }
       
-      setAnimateRating(false);
-      
     } catch (error) {
       console.error('Error submitting rating:', error);
       
       setInteractions(prev => prev.filter(i => !i.id.startsWith('temp_')));
-      setAnimateRating(false);
+      setSelectedRatingIndex(null);
+      setShowRatingsList(false);
       
-      setIsRatingEnabled(true);
       alert('Failed to submit rating. Please try again.');
     }
   };
@@ -936,177 +1042,260 @@ const RatingPage = () => {
         </div>
       </div>
 
-      {/* Bottom Sheet */}
-      <div
-        ref={sheetRef}
-        style={{
-          position: 'absolute',
-          bottom: 100,
-          left: 0,
-          right: 0,
-          height: `${snapPoints[snapState] - dragOffset}px`,
-          backgroundColor: '#1A2245',
-          borderTopLeftRadius: '20px',
-          borderTopRightRadius: '20px',
-          zIndex: 20,
-          transition: isDragging ? 'none' : 'height 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
-          willChange: 'height'
-        }}
-      >
-        {/* Handle */}
-        <div 
-          onPointerDown={handlePointerDown}
+      {/* Bottom Sheet - Ratings List (only show when ratings submitted) */}
+      {(showRatingsList || selectedRatingIndex !== null) && (
+        <div
+          ref={sheetRef}
           style={{
-            width: '100%',
-            padding: '15px 0',
-            display: 'flex',
-            justifyContent: 'center',
-            cursor: isDragging ? 'grabbing' : 'grab',
-            touchAction: 'none',
-            userSelect: 'none'
+            position: 'absolute',
+            bottom: 100,
+            left: 0,
+            right: 0,
+            height: `${snapPoints[snapState] - dragOffset}px`,
+            backgroundColor: '#1A2245',
+            borderTopLeftRadius: '20px',
+            borderTopRightRadius: '20px',
+            zIndex: 20,
+            display: showRatingsList ? 'block' : 'none',
+            transition: isDragging ? 'none' : 'height 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+            willChange: 'height'
           }}
         >
+          {/* Handle */}
+          <div 
+            onPointerDown={handlePointerDown}
+            style={{
+              width: '100%',
+              padding: '15px 0',
+              display: 'flex',
+              justifyContent: 'center',
+              cursor: isDragging ? 'grabbing' : 'grab',
+              touchAction: 'none',
+              userSelect: 'none'
+            }}
+          >
+            <div style={{
+              width: '40px',
+              height: '5px',
+              backgroundColor: 'rgba(255, 255, 255, 0.3)',
+              borderRadius: '200px',
+              pointerEvents: 'none'
+            }}></div>
+          </div>
+
+          {/* Header */}
           <div style={{
-            width: '40px',
-            height: '5px',
-            backgroundColor: 'rgba(255, 255, 255, 0.3)',
-            borderRadius: '200px',
-            pointerEvents: 'none'
-          }}></div>
-        </div>
-
-        {/* Header */}
-        <div style={{
-          padding: '0px 20px 10px 20px'
-        }}>
-          <h3 style={{
-            margin: 0,
-            fontSize: '15px',
-            fontWeight: 'bold',
-            color: 'rgba(255, 255, 255, 0.7)'
+            padding: '0px 20px 10px 20px'
           }}>
-            Ratings ({interactions.length})
-          </h3>
-        </div>
+            <h3 style={{
+              margin: 0,
+              fontSize: '15px',
+              fontWeight: 'bold',
+              color: 'rgba(255, 255, 255, 0.7)'
+            }}>
+              All Ratings ({interactions.length})
+            </h3>
+          </div>
 
-        {/* Ratings List */}
-        <div style={{
-          overflowY: 'auto',
-          height: 'calc(100% - 60px)',
-          WebkitOverflowScrolling: 'touch'
-        }}>
-          {interactions.map((interaction, index) => (
-            <div key={interaction.id}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '15px 20px',
-                paddingBottom: index === interactions.length - 1 ? '25px' : '15px'
-              }}>
-                <Avatar fingerprint={interaction.fingerprint} size={38} />
-
+          {/* Ratings List */}
+          <div style={{
+            overflowY: 'auto',
+            height: 'calc(100% - 60px)',
+            WebkitOverflowScrolling: 'touch'
+          }}>
+            {interactions.map((interaction, index) => (
+              <div key={interaction.id}>
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: '5px 10px',
-                  backgroundColor: '#DAA520',
-                  borderRadius: '20px'
+                  justifyContent: 'space-between',
+                  padding: '15px 20px',
+                  paddingBottom: index === interactions.length - 1 ? '25px' : '15px'
                 }}>
-                  <span style={{
-                    fontSize: '16px',
-                    fontWeight: 'bold',
-                    color: 'white'
-                  }}>
-                    {interaction.rating}
-                  </span>
-                  <button
-                    disabled
-                    style={{
-                      backgroundColor: 'transparent',
-                      border: 'none',
-                      fontSize: '18px',
-                      color: 'white',
-                      padding: 0,
-                      cursor: 'default',
-                      outline: 'none'
-                    }}
-                  >
-                    ★
-                  </button>
-                </div>
-              </div>
-              
-              {index < interactions.length - 1 && (
-                <div style={{
-                  height: '1px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  margin: '0'
-                }}></div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+                  <Avatar fingerprint={interaction.fingerprint} size={38} />
 
-      {/* Footer - Star Rating or Continue Playing Button */}
-      {!hasAlreadyVoted ? (
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '100px',
-          backgroundColor: '#10183C',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 30,
-          gap: '12px'
-        }}>
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button
-              key={star}
-              onClick={() => handleStarTap(star)}
-              onMouseEnter={() => {
-                // Only apply hover on non-touch devices
-                if (!hasAlreadyVoted && window.matchMedia && window.matchMedia('(hover: hover)').matches) {
-                  setHoveredStar(star);
-                }
-              }}
-              onMouseLeave={() => {
-                if (window.matchMedia && window.matchMedia('(hover: hover)').matches) {
-                  setHoveredStar(0);
-                }
-              }}
-              disabled={hasAlreadyVoted || !isRatingEnabled}
-              style={{
-                backgroundColor: 'transparent',
-                border: 'none',
-                fontSize: '40px',
-                cursor: hasAlreadyVoted ? 'not-allowed' : 'pointer',
-                color: (hoveredStar >= star || rating >= star) 
-                  ? '#FFD700' 
-                  : 'white',
-                padding: '5px',
-                transition: 'all 0.2s',
-                transform: (animateRating && star <= rating) ? 'scale(1.3)' : 'scale(1)',
-                outline: 'none'
-              }}
-            >
-              ★
-            </button>
-          ))}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '5px 10px',
+                    backgroundColor: '#DAA520',
+                    borderRadius: '20px'
+                  }}>
+                    <span style={{
+                      fontSize: '16px',
+                      fontWeight: 'bold',
+                      color: 'white'
+                    }}>
+                      {interaction.rating}
+                    </span>
+                    <button
+                      disabled
+                      style={{
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        fontSize: '18px',
+                        color: 'white',
+                        padding: 0,
+                        cursor: 'default',
+                        outline: 'none'
+                      }}
+                    >
+                      ★
+                    </button>
+                  </div>
+                </div>
+                
+                {index < interactions.length - 1 && (
+                  <div style={{
+                    height: '1px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    margin: '0'
+                  }}></div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-      ) : (
+      )}
+
+      {/* Slot Machine Footer */}
+      {!hasAlreadyVoted && (
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#1A2245',
+          borderTopLeftRadius: '20px',
+          borderTopRightRadius: '20px',
+          zIndex: 30,
+          padding: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
+          display: showRatingsList ? 'none' : 'flex',
+          pointerEvents: selectedRatingIndex !== null ? 'none' : 'auto'
+        }}>
+          {/* Instruction Text */}
+          <div style={{
+            textAlign: 'center',
+            color: 'rgba(255, 255, 255, 1)',
+            fontSize: '17px',
+            fontWeight: '600'
+          }}>
+            {spinsRemaining === 3 && 'Tap spin'}
+            {spinsRemaining === 2 && 'Spin 2 more times'}
+            {spinsRemaining === 1 && 'Last spin!'}
+            {spinsRemaining === 0 && 'Pick a rating'}
+          </div>
+
+          {/* Spin Results */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '15px',
+            minHeight: '70px',
+            alignItems: 'center'
+          }}>
+            {spins.map((rating, index) => (
+              <button
+                key={index}
+                onClick={() => spinsRemaining === 0 && handleSelectRating(index, rating)}
+                disabled={spinsRemaining > 0 || selectedRatingIndex !== null}
+                style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '5px',
+                  backgroundColor: selectedRatingIndex === index ? '#DAA520' : '#2A3A6B',
+                  border: spinsRemaining === 0 ? '2px solid rgba(255, 255, 255, 0.3)' : 'none',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: spinsRemaining === 0 && selectedRatingIndex === null ? 'pointer' : 'default',
+                  transition: 'all 0.3s ease',
+                  transform: selectedRatingIndex === index ? 'scale(1.1)' : 'scale(1)',
+                  opacity: rating ? 1 : 0.3
+                }}
+              >
+                {rating && (
+                  <>
+                    <span style={{
+                      fontSize: '24px',
+                      fontWeight: 'bold',
+                      color: 'white'
+                    }}>
+                      {rating}
+                    </span>
+                    <span style={{
+                      fontSize: '16px',
+                      color: 'white'
+                    }}>
+                      ★
+                    </span>
+                  </>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Spin Button */}
+          <button
+            onClick={handleSpin}
+            disabled={isSpinning || spinsRemaining === 0}
+            style={{
+              width: '100%',
+              padding: '18px',
+              backgroundColor: spinsRemaining > 0 ? '#FF3B6D' : '#666',
+              border: 'none',
+              borderRadius: '200px',
+              color: spinsRemaining > 0 ? '#FFF' : '#c2c2c2',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              cursor: spinsRemaining > 0 && !isSpinning ? 'pointer' : 'not-allowed',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              transition: 'transform 0.2s ease',
+              opacity: isSpinning ? 0.7 : 1
+            }}
+            onMouseDown={(e) => {
+              if (spinsRemaining > 0 && !isSpinning) {
+                e.currentTarget.style.transform = 'scale(0.98)';
+              }
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            <RefreshCw 
+              size={22} 
+              style={{ 
+                animation: isSpinning ? 'spin 0.8s linear infinite' : 'none'
+              }} 
+            />
+            <span>
+              {isSpinning ? 'Spinning...' : 'Spin'}
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* Continue Button - shown after rating is submitted */}
+      {(hasAlreadyVoted || selectedRatingIndex !== null) && (
         <div style={{
           position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
           height: '100px',
-          zIndex: 30
+          zIndex: 30,
+          display: showRatingsList ? 'block' : 'none'
         }}>
           <button
             onClick={handleContinuePlaying}
