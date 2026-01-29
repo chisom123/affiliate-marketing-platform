@@ -14,7 +14,7 @@ import {
   setDoc
 } from 'firebase/firestore';
 import { useParams } from 'react-router-dom';
-import { ArrowRight, X } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 
 // Development environment check
@@ -207,9 +207,6 @@ const RatingPage = () => {
   const [earningsPerRating, setEarningsPerRating] = useState(0.25);
   const [downloadClickInProgress, setDownloadClickInProgress] = useState(false);
   
-  // Intro modal state
-  const [showIntroModal, setShowIntroModal] = useState(false);
-  
   // Image loading states
   const [profileImageLoading, setProfileImageLoading] = useState(true);
   const [backgroundImageLoading, setBackgroundImageLoading] = useState(true);
@@ -374,14 +371,13 @@ const RatingPage = () => {
           }
         }
 
-        let existingRatings = null;
         if (!isDevelopment) {
           const existingRatingQuery = query(
             collection(db, 'ratings'),
             where('linkId', '==', linkData.id),
             where('fingerprint', '==', fingerprint)
           );
-          existingRatings = await getDocs(existingRatingQuery);
+          const existingRatings = await getDocs(existingRatingQuery);
           
           if (!existingRatings.empty) {
             setHasAlreadyVoted(true);
@@ -393,18 +389,6 @@ const RatingPage = () => {
 
         trackUniquePageOpen(linkData.id, fingerprint);
         await loadInteractions(linkData.id);
-
-        // Show intro modal after everything loads (only if haven't voted)
-        // PRODUCTION: Uncomment the next 3 lines to show modal only once per story
-        // const hasSeenIntro = localStorage.getItem(`intro_seen_${linkId}`);
-        // if (!hasSeenIntro && (existingRatings === null || existingRatings.empty)) {
-        //   setShowIntroModal(true);
-        // }
-        
-        // TESTING: Remove these 2 lines before production - shows modal on every load
-        if (existingRatings === null || existingRatings.empty) {
-          setShowIntroModal(true);
-        }
 
       } catch (error) {
         console.error('Error loading data:', error);
@@ -668,12 +652,6 @@ const RatingPage = () => {
     }
     
     window.location.href = 'https://apps.apple.com/app/socialstar-app/id6473705189';
-  };
-
-  // Handle intro modal dismiss
-  const handleDismissIntro = () => {
-    setShowIntroModal(false);
-    localStorage.setItem(`intro_seen_${linkId}`, 'true');
   };
 
   const handlePointerDown = (e) => {
@@ -958,108 +936,6 @@ const RatingPage = () => {
         </div>
       </div>
 
-      {/* Intro Modal */}
-      {showIntroModal && (
-        <>
-          {/* Backdrop */}
-          <div 
-            onClick={handleDismissIntro}
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.6)',
-              zIndex: 100,
-              animation: 'fadeIn 0.2s ease-out'
-            }}
-          />
-          
-          {/* Modal Sheet */}
-          <div style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            maxHeight: '55vh',
-            backgroundColor: '#1A2245',
-            borderTopLeftRadius: '20px',
-            borderTopRightRadius: '20px',
-            zIndex: 101,
-            padding: '30px 24px',
-            animation: 'slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
-            boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.3)'
-          }}>
-            {/* SocialStar Logo/Brand */}
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '10px', 
-              marginBottom: '24px'
-            }}>
-              <img 
-                src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a" 
-                alt="Star icon" 
-                style={{ width: '22px', height: '22px' }} 
-              />
-              <h1 style={{ 
-                margin: 0, 
-                fontSize: '18px', 
-                color: 'white',
-                marginTop: '2px',
-                fontWeight: 'bold'
-              }}>
-                SocialStar
-              </h1>
-            </div>
-
-            {/* Content */}
-            <p style={{
-              color: 'rgba(255, 255, 255, 0.9)',
-              fontSize: '17px',
-              lineHeight: '1.5',
-              marginBottom: '20px',
-              fontWeight: '500'
-            }}>
-              This is a preview of SocialStar – The photo competition app for friends.
-            </p>
-
-            {/* CTA Button */}
-            <button
-              onClick={handleDismissIntro}
-              style={{
-                width: '100%',
-                padding: '16px',
-                backgroundColor: '#4169E1',
-                border: 'none',
-                borderRadius: '200px',
-                color: 'white',
-                fontSize: '18px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                boxShadow: '0 4px 12px rgba(65, 105, 225, 0.3)'
-              }}
-              onMouseDown={(e) => {
-                e.currentTarget.style.transform = 'scale(0.98)';
-                e.currentTarget.style.backgroundColor = '#3557C1';
-              }}
-              onMouseUp={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.backgroundColor = '#4169E1';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.backgroundColor = '#4169E1';
-              }}
-            >
-              OK
-            </button>
-          </div>
-        </>
-      )}
-
       {/* Bottom Sheet */}
       <div
         ref={sheetRef}
@@ -1269,22 +1145,6 @@ const RatingPage = () => {
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes slideUp {
-          from { 
-            transform: translateY(100%);
-            opacity: 0;
-          }
-          to { 
-            transform: translateY(0);
-            opacity: 1;
-          }
         }
       `}</style>
     </div>
