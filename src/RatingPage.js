@@ -730,8 +730,10 @@ const RatingPage = () => {
     
     setInteractions(prev => [optimisticInteraction, ...prev]);
     
-    // Show ratings list immediately without delay
-    setShowRatingsList(true);
+    // Wait for the animation to complete before showing ratings list
+    setTimeout(() => {
+      setShowRatingsList(true);
+    }, 500); // Give time for the 0.3s transition + a bit extra
     
     try {
       await submitRating(rating);
