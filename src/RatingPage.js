@@ -507,39 +507,37 @@ const RatingPage = () => {
     
     setDownloadClickInProgress(true);
     
-    (async () => {
-      try {
-        const trackingDocId = `${linkDocId}_${userFingerprint}`;
-        const trackingDocRef = doc(db, 'unique_download_clicks', trackingDocId);
-        
-        const trackingDoc = await getDoc(trackingDocRef);
-        
-        if (!trackingDoc.exists()) {
-          await setDoc(trackingDocRef, {
-            linkId: linkDocId,
-            fingerprint: userFingerprint,
-            firstClickedAt: serverTimestamp(),
-            clickCount: 1
-          });
+    try {
+      const trackingDocId = `${linkDocId}_${userFingerprint}`;
+      const trackingDocRef = doc(db, 'unique_download_clicks', trackingDocId);
+      
+      const trackingDoc = await getDoc(trackingDocRef);
+      
+      if (!trackingDoc.exists()) {
+        await setDoc(trackingDocRef, {
+          linkId: linkDocId,
+          fingerprint: userFingerprint,
+          firstClickedAt: serverTimestamp(),
+          clickCount: 1
+        });
 
-          await updateDoc(doc(db, 'rating_links', linkDocId), {
-            totalDownloadClicks: increment(1),
-            lastDownloadClickAt: serverTimestamp()
-          });
-        } else {
-          await updateDoc(trackingDocRef, {
-            clickCount: increment(1),
-            lastClickedAt: serverTimestamp()
-          });
-        }
-      } catch (error) {
-        console.error('Error tracking unique download click:', error);
-      } finally {
-        setTimeout(() => {
-          setDownloadClickInProgress(false);
-        }, 1500);
+        await updateDoc(doc(db, 'rating_links', linkDocId), {
+          totalDownloadClicks: increment(1),
+          lastDownloadClickAt: serverTimestamp()
+        });
+      } else {
+        await updateDoc(trackingDocRef, {
+          clickCount: increment(1),
+          lastClickedAt: serverTimestamp()
+        });
       }
-    })();
+    } catch (error) {
+      console.error('Error tracking unique download click:', error);
+    } finally {
+      setTimeout(() => {
+        setDownloadClickInProgress(false);
+      }, 1500);
+    }
   };
 
   const loadInteractions = async (linkDocId) => {
@@ -754,12 +752,12 @@ const RatingPage = () => {
     }
   };
 
-  const handleContinuePlaying = () => {
+  const handleContinuePlaying = async () => {
     if (linkData && fingerprint) {
-      trackUniqueDownloadClick(linkData.id, fingerprint);
+      await trackUniqueDownloadClick(linkData.id, fingerprint);
     }
     
-    window.location.href = 'https://apps.apple.com/app/socialstar-app/id6473705189';
+    window.location.href = `/info/${affiliateId}/${linkId}`;
   };
 
   const handlePointerDown = (e) => {
