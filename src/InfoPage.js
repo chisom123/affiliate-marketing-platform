@@ -575,7 +575,7 @@ const InfoPage = () => {
                 cursor: 'pointer'
               }}
             >
-              <span>Continue</span>
+              <span>Get Started</span>
               <ArrowRight size={34} strokeWidth={2.5} style={{ marginLeft: 'auto' }} />
             </button>
           </div>
