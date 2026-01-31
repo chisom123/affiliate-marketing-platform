@@ -115,8 +115,6 @@ const InfoPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isValidEnvironment, setIsValidEnvironment] = useState(true);
-  
-  const [meImageLoading, setMeImageLoading] = useState(true);
 
   // Initialize fingerprint and check Instagram on component mount
   useEffect(() => {
@@ -224,30 +222,104 @@ const InfoPage = () => {
     })();
   };
 
-  // Build leaderboard data
-  const leaderboardData = [
-    { 
-      rank: 1, 
-      name: "Sophia", 
-      stars: 275, 
-      isCurrentUser: false,
-      profileUrl: "https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/compress%2F00e95ee3819ad001f7455d3e34e085c6-2-min.jpg?alt=media&token=3f34b56d-03b0-442c-abcc-6b6bd907e94e"
-    },
-    { 
-      rank: 2, 
-      name: "Emma", 
-      stars: 190, 
-      isCurrentUser: false,
-      profileUrl: "https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/compress%2F97509ae7fcd7ffedfbe7c010f1602d0c-min.jpg?alt=media&token=fe79998e-8a9f-45f2-8d42-c2f9677131fb" 
-    },
-    { 
-      rank: 3, 
-      name: "Jake", 
-      stars: 130, 
-      isCurrentUser: false,
-      profileUrl: "https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/compress%2F9f0efe5a61c7e766838c49e18d70dfd0-2-min.jpg?alt=media&token=72aaa156-75f9-4117-84f1-6f969bb3e657" 
-    }
-  ];
+  // Slot machine animation states
+  const [slots, setSlots] = useState([null, null, null]);
+  const [currentEarning, setCurrentEarning] = useState(null);
+  const [showEarning, setShowEarning] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  // Start slot machine animation on mount
+  useEffect(() => {
+    if (!isValidEnvironment || !fingerprint) return;
+
+    // Start animation after a brief delay
+    const startDelay = setTimeout(() => {
+      animateSlots();
+    }, 500);
+
+    return () => clearTimeout(startDelay);
+  }, [isValidEnvironment, fingerprint]);
+
+  const animateSlots = () => {
+    setIsAnimating(true);
+    
+    // Reset to exactly 3 empty slots at the start
+    const initialSlots = [null, null, null];
+    setSlots(initialSlots);
+    
+    // Track used ratings to prevent duplicates - needs to persist across animateNextSlot calls
+    const usedRatings = [];
+    
+    // Animate each slot sequentially
+    const animateNextSlot = (currentSlot) => {
+      if (currentSlot >= 3) {
+        setIsAnimating(false);
+        // Restart animation after a pause
+        setTimeout(() => {
+          animateSlots();
+        }, 3000);
+        return;
+      }
+
+      // Shuffle effect for current slot
+      let shuffleCount = 0;
+      const shuffleInterval = setInterval(() => {
+        const randomRating = Math.floor(Math.random() * 5) + 1;
+        
+        setSlots(prevSlots => {
+          // Create a clean array with exactly 3 elements
+          const slot0 = currentSlot === 0 ? randomRating : prevSlots[0];
+          const slot1 = currentSlot === 1 ? randomRating : prevSlots[1];
+          const slot2 = currentSlot === 2 ? randomRating : prevSlots[2];
+          return [slot0, slot1, slot2];
+        });
+
+        shuffleCount++;
+        if (shuffleCount >= 10) {
+          clearInterval(shuffleInterval);
+          
+          // Final value for this slot - ensure it's not a duplicate
+          let finalRating;
+          let attempts = 0;
+          do {
+            finalRating = Math.floor(Math.random() * 5) + 1;
+            attempts++;
+          } while (usedRatings.includes(finalRating) && attempts < 100);
+          
+          // Add to used ratings BEFORE setting state
+          usedRatings.push(finalRating);
+          
+          console.log(`Slot ${currentSlot}: ${finalRating}, Used so far:`, usedRatings);
+          
+          // Random earning between $0.10 and $1.00
+          const randomEarnings = [0.10, 0.25, 0.50, 0.75, 1.00];
+          const finalEarning = randomEarnings[Math.floor(Math.random() * randomEarnings.length)];
+          
+          setSlots(prevSlots => {
+            // Create a clean array with exactly 3 elements
+            const slot0 = currentSlot === 0 ? finalRating : prevSlots[0];
+            const slot1 = currentSlot === 1 ? finalRating : prevSlots[1];
+            const slot2 = currentSlot === 2 ? finalRating : prevSlots[2];
+            return [slot0, slot1, slot2];
+          });
+          
+          // Flash the earning amount
+          setCurrentEarning(finalEarning);
+          setShowEarning(true);
+
+          // Hide the earning flash after 800ms
+          setTimeout(() => {
+            setShowEarning(false);
+          }, 800);
+
+          // Move to next slot
+          setTimeout(() => animateNextSlot(currentSlot + 1), 400);
+        }
+      }, 100);
+    };
+
+    animateNextSlot(0);
+  };
 
   if (loading) {
     return (
@@ -331,6 +403,20 @@ const InfoPage = () => {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
+        @keyframes flashIn {
+          0% { 
+            opacity: 0;
+            transform: scale(0.8);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.1);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
       `}</style>
       
       <div style={{ 
@@ -343,7 +429,7 @@ const InfoPage = () => {
         paddingTop: '0',
         paddingBottom: '20px'
       }}>
-        {/* Combined Container: Title, Leaderboard, and Button */}
+        {/* Combined Container: Title, Slot Animation, and Button */}
         <div style={{
           width: '100%',
           maxWidth: '500px'
@@ -365,181 +451,108 @@ const InfoPage = () => {
                 margin: '0',
                 lineHeight: '1.25'
               }}>
-                Photo Competition with Friends!
+                Win money rating your friends' photos
               </h1>
             </div>
 
-            {/* Win $100 Green Box - Full Width */}
+            {/* Slot Machine Animation */}
             <div style={{
-              width: '100%',
-              backgroundColor: '#22C55E',
-              padding: '15px 0',
+              padding: '40px 20px',
               display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center'
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '30px'
             }}>
-              <span style={{
-                color: 'white',
-                fontSize: '1.5rem',
-                fontWeight: 'bold'
+              {/* Slot Boxes */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '15px'
               }}>
-                Win $100
-              </span>
-            </div>
-
-            {/* Leaderboard Rows */}
-            {leaderboardData.map((user, index) => (
-              <div key={index}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '24px 20px',
-                  backgroundColor: user.isCurrentUser ? '#243055' : 'transparent'
-                }}>
-                  <span style={{
-                    color: 'white',
-                    fontSize: '16px',
-                    fontWeight: 'bold',
-                    width: '30px',
-                    marginRight: '15px'
-                  }}>
-                    {user.rank}
-                  </span>
-                  
-                  {/* Profile Picture */}
-                  {user.profileUrl ? (
+                {slots.slice(0, 3).map((rating, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '8px',
+                      backgroundColor: '#2A3A6B',
+                      border: '3px solid rgba(255, 255, 255, 0.3)',
+                      position: 'relative',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.3s ease',
+                      transform: isAnimating ? 'scale(1.05)' : 'scale(1)'
+                    }}
+                  >
                     <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      marginRight: '15px',
-                      flexShrink: 0,
-                      overflow: 'hidden',
-                      backgroundColor: '#3B4374',
-                      position: 'relative'
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}>
-                      {meImageLoading && user.isCurrentUser && (
-                        <div style={{
-                          width: '100%',
-                          height: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                          position: 'absolute',
-                          top: 0,
-                          left: 0
-                        }}>
-                          <div style={{
-                            width: '15px',
-                            height: '15px',
-                            border: '2px solid rgba(255, 255, 255, 0.3)',
-                            borderTop: '2px solid #FFF',
-                            borderRadius: '50%',
-                            animation: 'spin 1s linear infinite'
-                          }} />
-                        </div>
-                      )}
-                      <img 
-                        src={user.profileUrl}
-                        alt={user.name || 'User'}
-                        onLoad={() => {
-                          if (user.isCurrentUser) setMeImageLoading(false);
-                        }}
-                        onError={(e) => {
-                          if (user.isCurrentUser) setMeImageLoading(false);
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
-                        }}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          display: (meImageLoading && user.isCurrentUser) ? 'none' : 'block'
-                        }}
-                      />
+                      <div style={{
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '2px'
+                      }}>
+                        {rating !== null && (
+                          <span style={{
+                            fontSize: '32px',
+                            fontWeight: 'bold',
+                            color: 'white',
+                            lineHeight: '1'
+                          }}>
+                            {rating}
+                          </span>
+                        )}
+                      </div>
+                      <span style={{
+                        fontSize: '20px',
+                        color: 'white',
+                        lineHeight: '1'
+                      }}>
+                        ★
+                      </span>
                     </div>
-                  ) : (
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                      marginRight: '15px',
-                      flexShrink: 0
-                    }} />
-                  )}
-                  
-                  {/* Name or Placeholder */}
-                  {user.name ? (
+                  </div>
+                ))}
+              </div>
+
+              {/* Single Flashing Win Indicator */}
+              <div style={{
+                minHeight: '60px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                {showEarning && currentEarning !== null && (
+                  <div
+                    style={{
+                      padding: '12px 24px',
+                      borderRadius: '25px',
+                      backgroundColor: '#22C55E',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      animation: 'flashIn 0.3s ease-in-out',
+                      boxShadow: '0 4px 12px rgba(34, 197, 94, 0.4)'
+                    }}
+                  >
                     <span style={{
                       color: 'white',
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      flex: 1,
-                      textAlign: 'left'
+                      fontSize: '24px',
+                      fontWeight: 'bold'
                     }}>
-                      {user.name}
+                      +${currentEarning.toFixed(2)}
                     </span>
-                  ) : (
-                    <div style={{
-                      height: '16px',
-                      width: '80px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                      borderRadius: '8px',
-                      marginRight: 'auto'
-                    }} />
-                  )}
-                  
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '5px 10px',
-                    backgroundColor: '#DAA520',
-                    borderRadius: '20px'
-                  }}>
-                    {user.stars ? (
-                      <span style={{
-                        fontSize: '16px',
-                        fontWeight: 'bold',
-                        color: 'white'
-                      }}>
-                        {user.stars}
-                      </span>
-                    ) : (
-                      <div style={{
-                        height: '16px',
-                        width: '35px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                        borderRadius: '8px'
-                      }} />
-                    )}
-                    <button
-                      disabled
-                      style={{
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        fontSize: '18px',
-                        color: 'rgba(255, 255, 255, 1)',
-                        padding: 0,
-                        cursor: 'default',
-                        outline: 'none'
-                      }}
-                    >
-                      ★
-                    </button>
                   </div>
-                </div>
-                
-                {index < leaderboardData.length - 1 && (
-                  <div style={{
-                    height: '1px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                  }} />
                 )}
               </div>
-            ))}
+            </div>
 
             {/* Integrated Download Button */}
             <button
@@ -582,7 +595,7 @@ const InfoPage = () => {
                 style={{ width: '22px', height: '22px' }} 
               />
             </div>
-            <span style={{ fontSize: '18px', color: 'white', fontWeight: 'bold' }}>
+            <span style={{ fontSize: '18px', color: 'white', fontWeight: 'bold', marginTop: '1.5px' }}>
               SocialStar
             </span>
           </div>
