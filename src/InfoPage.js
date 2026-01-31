@@ -15,6 +15,28 @@ import {
   getDocs
 } from 'firebase/firestore';
 
+// Development environment check
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+// Check if user is in Instagram app
+const isInstagramApp = () => {
+  if (isDevelopment) {
+    console.log('Development mode: Instagram requirement bypassed');
+    return true;
+  }
+  
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return false;
+  }
+  
+  const userAgent = navigator.userAgent.toLowerCase();
+  const isInstagram = /instagram/i.test(userAgent);
+  const isIOSInstagram = /instagram.*applewebkit/i.test(userAgent) && !/safari/i.test(userAgent);
+  const isAndroidInstagram = /instagram.*android/i.test(userAgent);
+  
+  return isInstagram || isIOSInstagram || isAndroidInstagram;
+};
+
 // Generate a fingerprint using available browser data
 const generateFingerprint = async () => {
   const components = [];
@@ -91,13 +113,22 @@ const InfoPage = () => {
   const [fingerprint, setFingerprint] = useState(null);
   const [continueClickInProgress, setContinueClickInProgress] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isValidEnvironment, setIsValidEnvironment] = useState(true);
   
   const [meImageLoading, setMeImageLoading] = useState(true);
 
-  // Initialize fingerprint on component mount
+  // Initialize fingerprint and check Instagram on component mount
   useEffect(() => {
     const initializeFingerprint = async () => {
       try {
+        if (!isInstagramApp() && !isDevelopment) {
+          setIsValidEnvironment(false);
+          setError('Please open this link in the Instagram app');
+          setLoading(false);
+          return;
+        }
+
         const fp = await generateFingerprint();
         setFingerprint(fp);
         localStorage.setItem(`info_fingerprint_${linkId}`, fp);
@@ -114,8 +145,10 @@ const InfoPage = () => {
 
   // Set loading to false after initialization
   useEffect(() => {
-    setLoading(false);
-  }, []);
+    if (isValidEnvironment && fingerprint) {
+      setLoading(false);
+    }
+  }, [isValidEnvironment, fingerprint]);
 
   // Track unique continue button click - FAST & NON-BLOCKING with spam prevention
   const trackUniqueContinueClick = async (stepName) => {
@@ -232,6 +265,57 @@ const InfoPage = () => {
             100% { transform: rotate(360deg); }
           }
         `}</style>
+      </div>
+    );
+  }
+
+  if (error && !isValidEnvironment) {
+    return (
+      <div style={{ 
+        minHeight: '100vh',
+        backgroundColor: '#10183C',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px'
+      }}>
+        <div style={{ 
+          textAlign: 'center',
+          width: '100%',
+          maxWidth: '500px'
+        }}>
+          <div style={{ 
+            backgroundColor: '#1A2245',
+            borderRadius: '12px',
+            padding: '40px 30px',
+            marginBottom: '30px'
+          }}>
+            <p style={{ 
+              color: 'rgba(255,255,255,0.8)',
+              marginBottom: '30px',
+              fontWeight: '600',
+              fontSize: '18px',
+              lineHeight: '1.5'
+            }}>
+              {error}
+            </p>
+          </div>
+      
+          <a href="https://apps.apple.com/gb/app/socialstar-app/id6473705189" target="_blank" style={{ textDecoration: 'none', cursor: 'pointer' }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '10px', 
+              justifyContent: 'flex-start',
+              width: '100%'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a" alt="Star icon" style={{ width: '22px', height: '22px' }} />
+              </div>
+              <h1 style={{ margin: '2px 0px 0px 0px', fontSize: '18px', color: 'white' }}> SocialStar</h1>
+            </div>
+          </a>
+        </div>
       </div>
     );
   }
