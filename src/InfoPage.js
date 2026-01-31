@@ -257,7 +257,7 @@ const InfoPage = () => {
         // Restart animation after a pause
         setTimeout(() => {
           animateSlots();
-        }, 3000);
+        }, 1500);
         return;
       }
 
