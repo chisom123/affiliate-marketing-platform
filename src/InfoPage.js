@@ -115,6 +115,8 @@ const InfoPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isValidEnvironment, setIsValidEnvironment] = useState(true);
+  const [claimCode, setClaimCode] = useState('');
+  const [codeCopied, setCodeCopied] = useState(false);
 
   // Initialize fingerprint and check Instagram on component mount
   useEffect(() => {
@@ -130,11 +132,18 @@ const InfoPage = () => {
         const fp = await generateFingerprint();
         setFingerprint(fp);
         localStorage.setItem(`info_fingerprint_${linkId}`, fp);
+        
+        // Generate claim code from fingerprint + linkId
+        const code = `SS${fp.substring(0, 4).toUpperCase()}${linkId.substring(0, 4).toUpperCase()}`;
+        setClaimCode(code);
+        
       } catch (error) {
         console.error('Error generating fingerprint:', error);
         const fallbackFp = `fallback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         setFingerprint(fallbackFp);
         localStorage.setItem(`info_fingerprint_${linkId}`, fallbackFp);
+        const code = `SS${fallbackFp.substring(0, 4).toUpperCase()}${linkId.substring(0, 4).toUpperCase()}`;
+        setClaimCode(code);
       }
     };
 
@@ -147,6 +156,14 @@ const InfoPage = () => {
       setLoading(false);
     }
   }, [isValidEnvironment, fingerprint]);
+
+  // Copy code to clipboard
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(claimCode).then(() => {
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 2000);
+    });
+  };
 
   // Track unique continue button click - FAST & NON-BLOCKING with spam prevention
   const trackUniqueContinueClick = async (stepName) => {
@@ -222,105 +239,6 @@ const InfoPage = () => {
     })();
   };
 
-  // Slot machine animation states
-  const [slots, setSlots] = useState([null, null, null]);
-  const [currentEarning, setCurrentEarning] = useState(null);
-  const [showEarning, setShowEarning] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
-
-  // Start slot machine animation on mount
-  useEffect(() => {
-    if (!isValidEnvironment || !fingerprint) return;
-
-    // Start animation after a brief delay
-    const startDelay = setTimeout(() => {
-      animateSlots();
-    }, 500);
-
-    return () => clearTimeout(startDelay);
-  }, [isValidEnvironment, fingerprint]);
-
-  const animateSlots = () => {
-    setIsAnimating(true);
-    
-    // Reset to exactly 3 empty slots at the start
-    const initialSlots = [null, null, null];
-    setSlots(initialSlots);
-    
-    // Track used ratings to prevent duplicates - needs to persist across animateNextSlot calls
-    const usedRatings = [];
-    
-    // Animate each slot sequentially
-    const animateNextSlot = (currentSlot) => {
-      if (currentSlot >= 3) {
-        setIsAnimating(false);
-        // Restart animation after a pause
-        setTimeout(() => {
-          animateSlots();
-        }, 1500);
-        return;
-      }
-
-      // Shuffle effect for current slot
-      let shuffleCount = 0;
-      const shuffleInterval = setInterval(() => {
-        const randomRating = Math.floor(Math.random() * 5) + 1;
-        
-        setSlots(prevSlots => {
-          // Create a clean array with exactly 3 elements
-          const slot0 = currentSlot === 0 ? randomRating : prevSlots[0];
-          const slot1 = currentSlot === 1 ? randomRating : prevSlots[1];
-          const slot2 = currentSlot === 2 ? randomRating : prevSlots[2];
-          return [slot0, slot1, slot2];
-        });
-
-        shuffleCount++;
-        if (shuffleCount >= 10) {
-          clearInterval(shuffleInterval);
-          
-          // Final value for this slot - ensure it's not a duplicate
-          let finalRating;
-          let attempts = 0;
-          do {
-            finalRating = Math.floor(Math.random() * 5) + 1;
-            attempts++;
-          } while (usedRatings.includes(finalRating) && attempts < 100);
-          
-          // Add to used ratings BEFORE setting state
-          usedRatings.push(finalRating);
-          
-          console.log(`Slot ${currentSlot}: ${finalRating}, Used so far:`, usedRatings);
-          
-          // Random earning between $0.10 and $1.00
-          const randomEarnings = [0.10, 0.25, 0.50, 0.75, 1.00];
-          const finalEarning = randomEarnings[Math.floor(Math.random() * randomEarnings.length)];
-          
-          setSlots(prevSlots => {
-            // Create a clean array with exactly 3 elements
-            const slot0 = currentSlot === 0 ? finalRating : prevSlots[0];
-            const slot1 = currentSlot === 1 ? finalRating : prevSlots[1];
-            const slot2 = currentSlot === 2 ? finalRating : prevSlots[2];
-            return [slot0, slot1, slot2];
-          });
-          
-          // Flash the earning amount
-          setCurrentEarning(finalEarning);
-          setShowEarning(true);
-
-          // Hide the earning flash after 800ms
-          setTimeout(() => {
-            setShowEarning(false);
-          }, 800);
-
-          // Move to next slot
-          setTimeout(() => animateNextSlot(currentSlot + 1), 400);
-        }
-      }, 100);
-    };
-
-    animateNextSlot(0);
-  };
-
   if (loading) {
     return (
       <div style={{
@@ -373,7 +291,7 @@ const InfoPage = () => {
             </p>
           </div>
       
-          <a href="https://apps.apple.com/gb/app/socialstar-app/id6473705189" target="_blank" style={{ textDecoration: 'none', cursor: 'pointer' }}>
+          <a href="https://apps.apple.com/gb/app/socialstar-app/id6473705189" target="_blank" rel="noreferrer" style={{ textDecoration: 'none', cursor: 'pointer' }}>
             <div style={{ 
               display: 'flex', 
               alignItems: 'center', 
@@ -403,20 +321,6 @@ const InfoPage = () => {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
-        @keyframes flashIn {
-          0% { 
-            opacity: 0;
-            transform: scale(0.8);
-          }
-          50% {
-            opacity: 1;
-            transform: scale(1.1);
-          }
-          100% {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
       `}</style>
       
       <div style={{ 
@@ -429,7 +333,7 @@ const InfoPage = () => {
         paddingTop: '0',
         paddingBottom: '20px'
       }}>
-        {/* Combined Container: Title, Slot Animation, and Button */}
+        {/* Combined Container: Title, Win Amount, Claim Code, and Button */}
         <div style={{
           width: '100%',
           maxWidth: '500px'
@@ -451,133 +355,105 @@ const InfoPage = () => {
                 margin: '0',
                 lineHeight: '1.25'
               }}>
-                Win money rating your friends' photos
+                Claim Your Winnings
               </h1>
             </div>
 
-            {/* Slot Machine Animation */}
+            {/* Claim Code */}
             <div style={{
-              padding: '40px 20px',
+              padding: '0px 20px 40px 20px',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
-              gap: '30px'
+              alignItems: 'center'
             }}>
-              {/* Slot Boxes */}
               <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                gap: '15px'
+                width: '100%',
+                maxWidth: '350px'
               }}>
-                {slots.slice(0, 3).map((rating, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      width: '80px',
-                      height: '80px',
-                      borderRadius: '8px',
-                      backgroundColor: '#2A3A6B',
-                      border: '3px solid rgba(255, 255, 255, 0.3)',
-                      position: 'relative',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.3s ease',
-                      transform: isAnimating ? 'scale(1.05)' : 'scale(1)'
-                    }}
-                  >
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <div style={{
-                        height: '32px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: '2px'
-                      }}>
-                        {rating !== null && (
-                          <span style={{
-                            fontSize: '32px',
-                            fontWeight: 'bold',
-                            color: 'white',
-                            lineHeight: '1'
-                          }}>
-                            {rating}
-                          </span>
-                        )}
-                      </div>
-                      <span style={{
-                        fontSize: '20px',
-                        color: 'white',
-                        lineHeight: '1'
-                      }}>
-                        ★
-                      </span>
-                    </div>
+                <div 
+                  onClick={handleCopyCode}
+                  style={{
+                    backgroundColor: codeCopied ? '#10B981' : '#2A3A6B',
+                    padding: '18px 20px',
+                    borderRadius: '10px',
+                    border: '2px solid rgba(255, 255, 255, 0.2)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <div style={{
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    color: 'rgba(255, 255, 255, 0.6)',
+                    textAlign: 'center',
+                    marginBottom: '4px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px'
+                  }}>
+                    Win Code
                   </div>
-                ))}
-              </div>
-
-              {/* Single Flashing Win Indicator */}
-              <div style={{
-                minHeight: '60px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                {showEarning && currentEarning !== null && (
-                  <div
-                    style={{
-                      padding: '12px 24px',
-                      borderRadius: '25px',
-                      backgroundColor: '#22C55E',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      animation: 'flashIn 0.3s ease-in-out',
-                      boxShadow: '0 4px 12px rgba(34, 197, 94, 0.4)'
-                    }}
-                  >
-                    <span style={{
-                      color: 'white',
-                      fontSize: '24px',
-                      fontWeight: 'bold'
-                    }}>
-                      +${currentEarning.toFixed(2)}
-                    </span>
+                  <div style={{
+                    fontSize: '24px',
+                    fontWeight: 'bold',
+                    color: 'white',
+                    letterSpacing: '2px',
+                    textAlign: 'center',
+                    fontFamily: 'monospace'
+                  }}>
+                    {claimCode}
                   </div>
-                )}
+                </div>
               </div>
             </div>
 
-            {/* Integrated Download Button */}
-            <button
-              onClick={() => {
-                trackUniqueContinueClick('download');
-                window.location.href = 'https://apps.apple.com/app/socialstar-app/id6473705189';
-              }}
-              style={{
-                width: '100%',
-                backgroundColor: '#4169E1',
-                color: 'white',
-                padding: '30px 20px',
-                fontSize: '22px',
-                fontWeight: 'bold',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                border: 'none',
-                borderRadius: '0',
-                cursor: 'pointer'
-              }}
-            >
-              <span>Get Started</span>
-              <ArrowRight size={34} strokeWidth={2.5} style={{ marginLeft: 'auto' }} />
-            </button>
+            {/* Subtitle and Download Button */}
+            <div style={{
+              padding: '0px 20px 20px 20px'
+            }}>
+              <p style={{
+                color: 'rgba(255, 255, 255, 0.8)',
+                fontSize: '16px',
+                margin: '0 0 15px 0',
+                lineHeight: '1.4',
+                textAlign: 'center'
+              }}>
+                Enter this code in the app to claim your winnings
+              </p>
+              <button
+                onClick={() => {
+                  trackUniqueContinueClick('download');
+                  window.location.href = 'https://apps.apple.com/app/socialstar-app/id6473705189';
+                }}
+                style={{
+                  width: '100%',
+                  padding: '18px',
+                  backgroundColor: '#4169E1',
+                  border: 'none',
+                  borderRadius: '200px',
+                  color: '#FFF',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  transition: 'transform 0.2s ease'
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = 'scale(0.98)';
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                <span>Get SocialStar</span>
+                <ArrowRight size={24} strokeWidth={2.5} />
+              </button>
+            </div>
           </div>
 
           {/* SocialStar Branding */}

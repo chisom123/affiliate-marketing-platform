@@ -14,7 +14,7 @@ import {
   setDoc
 } from 'firebase/firestore';
 import { useParams } from 'react-router-dom';
-import { ArrowRight, RefreshCw } from 'lucide-react';
+import { ArrowRight, RefreshCw, Banknote, X } from 'lucide-react';
 
 
 // Development environment check
@@ -209,10 +209,17 @@ const RatingPage = () => {
 
   // Slot machine states
   const [spins, setSpins] = useState([]);
+  const [spinEarnings, setSpinEarnings] = useState([0, 0, 0]); // Track earnings for each spin slot
   const [spinsRemaining, setSpinsRemaining] = useState(3);
   const [isSpinning, setIsSpinning] = useState(false);
   const [selectedRatingIndex, setSelectedRatingIndex] = useState(null);
   const [showRatingsList, setShowRatingsList] = useState(false);
+  const [currentSpinEarnings, setCurrentSpinEarnings] = useState(0); // For notification display
+  const [showWinScreen, setShowWinScreen] = useState(false);
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [displayedEarnings, setDisplayedEarnings] = useState(0);
+  const [dollarAmount, setDollarAmount] = useState(0);
+  const [displayedDollars, setDisplayedDollars] = useState(0);
   
   // Dynamic viewport height state
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
@@ -223,6 +230,11 @@ const RatingPage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartY, setDragStartY] = useState(0);
   const sheetRef = useRef(null);
+
+  // Earnings notification state
+  const [showEarningsNotification, setShowEarningsNotification] = useState(false);
+  const [notificationKey, setNotificationKey] = useState(0);
+  const earningsTimeoutRef = useRef(null);
 
   // Load dynamic earnings rate
   useEffect(() => {
@@ -292,6 +304,15 @@ const RatingPage = () => {
     };
   }, []);
 
+  // Cleanup earnings notification timeout
+  useEffect(() => {
+    return () => {
+      if (earningsTimeoutRef.current) {
+        clearTimeout(earningsTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Calculate snap points based on viewport
   const getSnapPoints = () => {
     const vh = viewportHeight;
@@ -307,6 +328,52 @@ const RatingPage = () => {
   };
 
   const snapPoints = getSnapPoints();
+
+  // Calculate base payout based on star rating
+  const getBasePayout = (stars) => {
+    const payoutTable = {
+      5: 500,
+      4: 400,
+      3: 300,
+      2: 200,
+      1: 100
+    };
+    return payoutTable[stars] || 0;
+  };
+
+  // Get random multiplier based on weighted probabilities
+  const getRandomMultiplier = () => {
+    const random = Math.random() * 100; // 0-100
+    
+    if (random < 75) return 1;        // 75% chance
+    if (random < 93) return 2;        // 18% chance (75 + 18 = 93)
+    if (random < 98) return 3;        // 5% chance (93 + 5 = 98)
+    if (random < 99.5) return 5;      // 1.5% chance (98 + 1.5 = 99.5)
+    return 10;                         // 0.5% chance (99.5 + 0.5 = 100)
+  };
+
+  // Calculate final earnings with multiplier
+  const calculateEarnings = (stars) => {
+    const basePayout = getBasePayout(stars);
+    const multiplier = getRandomMultiplier();
+    return basePayout * multiplier;
+  };
+
+  // Convert tokens to dollar amount ($0.50 - $1.50)
+  const convertTokensToDollars = (tokens) => {
+    // Min tokens: 100 (1 star * 1x) -> $0.50
+    // Max tokens: 5000 (5 stars * 10x) -> $1.50
+    const minTokens = 100;
+    const maxTokens = 5000;
+    const minDollars = 0.50;
+    const maxDollars = 1.50;
+    
+    // Linear scale between min and max
+    const ratio = (tokens - minTokens) / (maxTokens - minTokens);
+    const dollars = minDollars + (ratio * (maxDollars - minDollars));
+    
+    return Math.max(minDollars, Math.min(maxDollars, dollars));
+  };
 
   useEffect(() => {
     const initializeFingerprint = async () => {
@@ -708,6 +775,18 @@ const RatingPage = () => {
           
           return newSpins;
         });
+        
+        // Calculate earnings for this spin
+        const earnings = calculateEarnings(finalRating);
+        setCurrentSpinEarnings(earnings);
+        
+        // Save earnings for this spin slot
+        setSpinEarnings(prev => {
+          const newEarnings = [...prev];
+          newEarnings[3 - spinsRemaining] = earnings;
+          return newEarnings;
+        });
+        
         setSpinsRemaining(prev => prev - 1);
         setIsSpinning(false);
       }
@@ -719,37 +798,57 @@ const RatingPage = () => {
     
     setSelectedRatingIndex(index);
     
-    const optimisticInteraction = {
-      id: `temp_${Date.now()}`,
-      rating: rating,
-      fingerprint: fingerprint,
-      timestamp: { toDate: () => new Date() }
-    };
+    // Calculate total earnings from the selected spin
+    const total = spinEarnings[index];
+    setTotalEarnings(total);
     
-    setInteractions(prev => [optimisticInteraction, ...prev]);
-    
-    // Wait for the animation to complete before showing ratings list
-    setTimeout(() => {
-      setShowRatingsList(true);
-    }, 500); // Give time for the 0.3s transition + a bit extra
+    // Calculate dollar conversion
+    const dollars = convertTokensToDollars(total);
+    setDollarAmount(dollars);
     
     try {
       await submitRating(rating);
-      setHasAlreadyVoted(true);
       
-      if (linkData) {
-        await loadInteractions(linkData.id);
-      }
+      // Show win screen immediately
+      setShowWinScreen(true);
+      
+      // Start counting animation and set hasAlreadyVoted after brief delay
+      setTimeout(() => {
+        animateCounter(total, dollars);
+        setHasAlreadyVoted(true);
+      }, 500);
       
     } catch (error) {
       console.error('Error submitting rating:', error);
-      
-      setInteractions(prev => prev.filter(i => !i.id.startsWith('temp_')));
       setSelectedRatingIndex(null);
-      setShowRatingsList(false);
-      
       alert('Failed to submit rating. Please try again.');
     }
+  };
+
+  // Animate the earnings counter
+  const animateCounter = (targetAmount, targetDollars) => {
+    const duration = 2000; // 2 seconds
+    const steps = 60;
+    const tokenIncrement = targetAmount / steps;
+    const dollarIncrement = targetDollars / steps;
+    let currentTokens = 0;
+    let currentDollars = 0;
+    let step = 0;
+
+    const timer = setInterval(() => {
+      step++;
+      currentTokens += tokenIncrement;
+      currentDollars += dollarIncrement;
+      
+      if (step >= steps) {
+        setDisplayedEarnings(targetAmount);
+        setDisplayedDollars(targetDollars);
+        clearInterval(timer);
+      } else {
+        setDisplayedEarnings(Math.floor(currentTokens));
+        setDisplayedDollars(currentDollars);
+      }
+    }, duration / steps);
   };
 
   const handleContinuePlaying = async () => {
@@ -1042,125 +1141,106 @@ const RatingPage = () => {
         </div>
       </div>
 
-      {/* Bottom Sheet - Ratings List (only show when ratings submitted) */}
-      {(showRatingsList || selectedRatingIndex !== null) && (
-        <div
-          ref={sheetRef}
-          style={{
-            position: 'absolute',
-            bottom: 100,
-            left: 0,
-            right: 0,
-            height: `${snapPoints[snapState] - dragOffset}px`,
-            backgroundColor: '#1A2245',
-            borderTopLeftRadius: '20px',
-            borderTopRightRadius: '20px',
-            zIndex: 20,
-            display: showRatingsList ? 'block' : 'none',
-            transition: isDragging ? 'none' : 'height 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
-            willChange: 'height'
-          }}
-        >
-          {/* Handle */}
-          <div 
-            onPointerDown={handlePointerDown}
+      {/* Win Screen - Full screen overlay */}
+      {showWinScreen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(16, 185, 129, 1)',
+          zIndex: 50,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          {/* Close button */}
+          <button
+            onClick={() => setShowWinScreen(false)}
             style={{
-              width: '100%',
-              padding: '15px 0',
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              borderRadius: '50%',
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: 'white',
+              cursor: 'pointer',
               display: 'flex',
-              justifyContent: 'center',
-              cursor: isDragging ? 'grabbing' : 'grab',
-              touchAction: 'none',
-              userSelect: 'none'
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
           >
+            <X size={32} color="white" strokeWidth={3} />
+          </button>
+
+          {/* Win amount */}
+          <div style={{
+            marginBottom: '40px',
+            textAlign: 'center'
+          }}>
             <div style={{
-              width: '40px',
-              height: '5px',
-              backgroundColor: 'rgba(255, 255, 255, 0.3)',
-              borderRadius: '200px',
-              pointerEvents: 'none'
-            }}></div>
-          </div>
-
-          {/* Header */}
-          <div style={{
-            padding: '0px 20px 10px 20px'
-          }}>
-            <h3 style={{
-              margin: 0,
-              fontSize: '15px',
-              fontWeight: 'bold',
-              color: 'rgba(255, 255, 255, 0.7)'
+              fontSize: '18px',
+              color: 'white',
+              marginBottom: '20px',
+              fontWeight: '600'
             }}>
-              All Ratings ({interactions.length})
-            </h3>
+              You Won
+            </div>
+            <div style={{
+              fontSize: '72px',
+              fontWeight: 'bold',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '15px',
+              marginBottom: '15px'
+            }}>
+              <span>+{displayedEarnings}</span>
+              <Banknote size={60} color="white" strokeWidth={2} />
+            </div>
+            <div style={{
+              fontSize: '28px',
+              fontWeight: '600',
+              color: 'white',
+              opacity: 0.9
+            }}>
+              ${displayedDollars.toFixed(2)}
+            </div>
           </div>
 
-          {/* Ratings List */}
-          <div style={{
-            overflowY: 'auto',
-            height: 'calc(100% - 60px)',
-            WebkitOverflowScrolling: 'touch'
-          }}>
-            {interactions.map((interaction, index) => (
-              <div key={interaction.id}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '15px 20px',
-                  paddingBottom: index === interactions.length - 1 ? '25px' : '15px'
-                }}>
-                  <Avatar fingerprint={interaction.fingerprint} size={38} />
-
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '5px 10px',
-                    backgroundColor: '#DAA520',
-                    borderRadius: '20px'
-                  }}>
-                    <span style={{
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      color: 'white'
-                    }}>
-                      {interaction.rating}
-                    </span>
-                    <button
-                      disabled
-                      style={{
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        fontSize: '18px',
-                        color: 'white',
-                        padding: 0,
-                        cursor: 'default',
-                        outline: 'none'
-                      }}
-                    >
-                      ★
-                    </button>
-                  </div>
-                </div>
-                
-                {index < interactions.length - 1 && (
-                  <div style={{
-                    height: '1px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    margin: '0'
-                  }}></div>
-                )}
-              </div>
-            ))}
-          </div>
+          {/* Download button */}
+          <button
+            onClick={handleContinuePlaying}
+            style={{
+              width: '100%',
+              maxWidth: '400px',
+              padding: '20px',
+              backgroundColor: 'white',
+              border: 'none',
+              borderRadius: '200px',
+              color: 'black',
+              fontSize: '20px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px'
+            }}
+          >
+            <span>Claim Winnings</span>
+            <ArrowRight size={24} strokeWidth={2.5} color="black" />
+          </button>
         </div>
       )}
 
-      {/* Slot Machine Footer */}
-      {!hasAlreadyVoted && (
+      {/* Winnings Footer - shown after user has voted and win screen is closed */}
+      {hasAlreadyVoted && !showWinScreen && (
         <div style={{
           position: 'absolute',
           bottom: 0,
@@ -1173,8 +1253,135 @@ const RatingPage = () => {
           padding: '20px',
           display: 'flex',
           flexDirection: 'column',
+          gap: '20px'
+        }}>
+          {/* Winnings Display */}
+          <div style={{
+            textAlign: 'center',
+            color: 'white'
+          }}>
+            <div style={{
+              fontSize: '16px',
+              color: 'rgba(255, 255, 255, 0.7)',
+              marginBottom: '10px',
+              fontWeight: '600'
+            }}>
+              You Won
+            </div>
+            <div style={{
+              fontSize: '48px',
+              fontWeight: 'bold',
+              color: '#10B981',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px',
+              marginBottom: '8px'
+            }}>
+              <span>+{totalEarnings}</span>
+              <Banknote size={42} color="#10B981" strokeWidth={2} />
+            </div>
+            <div style={{
+              fontSize: '20px',
+              fontWeight: '600',
+              color: 'white'
+            }}>
+              ${dollarAmount.toFixed(2)}
+            </div>
+          </div>
+
+          {/* Claim Winnings Button */}
+          <button
+            onClick={handleContinuePlaying}
+            style={{
+              width: '100%',
+              padding: '18px',
+              backgroundColor: '#4169E1',
+              border: 'none',
+              borderRadius: '200px',
+              color: '#FFF',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              transition: 'transform 0.2s ease'
+            }}
+            onMouseDown={(e) => {
+              e.currentTarget.style.transform = 'scale(0.98)';
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            <span>Claim Winnings</span>
+            <ArrowRight size={24} strokeWidth={2.5} />
+          </button>
+        </div>
+      )}
+
+
+      {/* Earnings Notification - slides up behind slot machine footer */}
+      <div 
+        key={notificationKey}
+        style={{
+          position: 'absolute',
+          bottom: showEarningsNotification ? 0 : '-100%',
+          left: 0,
+          right: 0,
+          height: '300px',
+          background: '#10B981',
+          borderTopLeftRadius: '20px',
+          borderTopRightRadius: '20px',
+          zIndex: 25,
+          transition: 'bottom 0.5s cubic-bezier(0.32, 0.72, 0, 1)',
+          pointerEvents: 'none'
+        }}
+      >
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          paddingTop: '18px',
+          gap: '10px'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <div style={{
+              fontSize: '25px',
+              fontWeight: 'bold',
+              color: 'white'
+            }}>
+              +{Math.round(currentSpinEarnings)}
+            </div>
+            <Banknote size={38} color="white" strokeWidth={2} />
+          </div>
+        </div>
+      </div>
+
+      {/* Slot Machine Footer */}
+      <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#1A2245',
+          borderTopLeftRadius: '20px',
+          borderTopRightRadius: '20px',
+          zIndex: 30,
+          padding: '20px',
+          display: (hasAlreadyVoted && !showWinScreen) ? 'none' : 'flex',
+          flexDirection: 'column',
           gap: '20px',
-          display: showRatingsList ? 'none' : 'flex',
           pointerEvents: selectedRatingIndex !== null ? 'none' : 'auto'
         }}>
           {/* Instruction Text */}
@@ -1207,7 +1414,7 @@ const RatingPage = () => {
                   width: '60px',
                   height: '60px',
                   borderRadius: '5px',
-                  backgroundColor: selectedRatingIndex === index ? '#DAA520' : '#2A3A6B',
+                  backgroundColor: '#2A3A6B',
                   border: spinsRemaining === 0 ? '2px solid rgba(255, 255, 255, 0.3)' : 'none',
                   display: 'flex',
                   flexDirection: 'column',
@@ -1247,7 +1454,7 @@ const RatingPage = () => {
             style={{
               width: '100%',
               padding: '18px',
-              backgroundColor: spinsRemaining > 0 ? '#FF3B6D' : '#666',
+              backgroundColor: spinsRemaining > 0 ? '#4169E1' : '#666',
               border: 'none',
               borderRadius: '200px',
               color: spinsRemaining > 0 ? '#FFF' : '#c2c2c2',
@@ -1285,51 +1492,7 @@ const RatingPage = () => {
             </span>
           </button>
         </div>
-      )}
 
-      {/* Continue Button - shown after rating is submitted */}
-      {(hasAlreadyVoted || selectedRatingIndex !== null) && (
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '100px',
-          zIndex: 30,
-          display: showRatingsList ? 'block' : 'none'
-        }}>
-          <button
-            onClick={handleContinuePlaying}
-            style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              backgroundColor: '#4169E1',
-              border: 'none',
-              padding: '0 24px',
-              cursor: 'pointer',
-              fontSize: '22px',
-              fontWeight: 'bold',
-              color: '#FFF',
-              transition: 'transform 0.2s ease'
-            }}
-            onMouseDown={(e) => {
-              e.currentTarget.style.transform = 'scale(0.98)';
-            }}
-            onMouseUp={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-          >
-            <span>Continue</span>
-            <ArrowRight size={34} strokeWidth={2.5} style={{ marginLeft: 'auto' }} />
-          </button>
-        </div>
-      )}
 
       <style>{`
         @keyframes spin {
