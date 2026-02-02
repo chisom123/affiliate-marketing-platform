@@ -417,7 +417,7 @@ const InfoPage = () => {
                 lineHeight: '1.4',
                 textAlign: 'center'
               }}>
-                Enter this code in the app to claim your winnings
+                Enter the code in SocialStar to claim your winnings
               </p>
               <button
                 onClick={() => {
