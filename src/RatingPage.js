@@ -734,63 +734,83 @@ const RatingPage = () => {
     }
   };
 
-  const handleSpin = () => {
-    if (isSpinning || spinsRemaining <= 0 || hasAlreadyVoted) return;
-    
-    setIsSpinning(true);
-    
-    // Get already used ratings
-    const usedRatings = spins.filter(r => r !== undefined && r !== null);
-    
-    // Simulate spinning animation with random numbers
-    let spinCount = 0;
-    const spinInterval = setInterval(() => {
-      const randomRating = Math.floor(Math.random() * 5) + 1;
-      setSpins(prev => {
-        const newSpins = [...prev];
-        newSpins[3 - spinsRemaining] = randomRating;
-        return newSpins;
-      });
-      
-      spinCount++;
-      if (spinCount >= 10) {
-        clearInterval(spinInterval);
-        
-        // Final rating - ensure it's not a duplicate
-        let finalRating;
-        let attempts = 0;
-        do {
-          finalRating = Math.floor(Math.random() * 5) + 1;
-          attempts++;
-        } while (usedRatings.includes(finalRating) && attempts < 100);
-        
+  // ── Single spin: animates one slot and resolves with the final rating ──
+  const runSingleSpin = (slotIndex, usedRatings) => {
+    return new Promise((resolve) => {
+      let spinCount = 0;
+      const spinInterval = setInterval(() => {
+        const randomRating = Math.floor(Math.random() * 5) + 1;
         setSpins(prev => {
           const newSpins = [...prev];
-          newSpins[3 - spinsRemaining] = finalRating;
-          
-          // Save spin state to Firestore after updating
-          if (linkData && fingerprint) {
-            saveSpinState(linkData.id, fingerprint, newSpins);
-          }
-          
+          newSpins[slotIndex] = randomRating;
           return newSpins;
         });
-        
-        // Calculate earnings for this spin
-        const earnings = calculateEarnings(finalRating);
-        setCurrentSpinEarnings(earnings);
-        
-        // Save earnings for this spin slot
-        setSpinEarnings(prev => {
-          const newEarnings = [...prev];
-          newEarnings[3 - spinsRemaining] = earnings;
-          return newEarnings;
-        });
-        
-        setSpinsRemaining(prev => prev - 1);
-        setIsSpinning(false);
+
+        spinCount++;
+        if (spinCount >= 10) {
+          clearInterval(spinInterval);
+
+          // Final value — avoid duplicating an already-settled slot
+          let finalRating;
+          let attempts = 0;
+          do {
+            finalRating = Math.floor(Math.random() * 5) + 1;
+            attempts++;
+          } while (usedRatings.includes(finalRating) && attempts < 100);
+
+          setSpins(prev => {
+            const newSpins = [...prev];
+            newSpins[slotIndex] = finalRating;
+            return newSpins;
+          });
+
+          // Calculate & store earnings for this slot
+          const earnings = calculateEarnings(finalRating);
+          setCurrentSpinEarnings(earnings);
+          setSpinEarnings(prev => {
+            const newEarnings = [...prev];
+            newEarnings[slotIndex] = earnings;
+            return newEarnings;
+          });
+
+          resolve({ slotIndex, finalRating });
+        }
+      }, 100);
+    });
+  };
+
+  // ── One button press → run all remaining spins in sequence ──
+  const handleSpin = async () => {
+    if (isSpinning || spinsRemaining <= 0 || hasAlreadyVoted) return;
+
+    setIsSpinning(true);
+
+    const settledRatings = spins.filter(r => r !== undefined && r !== null); // already settled
+    const totalToSpin = spinsRemaining;                                      // how many left
+
+    for (let i = 0; i < totalToSpin; i++) {
+      const slotIndex = 3 - spinsRemaining + i; // fills 0 → 1 → 2
+
+      const { finalRating } = await runSingleSpin(slotIndex, settledRatings);
+      settledRatings.push(finalRating);
+
+      setSpinsRemaining(prev => prev - 1);
+
+      // Short pause between spins so the user can see each result land
+      if (i < totalToSpin - 1) {
+        await new Promise(resolve => setTimeout(resolve, 600));
       }
-    }, 100);
+    }
+
+    // Persist final spin state to Firestore
+    setSpins(prev => {
+      if (linkData && fingerprint) {
+        saveSpinState(linkData.id, fingerprint, prev);
+      }
+      return prev;
+    });
+
+    setIsSpinning(false);
   };
 
   const handleSelectRating = async (index, rating) => {
@@ -1392,8 +1412,8 @@ const RatingPage = () => {
             fontWeight: '600'
           }}>
             {spinsRemaining === 3 && 'Tap spin'}
-            {spinsRemaining === 2 && 'Spin 2 more times'}
-            {spinsRemaining === 1 && 'Last spin!'}
+            {spinsRemaining === 2 && 'Spinning...'}
+            {spinsRemaining === 1 && 'Spinning...'}
             {spinsRemaining === 0 && 'Pick a rating'}
           </div>
 
@@ -1454,10 +1474,10 @@ const RatingPage = () => {
             style={{
               width: '100%',
               padding: '18px',
-              backgroundColor: spinsRemaining > 0 ? '#4169E1' : '#666',
+              backgroundColor: spinsRemaining > 0 && !isSpinning ? '#4169E1' : '#666',
               border: 'none',
               borderRadius: '200px',
-              color: spinsRemaining > 0 ? '#FFF' : '#c2c2c2',
+              color: spinsRemaining > 0 && !isSpinning ? '#FFF' : '#c2c2c2',
               fontSize: '18px',
               fontWeight: 'bold',
               cursor: spinsRemaining > 0 && !isSpinning ? 'pointer' : 'not-allowed',
@@ -1466,7 +1486,7 @@ const RatingPage = () => {
               justifyContent: 'center',
               gap: '10px',
               transition: 'transform 0.2s ease',
-              opacity: isSpinning ? 0.7 : 1
+              opacity: 1
             }}
             onMouseDown={(e) => {
               if (spinsRemaining > 0 && !isSpinning) {
