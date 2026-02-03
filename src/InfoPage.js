@@ -450,7 +450,7 @@ const InfoPage = () => {
                   e.currentTarget.style.transform = 'scale(1)';
                 }}
               >
-                <span>Get SocialStar</span>
+                <span>Continue</span>
                 <ArrowRight size={24} strokeWidth={2.5} />
               </button>
             </div>

@@ -212,6 +212,7 @@ const RatingPage = () => {
   const [spinEarnings, setSpinEarnings] = useState([0, 0, 0]); // Track earnings for each spin slot
   const [spinsRemaining, setSpinsRemaining] = useState(3);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [hasStartedSpinning, setHasStartedSpinning] = useState(false);
   const [selectedRatingIndex, setSelectedRatingIndex] = useState(null);
   const [showRatingsList, setShowRatingsList] = useState(false);
   const [currentSpinEarnings, setCurrentSpinEarnings] = useState(0); // For notification display
@@ -784,8 +785,7 @@ const RatingPage = () => {
     if (isSpinning || spinsRemaining <= 0 || hasAlreadyVoted) return;
 
     setIsSpinning(true);
-
-    // Snapshot current spins array and track which ratings are already settled
+    setHasStartedSpinning(true);
     const currentSpins = [...spins];
     const settledRatings = currentSpins.filter(r => r !== undefined && r !== null);
     const totalToSpin = spinsRemaining;
@@ -1412,9 +1412,8 @@ const RatingPage = () => {
             fontSize: '17px',
             fontWeight: '600'
           }}>
-            {spinsRemaining === 3 && 'Tap spin'}
-            {spinsRemaining === 2 && 'Spinning...'}
-            {spinsRemaining === 1 && 'Spinning...'}
+            {!hasStartedSpinning && 'Tap spin'}
+            {hasStartedSpinning && spinsRemaining > 0 && 'Spinning...'}
             {spinsRemaining === 0 && 'Pick a rating'}
           </div>
 
