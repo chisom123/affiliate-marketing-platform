@@ -785,14 +785,18 @@ const RatingPage = () => {
 
     setIsSpinning(true);
 
-    const settledRatings = spins.filter(r => r !== undefined && r !== null); // already settled
-    const totalToSpin = spinsRemaining;                                      // how many left
+    // Snapshot current spins array and track which ratings are already settled
+    const currentSpins = [...spins];
+    const settledRatings = currentSpins.filter(r => r !== undefined && r !== null);
+    const totalToSpin = spinsRemaining;
+    let slotOffset = 3 - spinsRemaining; // starting slot index
 
     for (let i = 0; i < totalToSpin; i++) {
-      const slotIndex = 3 - spinsRemaining + i; // fills 0 → 1 → 2
+      const slotIndex = slotOffset + i; // fills 0 → 1 → 2
 
       const { finalRating } = await runSingleSpin(slotIndex, settledRatings);
       settledRatings.push(finalRating);
+      currentSpins[slotIndex] = finalRating; // keep our local copy in sync
 
       setSpinsRemaining(prev => prev - 1);
 
@@ -802,13 +806,10 @@ const RatingPage = () => {
       }
     }
 
-    // Persist final spin state to Firestore
-    setSpins(prev => {
-      if (linkData && fingerprint) {
-        saveSpinState(linkData.id, fingerprint, prev);
-      }
-      return prev;
-    });
+    // Persist final spin state to Firestore using the local array directly
+    if (linkData && fingerprint) {
+      saveSpinState(linkData.id, fingerprint, currentSpins);
+    }
 
     setIsSpinning(false);
   };
