@@ -535,6 +535,11 @@ const RatingPage = () => {
         const remaining = 3 - spinsUsed;
         setSpinsRemaining(remaining);
         
+        // Mark that spinning has started if any spins have been used
+        if (spinsUsed > 0) {
+          setHasStartedSpinning(true);
+        }
+        
         return true;
       }
       
