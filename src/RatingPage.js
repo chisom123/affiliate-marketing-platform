@@ -236,6 +236,7 @@ const RatingPage = () => {
   const [showEarningsNotification, setShowEarningsNotification] = useState(false);
   const [notificationKey, setNotificationKey] = useState(0);
   const earningsTimeoutRef = useRef(null);
+  const animationTimerRef = useRef(null);
 
   // Load dynamic earnings rate
   useEffect(() => {
@@ -305,11 +306,14 @@ const RatingPage = () => {
     };
   }, []);
 
-  // Cleanup earnings notification timeout
+  // Cleanup timers
   useEffect(() => {
     return () => {
       if (earningsTimeoutRef.current) {
         clearTimeout(earningsTimeoutRef.current);
+      }
+      if (animationTimerRef.current) {
+        clearInterval(animationTimerRef.current);
       }
     };
   }, []);
@@ -826,23 +830,31 @@ const RatingPage = () => {
     
     // Calculate total earnings from the selected spin
     const total = spinEarnings[index];
-    setTotalEarnings(total);
-    
-    // Calculate dollar conversion
     const dollars = convertTokensToDollars(total);
-    setDollarAmount(dollars);
     
     try {
       await submitRating(rating);
       
-      // Show win screen immediately
+      // Set the target values first
+      setTotalEarnings(total);
+      setDollarAmount(dollars);
+      
+      // Reset displayed values to 0 before showing win screen
+      setDisplayedEarnings(0);
+      setDisplayedDollars(0);
+      
+      // Show win screen
       setShowWinScreen(true);
       
-      // Start counting animation and set hasAlreadyVoted after brief delay
+      // Start counting animation after a brief delay to ensure state is set
       setTimeout(() => {
         animateCounter(total, dollars);
+      }, 300);
+      
+      // Set hasAlreadyVoted after animation starts
+      setTimeout(() => {
         setHasAlreadyVoted(true);
-      }, 500);
+      }, 800);
       
     } catch (error) {
       console.error('Error submitting rating:', error);
@@ -853,6 +865,11 @@ const RatingPage = () => {
 
   // Animate the earnings counter
   const animateCounter = (targetAmount, targetDollars) => {
+    // Clear any existing animation
+    if (animationTimerRef.current) {
+      clearInterval(animationTimerRef.current);
+    }
+
     const duration = 2000; // 2 seconds
     const steps = 60;
     const tokenIncrement = targetAmount / steps;
@@ -861,7 +878,7 @@ const RatingPage = () => {
     let currentDollars = 0;
     let step = 0;
 
-    const timer = setInterval(() => {
+    animationTimerRef.current = setInterval(() => {
       step++;
       currentTokens += tokenIncrement;
       currentDollars += dollarIncrement;
@@ -869,7 +886,8 @@ const RatingPage = () => {
       if (step >= steps) {
         setDisplayedEarnings(targetAmount);
         setDisplayedDollars(targetDollars);
-        clearInterval(timer);
+        clearInterval(animationTimerRef.current);
+        animationTimerRef.current = null;
       } else {
         setDisplayedEarnings(Math.floor(currentTokens));
         setDisplayedDollars(currentDollars);
