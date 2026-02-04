@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { db } from './firebase';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Copy } from 'lucide-react';
 import { 
   doc, 
   getDoc, 
@@ -117,6 +117,7 @@ const InfoPage = () => {
   const [isValidEnvironment, setIsValidEnvironment] = useState(true);
   const [claimCode, setClaimCode] = useState('');
   const [codeCopied, setCodeCopied] = useState(false);
+  const [hasEverCopied, setHasEverCopied] = useState(false);
 
   // Initialize fingerprint and check Instagram on component mount
   useEffect(() => {
@@ -161,6 +162,7 @@ const InfoPage = () => {
   const handleCopyCode = () => {
     navigator.clipboard.writeText(claimCode).then(() => {
       setCodeCopied(true);
+      setHasEverCopied(true);
       setTimeout(() => setCodeCopied(false), 2000);
     });
   };
@@ -333,7 +335,7 @@ const InfoPage = () => {
         paddingTop: '0',
         paddingBottom: '20px'
       }}>
-        {/* Combined Container: Title, Win Amount, Claim Code, and Button */}
+        {/* Main Container */}
         <div style={{
           width: '100%',
           maxWidth: '500px'
@@ -345,7 +347,7 @@ const InfoPage = () => {
           }}>
             {/* Title */}
             <div style={{
-              padding: '30px 20px',
+              padding: '30px 20px 20px 20px',
               textAlign: 'center'
             }}>
               <h1 style={{
@@ -355,90 +357,98 @@ const InfoPage = () => {
                 margin: '0',
                 lineHeight: '1.25'
               }}>
-                Claim Your Winnings
+                Claim Winnings
               </h1>
             </div>
 
-            {/* Claim Code */}
+            {/* Step 1: Copy Code */}
             <div style={{
-              padding: '0px 20px 40px 20px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center'
+              padding: '20px',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
             }}>
               <div style={{
-                width: '100%',
-                maxWidth: '350px'
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                marginBottom: '15px'
               }}>
-                <div 
-                  onClick={handleCopyCode}
-                  style={{
-                    backgroundColor: codeCopied ? '#10B981' : '#2A3A6B',
-                    padding: '18px 20px',
-                    borderRadius: '10px',
-                    border: '2px solid rgba(255, 255, 255, 0.2)',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <div style={{
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    color: 'rgba(255, 255, 255, 0.6)',
-                    textAlign: 'center',
-                    marginBottom: '4px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px'
-                  }}>
-                    Win Code
-                  </div>
-                  <div style={{
-                    fontSize: '24px',
-                    fontWeight: 'bold',
-                    color: 'white',
-                    letterSpacing: '2px',
-                    textAlign: 'center',
-                    fontFamily: 'monospace'
-                  }}>
-                    {claimCode}
-                  </div>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  backgroundColor: '#4169E1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  color: 'white',
+                  flexShrink: 0
+                }}>
+                  {'1'}
+                </div>
+                <h2 style={{
+                  color: 'white',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  margin: '0'
+                }}>
+                  Copy Win Code
+                </h2>
+              </div>
+
+              <div 
+                onClick={handleCopyCode}
+                style={{
+                  backgroundColor: '#2A3A6B',
+                  padding: '18px 20px',
+                  borderRadius: '10px',
+                  border: '2px solid rgba(255, 255, 255, 0.2)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  marginBottom: '12px'
+                }}
+              >
+                <div style={{
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  textAlign: 'center',
+                  marginBottom: '4px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px'
+                }}>
+                  Win Code
+                </div>
+                <div style={{
+                  fontSize: '24px',
+                  fontWeight: 'bold',
+                  color: 'white',
+                  letterSpacing: '2px',
+                  textAlign: 'center',
+                  fontFamily: 'monospace'
+                }}>
+                  {claimCode}
                 </div>
               </div>
-            </div>
 
-            {/* Subtitle and Download Button */}
-            <div style={{
-              padding: '0px 20px 20px 20px'
-            }}>
-              <p style={{
-                color: 'rgba(255, 255, 255, 0.8)',
-                fontSize: '16px',
-                margin: '0 0 15px 0',
-                lineHeight: '1.4',
-                textAlign: 'center'
-              }}>
-                Enter the code in SocialStar to claim your winnings
-              </p>
               <button
-                onClick={() => {
-                  trackUniqueContinueClick('download');
-                  window.location.href = 'https://apps.apple.com/app/socialstar-app/id6473705189';
-                }}
+                onClick={handleCopyCode}
                 style={{
                   width: '100%',
-                  padding: '18px',
-                  backgroundColor: '#4169E1',
+                  padding: '14px',
+                  backgroundColor: codeCopied ? '#10B981' : '#4169E1',
                   border: 'none',
                   borderRadius: '200px',
                   color: '#FFF',
-                  fontSize: '18px',
+                  fontSize: '16px',
                   fontWeight: 'bold',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '10px',
-                  transition: 'transform 0.2s ease'
+                  gap: '8px',
+                  transition: 'all 0.2s ease'
                 }}
                 onMouseDown={(e) => {
                   e.currentTarget.style.transform = 'scale(0.98)';
@@ -450,7 +460,98 @@ const InfoPage = () => {
                   e.currentTarget.style.transform = 'scale(1)';
                 }}
               >
-                <span>Continue</span>
+                  <>
+                    <Copy size={20} strokeWidth={2.5} />
+                    <span>Copy Code</span>
+                  </>
+              </button>
+            </div>
+
+            {/* Step 2: Open SocialStar */}
+            <div style={{
+              padding: '20px',
+              opacity: hasEverCopied ? 1 : 0.5,
+              transition: 'opacity 0.3s ease'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                marginBottom: '15px'
+              }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  backgroundColor: hasEverCopied ? '#4169E1' : '#2A3A6B',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  color: hasEverCopied ? 'white' : 'rgba(255, 255, 255, 0.4)',
+                  flexShrink: 0
+                }}>
+                  2
+                </div>
+                <h2 style={{
+                  color: hasEverCopied ? 'white' : 'rgba(255, 255, 255, 0.4)',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  margin: '0'
+                }}>
+                  Open SocialStar
+                </h2>
+              </div>
+
+              <p style={{
+                color: hasEverCopied ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.4)',
+                fontSize: '15px',
+                margin: '0 0 15px 0',
+                lineHeight: '1.4'
+              }}>
+                Enter the code in SocialStar to claim your winnings
+              </p>
+
+              <button
+                onClick={() => {
+                  if (hasEverCopied) {
+                    trackUniqueContinueClick('download');
+                    window.location.href = 'https://apps.apple.com/app/socialstar-app/id6473705189';
+                  }
+                }}
+                disabled={!hasEverCopied}
+                style={{
+                  width: '100%',
+                  padding: '18px',
+                  backgroundColor: hasEverCopied ? '#4169E1' : '#2A3A6B',
+                  border: 'none',
+                  borderRadius: '200px',
+                  color: hasEverCopied ? '#FFF' : 'rgba(255, 255, 255, 0.4)',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  cursor: hasEverCopied ? 'pointer' : 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseDown={(e) => {
+                  if (hasEverCopied) {
+                    e.currentTarget.style.transform = 'scale(0.98)';
+                  }
+                }}
+                onMouseUp={(e) => {
+                  if (hasEverCopied) {
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                <span>Open SocialStar</span>
                 <ArrowRight size={24} strokeWidth={2.5} />
               </button>
             </div>
