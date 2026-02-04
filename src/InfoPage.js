@@ -376,7 +376,7 @@ const InfoPage = () => {
                   width: '32px',
                   height: '32px',
                   borderRadius: '50%',
-                  backgroundColor: '#4169E1',
+                  backgroundColor: codeCopied ? '#10B981' : '#4169E1',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
