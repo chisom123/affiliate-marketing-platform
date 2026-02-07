@@ -1250,7 +1250,7 @@ const RatingPage = () => {
               color: 'white',
               opacity: 0.9
             }}>
-              $50 competition points
+              $50 Competition
             </div>
           </div>
 
