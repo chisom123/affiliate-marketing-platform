@@ -1327,7 +1327,7 @@ const RatingPage = () => {
               fontWeight: '600',
               color: 'white'
             }}>
-              ${dollarAmount.toFixed(2)}
+              $50 Competition
             </div>
           </div>
 
