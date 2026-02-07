@@ -430,6 +430,21 @@ const RatingPage = () => {
           if (!existingRatings.empty) {
             setHasAlreadyVoted(true);
             setShowRatingsList(true);
+            
+            const winCodeDocId = `${linkData.id}_${fingerprint}`;
+            const winCodeRef = doc(db, 'pending_wins', winCodeDocId);
+            const winCodeDoc = await getDoc(winCodeRef);
+            
+            if (winCodeDoc.exists()) {
+              const winData = winCodeDoc.data();
+              const earnings = winData.points || 0;
+              const dollars = convertTokensToDollars(earnings);
+              
+              setTotalEarnings(earnings);
+              setDollarAmount(dollars);
+              setDisplayedEarnings(earnings);
+              setDisplayedDollars(dollars);
+            }
           }
         } else {
           console.log('Development mode: Skipping "already rated" check');
