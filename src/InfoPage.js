@@ -118,6 +118,7 @@ const InfoPage = () => {
   const [claimCode, setClaimCode] = useState('');
   const [codeCopied, setCodeCopied] = useState(false);
   const [hasEverCopied, setHasEverCopied] = useState(false);
+  const [linkData, setLinkData] = useState(null);
 
   // Initialize fingerprint and check Instagram on component mount
   useEffect(() => {
@@ -134,29 +135,67 @@ const InfoPage = () => {
         setFingerprint(fp);
         localStorage.setItem(`info_fingerprint_${linkId}`, fp);
         
-        // Generate claim code from fingerprint + linkId
-        const code = `SS${fp.substring(0, 4).toUpperCase()}${linkId.substring(0, 4).toUpperCase()}`;
-        setClaimCode(code);
-        
       } catch (error) {
         console.error('Error generating fingerprint:', error);
         const fallbackFp = `fallback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         setFingerprint(fallbackFp);
         localStorage.setItem(`info_fingerprint_${linkId}`, fallbackFp);
-        const code = `SS${fallbackFp.substring(0, 4).toUpperCase()}${linkId.substring(0, 4).toUpperCase()}`;
-        setClaimCode(code);
       }
     };
 
     initializeFingerprint();
   }, [linkId]);
 
-  // Set loading to false after initialization
+  // Fetch the win code from Firestore after fingerprint is ready
   useEffect(() => {
+    const fetchWinCode = async () => {
+      if (!fingerprint || !linkId) return;
+
+      try {
+        // First, get the actual document ID from rating_links collection
+        const linksQuery = query(
+          collection(db, 'rating_links'),
+          where('linkId', '==', linkId)
+        );
+        const linkSnapshot = await getDocs(linksQuery);
+        
+        if (linkSnapshot.empty) {
+          setError('Rating link not found');
+          setLoading(false);
+          return;
+        }
+
+        const linkDoc = linkSnapshot.docs[0];
+        const linkData = { id: linkDoc.id, ...linkDoc.data() };
+        setLinkData(linkData);
+
+        // Now fetch the win code using {linkId}_{fingerprint} as document ID
+        const winCodeDocId = `${linkData.id}_${fingerprint}`;
+        const winCodeRef = doc(db, 'pending_wins', winCodeDocId);
+        const winCodeDoc = await getDoc(winCodeRef);
+
+        if (winCodeDoc.exists()) {
+          // Use the SAVED code from Firestore
+          const savedCode = winCodeDoc.data().code;
+          setClaimCode(savedCode);
+          setLoading(false);
+        } else {
+          // User hasn't voted yet
+          setError('No winnings to claim. Please rate first.');
+          setLoading(false);
+        }
+        
+      } catch (error) {
+        console.error('Error fetching win code:', error);
+        setError('Failed to load your winnings');
+        setLoading(false);
+      }
+    };
+
     if (isValidEnvironment && fingerprint) {
-      setLoading(false);
+      fetchWinCode();
     }
-  }, [isValidEnvironment, fingerprint]);
+  }, [fingerprint, linkId, isValidEnvironment]);
 
   // Copy code to clipboard
   const handleCopyCode = () => {
@@ -170,7 +209,7 @@ const InfoPage = () => {
   // Track unique continue button click - FAST & NON-BLOCKING with spam prevention
   const trackUniqueContinueClick = async (stepName) => {
     // PREVENT SPAM - if already in progress, ignore this call
-    if (continueClickInProgress || !fingerprint || !linkId) {
+    if (continueClickInProgress || !fingerprint || !linkId || !linkData) {
       if (continueClickInProgress) {
         console.log('Continue click already in progress, ignoring duplicate');
       }
@@ -183,21 +222,7 @@ const InfoPage = () => {
     // Run tracking asynchronously without awaiting
     (async () => {
       try {
-        // First, get the actual document ID from rating_links collection
-        const linksQuery = query(
-          collection(db, 'rating_links'),
-          where('linkId', '==', linkId)
-        );
-        const linkSnapshot = await getDocs(linksQuery);
-        
-        if (linkSnapshot.empty) {
-          console.warn('Rating link not found for tracking');
-          return;
-        }
-        
-        const linkDocId = linkSnapshot.docs[0].id;
-        
-        const trackingDocId = `${linkDocId}_${fingerprint}_${stepName}`;
+        const trackingDocId = `${linkData.id}_${fingerprint}_${stepName}`;
         const trackingDocRef = doc(db, 'unique_info_continue_clicks', trackingDocId);
         
         // Check if this fingerprint has already clicked this continue button for this link
@@ -207,7 +232,7 @@ const InfoPage = () => {
           // First time this fingerprint is clicking this continue button for this link
           // Create tracking document
           await setDoc(trackingDocRef, {
-            linkId: linkDocId,
+            linkId: linkData.id,
             fingerprint: fingerprint,
             stepName: stepName,
             firstClickedAt: serverTimestamp(),
@@ -215,7 +240,7 @@ const InfoPage = () => {
           });
 
           // Increment UNIQUE continue clicks counter for this specific step
-          const linkDocRef = doc(db, 'rating_links', linkDocId);
+          const linkDocRef = doc(db, 'rating_links', linkData.id);
           
           const updateData = {
             lastInfoContinueClickAt: serverTimestamp(),

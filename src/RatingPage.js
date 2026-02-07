@@ -712,9 +712,12 @@ const RatingPage = () => {
       
       await Promise.all(updates);
       
-      // Generate and save win code (with timestamp for uniqueness)
+      // Generate unique win code with timestamp
       const code = generateWinCode(fingerprint, linkData.id);
-      const winCodeRef = doc(db, 'pending_wins', code);
+      
+      // Use predictable document ID: {linkId}_{fingerprint}
+      const winCodeDocId = `${linkData.id}_${fingerprint}`;
+      const winCodeRef = doc(db, 'pending_wins', winCodeDocId);
       
       await setDoc(winCodeRef, {
         code: code,

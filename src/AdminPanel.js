@@ -1154,6 +1154,29 @@ const AdminDashboard = () => {
                           {((link.totalDownloadClicks || 0) > 0 ? (((link.totalInfoContinueClicksDownload || 0) / link.totalDownloadClicks) * 100).toFixed(1) : 0)}%
                         </p>
                       </div>
+
+                      {/* Arrow */}
+                      <div style={{ fontSize: '24px', color: '#bbb' }}>→</div>
+
+                      {/* Step 5: Codes Claimed */}
+                      <div style={{ 
+                        minWidth: '140px',
+                        backgroundColor: '#f3e5f5',
+                        padding: '20px 15px',
+                        borderRadius: '8px',
+                        textAlign: 'center',
+                        border: '2px solid #9c27b0'
+                      }}>
+                        <p style={{ margin: '0 0 5px 0', fontSize: '11px', color: '#6a1b9a', fontWeight: '600', textTransform: 'uppercase' }}>
+                          Codes Claimed
+                        </p>
+                        <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: '#7b1fa2' }}>
+                          {link.totalCodesClaimed || 0}
+                        </p>
+                        <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#8e24aa', fontWeight: 'bold' }}>
+                          {((link.totalInfoContinueClicksDownload || 0) > 0 ? (((link.totalCodesClaimed || 0) / link.totalInfoContinueClicksDownload) * 100).toFixed(1) : 0)}%
+                        </p>
+                      </div>
                     </div>
                   </div>
                 );

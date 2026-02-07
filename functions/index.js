@@ -431,6 +431,78 @@ exports.completePayouts = onCall(
   }
 );
 
+// Claim win code from Swift app (cross-Firebase bridge)
+exports.claimWinCode = onCall(
+  async (request) => {
+    const { code, swiftUserId } = request.data;
+    
+    // Validate inputs
+    if (!code || !swiftUserId) {
+      throw new Error('Code and userId required');
+    }
+    
+    try {
+      // QUERY by code field instead of using code as document ID
+      const winQuery = await db.collection('pending_wins')
+        .where('code', '==', code)
+        .limit(1)
+        .get();
+      
+      // Check if code exists
+      if (winQuery.empty) {
+        throw new Error('Invalid win code');
+      }
+      
+      const winDoc = winQuery.docs[0];
+      const winData = winDoc.data();
+      
+      // Check if already claimed
+      if (winData.claimed) {
+        throw new Error('Code already claimed');
+      }
+      
+      // Mark as claimed and update link stats in a transaction
+      await db.runTransaction(async (transaction) => {
+        // Update win code (use the actual document reference)
+        transaction.update(winDoc.ref, {
+          claimed: true,
+          claimedBy: swiftUserId,
+          claimedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Increment rating link's claimed count
+        const linkRef = db.collection('rating_links').doc(winData.linkId);
+        transaction.update(linkRef, {
+          totalCodesClaimed: admin.firestore.FieldValue.increment(1)
+        });
+      });
+      
+      logger.info('Win code claimed', { 
+        code, 
+        swiftUserId, 
+        points: winData.points,
+        linkId: winData.linkId 
+      });
+      
+      // Return points to Swift app
+      return {
+        success: true,
+        points: winData.points,
+        affiliateId: winData.affiliateId,
+        linkId: winData.linkId
+      };
+      
+    } catch (error) {
+      logger.error('Error claiming win code', { 
+        code, 
+        swiftUserId, 
+        error: error.message 
+      });
+      throw new Error(error.message);
+    }
+  }
+);
+
 // Test function
 const {onRequest: onRequestV2} = require("firebase-functions/v2/https");
 exports.helloWorld = onRequestV2((req, res) => {
