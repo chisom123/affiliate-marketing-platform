@@ -98,37 +98,6 @@ const isInstagramApp = () => {
   return isInstagram || isIOSInstagram || isAndroidInstagram;
 };
 
-// Generate consistent color from fingerprint
-const getColorFromFingerprint = (fingerprint) => {
-  if (!fingerprint) return '#999';
-  
-  let hash = 0;
-  for (let i = 0; i < fingerprint.length; i++) {
-    hash = fingerprint.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  
-  const colors = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', 
-    '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2',
-    '#F8B88B', '#A8E6CF', '#FFD3B6', '#FFAAA5'
-  ];
-  
-  return colors[Math.abs(hash) % colors.length];
-};
-
-// Avatar component - simplified to just show colored circle
-const Avatar = ({ fingerprint, size = 40 }) => {
-  return (
-    <div style={{
-      width: `${size}px`,
-      height: `${size}px`,
-      borderRadius: '50%',
-      backgroundColor: getColorFromFingerprint(fingerprint),
-      flexShrink: 0
-    }} />
-  );
-};
-
 // Spinner component
 const Spinner = () => (
   <div style={{
