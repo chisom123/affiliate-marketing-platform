@@ -350,11 +350,11 @@ const RatingPage = () => {
   const getRandomMultiplier = () => {
     const random = Math.random() * 100; // 0-100
     
-    if (random < 75) return 1;        // 75% chance
-    if (random < 93) return 2;        // 18% chance (75 + 18 = 93)
-    if (random < 98) return 3;        // 5% chance (93 + 5 = 98)
-    if (random < 99.5) return 5;      // 1.5% chance (98 + 1.5 = 99.5)
-    return 10;                         // 0.5% chance (99.5 + 0.5 = 100)
+    if (random < 60) return 1;        // 60% chance
+    if (random < 85) return 2;        // 25% chance (60 + 25 = 85)
+    if (random < 95) return 3;        // 10% chance (85 + 10 = 95)
+    if (random < 99) return 5;        // 4% chance (95 + 4 = 99)
+    return 10;                         // 1% chance (99 + 1 = 100)
   };
 
   // Calculate final earnings with multiplier
