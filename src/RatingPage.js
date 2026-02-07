@@ -98,6 +98,12 @@ const isInstagramApp = () => {
   return isInstagram || isIOSInstagram || isAndroidInstagram;
 };
 
+// Generate win code from fingerprint, linkId, and timestamp for uniqueness
+const generateWinCode = (fingerprint, linkId) => {
+  const timestamp = Date.now().toString(36).substring(Date.now().toString(36).length - 2);
+  return `SS${fingerprint.substring(0, 3).toUpperCase()}${linkId.substring(0, 3).toUpperCase()}${timestamp.toUpperCase()}`;
+};
+
 // Spinner component
 const Spinner = () => (
   <div style={{
@@ -630,7 +636,7 @@ const RatingPage = () => {
     }
   };
 
-  const submitRating = async (stars) => {
+  const submitRating = async (stars, points) => {
     if (!linkData || !fingerprint) return;
 
     const ratingFingerprint = isDevelopment 
@@ -642,6 +648,7 @@ const RatingPage = () => {
       linkIdString: linkData.linkId,
       affiliateId: affiliateId,
       rating: stars,
+      points: points,
       earnings: earningsPerRating,
       fingerprint: ratingFingerprint,
       userAgent: navigator.userAgent,
@@ -704,6 +711,24 @@ const RatingPage = () => {
       }
       
       await Promise.all(updates);
+      
+      // Generate and save win code (with timestamp for uniqueness)
+      const code = generateWinCode(fingerprint, linkData.id);
+      const winCodeRef = doc(db, 'pending_wins', code);
+      
+      await setDoc(winCodeRef, {
+        code: code,
+        points: points,
+        affiliateId: affiliateId,
+        linkId: linkData.id,
+        fingerprint: fingerprint,
+        rating: stars,
+        totalSpins: spins,
+        claimed: false,
+        claimedBy: null,
+        claimedAt: null,
+        createdAt: serverTimestamp()
+      });
       
       return ratingDocRef.id;
       
@@ -802,7 +827,7 @@ const RatingPage = () => {
     const dollars = convertTokensToDollars(total);
     
     try {
-      await submitRating(rating);
+      await submitRating(rating, total);
       
       // Set the target values first
       setTotalEarnings(total);
