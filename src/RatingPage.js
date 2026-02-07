@@ -14,7 +14,7 @@ import {
   setDoc
 } from 'firebase/firestore';
 import { useParams } from 'react-router-dom';
-import { ArrowRight, RefreshCw, Banknote, X } from 'lucide-react';
+import { ArrowRight, RefreshCw, Gem, X } from 'lucide-react';
 
 
 // Development environment check
@@ -1214,7 +1214,7 @@ const RatingPage = () => {
               marginBottom: '15px'
             }}>
               <span>+{displayedEarnings}</span>
-              <Banknote size={60} color="white" strokeWidth={2} />
+              <Gem size={60} color="white" strokeWidth={2} />
             </div>
             <div style={{
               fontSize: '28px',
@@ -1222,7 +1222,7 @@ const RatingPage = () => {
               color: 'white',
               opacity: 0.9
             }}>
-              ${displayedDollars.toFixed(2)}
+              $50 competition points
             </div>
           </div>
 
@@ -1292,7 +1292,7 @@ const RatingPage = () => {
               marginBottom: '8px'
             }}>
               <span>+{totalEarnings}</span>
-              <Banknote size={42} color="#10B981" strokeWidth={2} />
+              <Gem size={42} color="#10B981" strokeWidth={2} />
             </div>
             <div style={{
               fontSize: '20px',
@@ -1376,7 +1376,7 @@ const RatingPage = () => {
             }}>
               +{Math.round(currentSpinEarnings)}
             </div>
-            <Banknote size={38} color="white" strokeWidth={2} />
+            <Gem size={38} color="white" strokeWidth={2} />
           </div>
         </div>
       </div>
