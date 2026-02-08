@@ -1460,35 +1460,35 @@ const RatingPage = () => {
             minHeight: '70px',
             alignItems: 'center'
           }}>
-            {spins.map((rating, index) => (
+            {[0, 1, 2].map((index) => (
               <button
                 key={index}
-                onClick={() => spinsRemaining === 0 && handleSelectRating(index, rating)}
-                disabled={spinsRemaining > 0 || selectedRatingIndex !== null}
+                onClick={() => spinsRemaining === 0 && spins[index] && handleSelectRating(index, spins[index])}
+                disabled={spinsRemaining > 0 || selectedRatingIndex !== null || !spins[index]}
                 style={{
                   width: '60px',
                   height: '60px',
                   borderRadius: '5px',
                   backgroundColor: '#2A3A6B',
-                  border: spinsRemaining === 0 ? '2px solid rgba(255, 255, 255, 0.3)' : 'none',
+                  border: spinsRemaining === 0 && spins[index] ? '2px solid rgba(255, 255, 255, 0.3)' : 'none',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  cursor: spinsRemaining === 0 && selectedRatingIndex === null ? 'pointer' : 'default',
+                  cursor: spinsRemaining === 0 && spins[index] && selectedRatingIndex === null ? 'pointer' : 'default',
                   transition: 'all 0.3s ease',
                   transform: selectedRatingIndex === index ? 'scale(1.1)' : 'scale(1)',
-                  opacity: rating ? 1 : 0.3
+                  opacity: spins[index] ? 1 : 0.3
                 }}
               >
-                {rating && (
+                {spins[index] && (
                   <>
                     <span style={{
                       fontSize: '24px',
                       fontWeight: 'bold',
                       color: 'white'
                     }}>
-                      {rating}
+                      {spins[index]}
                     </span>
                     <span style={{
                       fontSize: '16px',
