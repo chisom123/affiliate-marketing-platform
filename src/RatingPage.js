@@ -520,9 +520,11 @@ const RatingPage = () => {
       
       if (spinStateDoc.exists()) {
         const data = spinStateDoc.data();
-        // User has already spun, restore their state
         const savedSpins = data.spins || [];
+        const savedEarnings = data.earnings || [0, 0, 0];
+        
         setSpins(savedSpins);
+        setSpinEarnings(savedEarnings);
         
         // Calculate remaining spins based on how many they've already done
         const spinsUsed = savedSpins.filter(s => s !== undefined && s !== null).length;
@@ -544,7 +546,7 @@ const RatingPage = () => {
     }
   };
 
-  const saveSpinState = async (linkDocId, userFingerprint, spinsArray) => {
+  const saveSpinState = async (linkDocId, userFingerprint, spinsArray, earningsArray) => {
     if (isDevelopment) {
       console.log('Development mode: Skipping spin state save');
       return;
@@ -558,6 +560,7 @@ const RatingPage = () => {
         linkId: linkDocId,
         fingerprint: userFingerprint,
         spins: spinsArray,
+        earnings: earningsArray,
         createdAt: serverTimestamp(),
         lastUpdatedAt: serverTimestamp()
       });
@@ -795,7 +798,7 @@ const RatingPage = () => {
             return newEarnings;
           });
 
-          resolve({ slotIndex, finalRating });
+          resolve({ slotIndex, finalRating, earnings });
         }
       }, 100);
     });
@@ -808,6 +811,7 @@ const RatingPage = () => {
     setIsSpinning(true);
     setHasStartedSpinning(true);
     const currentSpins = [...spins];
+    const currentEarnings = [...spinEarnings];
     const settledRatings = currentSpins.filter(r => r !== undefined && r !== null);
     const totalToSpin = spinsRemaining;
     let slotOffset = 3 - spinsRemaining; // starting slot index
@@ -815,9 +819,10 @@ const RatingPage = () => {
     for (let i = 0; i < totalToSpin; i++) {
       const slotIndex = slotOffset + i; // fills 0 → 1 → 2
 
-      const { finalRating } = await runSingleSpin(slotIndex, settledRatings);
+      const { finalRating, earnings } = await runSingleSpin(slotIndex, settledRatings);
       settledRatings.push(finalRating);
-      currentSpins[slotIndex] = finalRating; // keep our local copy in sync
+      currentSpins[slotIndex] = finalRating;
+      currentEarnings[slotIndex] = earnings;
 
       setSpinsRemaining(prev => prev - 1);
 
@@ -827,9 +832,9 @@ const RatingPage = () => {
       }
     }
 
-    // Persist final spin state to Firestore using the local array directly
+    // Persist final spin state to Firestore using the local arrays directly
     if (linkData && fingerprint) {
-      saveSpinState(linkData.id, fingerprint, currentSpins);
+      saveSpinState(linkData.id, fingerprint, currentSpins, currentEarnings);
     }
 
     setIsSpinning(false);
