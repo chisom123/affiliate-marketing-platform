@@ -1295,7 +1295,6 @@ const RatingPage = () => {
             }}
           >
             <span>Claim Winnings</span>
-            <ArrowRight size={24} strokeWidth={2.5} color="black" />
           </button>
         </div>
       )}
@@ -1381,7 +1380,6 @@ const RatingPage = () => {
             }}
           >
             <span>Claim Winnings</span>
-            <ArrowRight size={24} strokeWidth={2.5} />
           </button>
         </div>
       )}

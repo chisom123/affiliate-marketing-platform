@@ -486,7 +486,6 @@ const InfoPage = () => {
                 }}
               >
                   <>
-                    <Copy size={20} strokeWidth={2.5} />
                     <span>Copy Code</span>
                   </>
               </button>
@@ -577,7 +576,6 @@ const InfoPage = () => {
                 }}
               >
                 <span>Open SocialStar</span>
-                <ArrowRight size={24} strokeWidth={2.5} />
               </button>
             </div>
           </div>
