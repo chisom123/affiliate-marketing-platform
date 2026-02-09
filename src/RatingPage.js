@@ -845,8 +845,8 @@ const RatingPage = () => {
     
     setSelectedRatingIndex(index);
     
-    // Calculate total earnings from the selected spin
-    const total = spinEarnings[index];
+    // ✅ Calculate total earnings from ALL 3 spins (not just selected one)
+    const total = spinEarnings.reduce((sum, points) => sum + points, 0);
     const dollars = convertTokensToDollars(total);
     
     try {
