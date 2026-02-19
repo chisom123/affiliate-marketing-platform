@@ -15,6 +15,10 @@ import {
 } from 'firebase/firestore';
 import { useParams } from 'react-router-dom';
 import { ArrowRight, RefreshCw, Gem, X } from 'lucide-react';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+
+const functions = getFunctions();
+const submitRatingFn = httpsCallable(functions, 'submitRating');
 
 
 // Development environment check
@@ -655,108 +659,15 @@ const RatingPage = () => {
   };
 
   const submitRating = async (stars, points) => {
-    if (!linkData || !fingerprint) return;
-
-    const ratingFingerprint = isDevelopment 
-      ? `dev_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      : fingerprint;
-
-    const ratingData = {
-      linkId: linkData.id,
-      linkIdString: linkData.linkId,
+    const result = await submitRatingFn({
+      linkId: linkData.linkId,
       affiliateId: affiliateId,
-      rating: stars,
-      points: points,
-      earnings: earningsPerRating,
-      fingerprint: ratingFingerprint,
-      userAgent: navigator.userAgent,
-      timestamp: serverTimestamp(),
-      createdAt: serverTimestamp(),
-      isDevelopment: isDevelopment
-    };
-    
-    try {
-      const ratingDocRef = await addDoc(collection(db, 'ratings'), ratingData);
-      
-      const recruiterId = await getRecruiterId(affiliateId);
-      
-      const updates = [];
-      
-      updates.push(updateDoc(doc(db, 'rating_links', linkData.id), {
-        totalRatings: increment(1),
-        earnings: increment(earningsPerRating),
-        lastRatedAt: serverTimestamp()
-      }));
-      
-      updates.push(updateDoc(doc(db, 'affiliates', affiliateId), {
-        totalRatings: increment(1),
-        totalEarnings: increment(earningsPerRating),
-        balance: increment(earningsPerRating)
-      }));
-      
-      if (recruiterId) {
-        const recruiterEarnings = 0.10;
-        
-        updates.push(updateDoc(doc(db, 'affiliates', recruiterId), {
-          balance: increment(recruiterEarnings),
-          totalEarnings: increment(recruiterEarnings),
-          recruiterEarnings: increment(recruiterEarnings)
-        }));
-        
-        updates.push(updateDoc(doc(db, 'affiliates', recruiterId, 'recruits', affiliateId), {
-          recruiterEarnings: increment(recruiterEarnings),
-          totalRatings: increment(1),
-          lastRatingAt: serverTimestamp()
-        }));
-        
-        setTimeout(async () => {
-          try {
-            const recruiterTransaction = {
-              type: 'recruiter_earnings',
-              amount: recruiterEarnings,
-              recruitId: affiliateId,
-              ratingId: ratingDocRef.id,
-              linkId: linkData.id,
-              timestamp: serverTimestamp(),
-              createdAt: serverTimestamp()
-            };
-            
-            await addDoc(collection(db, 'affiliates', recruiterId, 'transactions'), recruiterTransaction);
-          } catch (err) {
-            console.error('Error creating recruiter transaction:', err);
-          }
-        }, 0);
-      }
-      
-      await Promise.all(updates);
-      
-      // Generate unique win code with timestamp
-      const code = generateWinCode(fingerprint, linkData.id);
-      
-      // Use predictable document ID: {linkId}_{fingerprint}
-      const winCodeDocId = `${linkData.id}_${fingerprint}`;
-      const winCodeRef = doc(db, 'pending_wins', winCodeDocId);
-      
-      await setDoc(winCodeRef, {
-        code: code,
-        points: points,
-        affiliateId: affiliateId,
-        linkId: linkData.id,
-        fingerprint: fingerprint,
-        rating: stars,
-        totalSpins: spins,
-        claimed: false,
-        claimedBy: null,
-        claimedAt: null,
-        createdAt: serverTimestamp()
-      });
-      
-      return ratingDocRef.id;
-      
-    } catch (error) {
-      console.error('Error submitting rating:', error);
-      throw error;
-    }
+      stars: stars,
+      fingerprint: fingerprint,
+      spins: spins,
+      spinEarnings: spinEarnings
+    });
+    return result.data.ratingId;
   };
 
   // ── Single spin: animates one slot and resolves with the final rating ──

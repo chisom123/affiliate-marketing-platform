@@ -503,6 +503,135 @@ exports.claimWinCode = onCall(
   }
 );
 
+exports.submitRating = onCall(async (request) => {
+  const { linkId, affiliateId, stars, fingerprint, spins, spinEarnings } = request.data;
+
+  if (!linkId || !affiliateId || !stars || !fingerprint) {
+    throw new Error('Missing required fields');
+  }
+
+  if (stars < 1 || stars > 5) {
+    throw new Error('Invalid rating');
+  }
+
+  try {
+    // 1. Get the rating link document
+    const linksQuery = await db.collection('rating_links')
+      .where('linkId', '==', linkId)
+      .limit(1)
+      .get();
+
+    if (linksQuery.empty) {
+      throw new Error('Rating link not found');
+    }
+
+    const linkDoc = linksQuery.docs[0];
+
+    // 2. Check for duplicate fingerprint (skip in development)
+    const isDevelopment = fingerprint.startsWith('dev_');
+
+    if (!isDevelopment) {
+      const existingRatingQuery = await db.collection('ratings')
+        .where('linkId', '==', linkDoc.id)
+        .where('fingerprint', '==', fingerprint)
+        .limit(1)
+        .get();
+
+      if (!existingRatingQuery.empty) {
+        throw new Error('Already rated');
+      }
+    }
+
+    // 3. Get earnings per rating from config
+    const configDoc = await db.collection('app_config')
+      .doc('affiliate_pricing')
+      .get();
+    const earningsPerRating = configDoc.exists 
+      ? (configDoc.data().earnings_per_rating || 0.25) 
+      : 0.25;
+
+    // 4. Calculate total points from all spins
+    const totalPoints = spinEarnings 
+      ? spinEarnings.reduce((sum, e) => sum + e, 0) 
+      : 0;
+
+    // 5. Get recruiter if exists
+    const affiliateDoc = await db.collection('affiliates').doc(affiliateId).get();
+    const recruiterId = affiliateDoc.exists 
+      ? affiliateDoc.data()?.recruitedBy 
+      : null;
+
+    // 6. Run everything in a transaction
+    const ratingRef = db.collection('ratings').doc();
+    const winCodeDocId = `${linkDoc.id}_${fingerprint}`;
+
+    await db.runTransaction(async (transaction) => {
+      transaction.set(ratingRef, {
+        linkId: linkDoc.id,
+        linkIdString: linkId,
+        affiliateId: affiliateId,
+        rating: stars,
+        points: totalPoints,
+        earnings: earningsPerRating,
+        fingerprint: fingerprint,
+        spins: spins || [],
+        spinEarnings: spinEarnings || [],
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      transaction.update(linkDoc.ref, {
+        totalRatings: admin.firestore.FieldValue.increment(1),
+        earnings: admin.firestore.FieldValue.increment(earningsPerRating),
+        lastRatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      transaction.update(db.collection('affiliates').doc(affiliateId), {
+        totalRatings: admin.firestore.FieldValue.increment(1),
+        totalEarnings: admin.firestore.FieldValue.increment(earningsPerRating),
+        balance: admin.firestore.FieldValue.increment(earningsPerRating)
+      });
+
+      if (recruiterId) {
+        const recruiterEarnings = 0.10;
+        transaction.update(db.collection('affiliates').doc(recruiterId), {
+          balance: admin.firestore.FieldValue.increment(recruiterEarnings),
+          totalEarnings: admin.firestore.FieldValue.increment(recruiterEarnings),
+          recruiterEarnings: admin.firestore.FieldValue.increment(recruiterEarnings)
+        });
+      }
+
+      const winCode = `SS${fingerprint.substring(0, 3).toUpperCase()}${linkId.substring(0, 3).toUpperCase()}${Date.now().toString(36).slice(-2).toUpperCase()}`;
+      transaction.set(db.collection('pending_wins').doc(winCodeDocId), {
+        code: winCode,
+        points: totalPoints,
+        affiliateId: affiliateId,
+        linkId: linkDoc.id,
+        fingerprint: fingerprint,
+        rating: stars,
+        totalSpins: spins || [],
+        claimed: false,
+        claimedBy: null,
+        claimedAt: null,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+    });
+
+    logger.info('Rating submitted', { linkId, affiliateId, stars, totalPoints });
+
+    return {
+      success: true,
+      ratingId: ratingRef.id,
+      winCodeDocId: winCodeDocId,
+      totalPoints: totalPoints
+    };
+
+  } catch (error) {
+    logger.error('Error submitting rating', { error: error.message, linkId, affiliateId });
+    throw new Error(error.message);
+  }
+});
+
 // Test function
 const {onRequest: onRequestV2} = require("firebase-functions/v2/https");
 exports.helloWorld = onRequestV2((req, res) => {
