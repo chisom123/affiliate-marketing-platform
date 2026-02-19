@@ -369,6 +369,13 @@ const RatingPage = () => {
           return;
         }
 
+        // In development always use a fresh dev_ fingerprint to bypass duplicate check
+        if (isDevelopment) {
+          const devFp = `dev_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          setFingerprint(devFp);
+          return;
+        }
+    
         const fp = await generateFingerprint();
         setFingerprint(fp);
         localStorage.setItem(`rating_fingerprint_${linkId}`, fp);
