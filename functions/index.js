@@ -503,7 +503,7 @@ exports.claimWinCode = onCall(
   }
 );
 
-exports.submitRating = onCall(async (request) => {
+exports.submitRating = onCall({ minInstances: 1 }, async (request) => {
   const { linkId, affiliateId, stars, fingerprint, spins, spinEarnings } = request.data;
 
   if (!linkId || !affiliateId || !stars || !fingerprint) {
