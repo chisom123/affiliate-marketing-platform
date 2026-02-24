@@ -678,7 +678,9 @@ const RatingPage = () => {
   };
 
   // ── Single spin: animates one slot and resolves with the final rating ──
-  const runSingleSpin = (slotIndex, usedRatings) => {
+  // If forcedRating is provided, the slot always lands on that value.
+  // Otherwise it picks randomly while avoiding anything in usedRatings.
+  const runSingleSpin = (slotIndex, usedRatings, forcedRating = null) => {
     return new Promise((resolve) => {
       let spinCount = 0;
       const spinInterval = setInterval(() => {
@@ -693,13 +695,18 @@ const RatingPage = () => {
         if (spinCount >= 10) {
           clearInterval(spinInterval);
 
-          // Final value — avoid duplicating an already-settled slot
           let finalRating;
-          let attempts = 0;
-          do {
-            finalRating = Math.floor(Math.random() * 5) + 1;
-            attempts++;
-          } while (usedRatings.includes(finalRating) && attempts < 100);
+          if (forcedRating !== null) {
+            // This slot is guaranteed — always land on the forced value
+            finalRating = forcedRating;
+          } else {
+            // Pick randomly, avoiding all used/reserved ratings
+            let attempts = 0;
+            do {
+              finalRating = Math.floor(Math.random() * 5) + 1;
+              attempts++;
+            } while (usedRatings.includes(finalRating) && attempts < 100);
+          }
 
           setSpins(prev => {
             const newSpins = [...prev];
@@ -732,12 +739,31 @@ const RatingPage = () => {
     const currentEarnings = [...spinEarnings];
     const settledRatings = currentSpins.filter(r => r !== undefined && r !== null);
     const totalToSpin = spinsRemaining;
-    let slotOffset = 3 - spinsRemaining; // starting slot index
+    let slotOffset = 3 - spinsRemaining;
+
+    // Pick a guaranteed 4 or 5, assign it to a random slot among those being spun
+    const guaranteedRating = Math.random() < 0.5 ? 4 : 5;
+    const guaranteedSlot = slotOffset + Math.floor(Math.random() * totalToSpin);
+
+    // Seed usedRatings with already-settled results + the guaranteed rating
+    // so free slots never accidentally duplicate it
+    const usedRatings = [...settledRatings, guaranteedRating];
 
     for (let i = 0; i < totalToSpin; i++) {
-      const slotIndex = slotOffset + i; // fills 0 → 1 → 2
+      const slotIndex = slotOffset + i;
+      const isGuaranteedSlot = slotIndex === guaranteedSlot;
 
-      const { finalRating, earnings } = await runSingleSpin(slotIndex, settledRatings);
+      const { finalRating, earnings } = await runSingleSpin(
+        slotIndex,
+        isGuaranteedSlot ? [] : usedRatings,  // guaranteed slot ignores exclusions
+        isGuaranteedSlot ? guaranteedRating : null
+      );
+
+      // Only add free-slot results to usedRatings — guaranteed was already seeded above
+      if (!isGuaranteedSlot) {
+        usedRatings.push(finalRating);
+      }
+
       settledRatings.push(finalRating);
       currentSpins[slotIndex] = finalRating;
       currentEarnings[slotIndex] = earnings;
