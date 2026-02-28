@@ -112,6 +112,7 @@ const InfoPage = () => {
   const { affiliateId, linkId } = useParams();
   const [fingerprint, setFingerprint] = useState(null);
   const [continueClickInProgress, setContinueClickInProgress] = useState(false);
+  const [copyClickInProgress, setCopyClickInProgress] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isValidEnvironment, setIsValidEnvironment] = useState(true);
@@ -152,7 +153,6 @@ const InfoPage = () => {
       if (!fingerprint || !linkId) return;
 
       try {
-        // First, get the actual document ID from rating_links collection
         const linksQuery = query(
           collection(db, 'rating_links'),
           where('linkId', '==', linkId)
@@ -169,18 +169,15 @@ const InfoPage = () => {
         const linkData = { id: linkDoc.id, ...linkDoc.data() };
         setLinkData(linkData);
 
-        // Now fetch the win code using {linkId}_{fingerprint} as document ID
         const winCodeDocId = `${linkData.id}_${fingerprint}`;
         const winCodeRef = doc(db, 'pending_wins', winCodeDocId);
         const winCodeDoc = await getDoc(winCodeRef);
 
         if (winCodeDoc.exists()) {
-          // Use the SAVED code from Firestore
           const savedCode = winCodeDoc.data().code;
           setClaimCode(savedCode);
           setLoading(false);
         } else {
-          // User hasn't voted yet
           setError('No winnings to claim. Please rate first.');
           setLoading(false);
         }
@@ -197,18 +194,54 @@ const InfoPage = () => {
     }
   }, [fingerprint, linkId, isValidEnvironment]);
 
+  // Track unique code copy
+  const trackUniqueCodeCopy = async () => {
+    if (copyClickInProgress || !fingerprint || !linkData) return;
+    setCopyClickInProgress(true);
+
+    (async () => {
+      try {
+        const trackingDocId = `${linkData.id}_${fingerprint}`;
+        const trackingDocRef = doc(db, 'unique_code_copies', trackingDocId);
+        const trackingDoc = await getDoc(trackingDocRef);
+
+        if (!trackingDoc.exists()) {
+          await setDoc(trackingDocRef, {
+            linkId: linkData.id,
+            fingerprint,
+            firstCopiedAt: serverTimestamp(),
+            copyCount: 1
+          });
+          await updateDoc(doc(db, 'rating_links', linkData.id), {
+            totalCodeCopies: increment(1),
+            lastCodeCopiedAt: serverTimestamp()
+          });
+        } else {
+          await updateDoc(trackingDocRef, {
+            copyCount: increment(1),
+            lastCopiedAt: serverTimestamp()
+          });
+        }
+      } catch (error) {
+        console.error('Error tracking code copy:', error);
+      } finally {
+        setTimeout(() => setCopyClickInProgress(false), 1500);
+      }
+    })();
+  };
+
   // Copy code to clipboard
   const handleCopyCode = () => {
     navigator.clipboard.writeText(claimCode).then(() => {
       setCodeCopied(true);
       setHasEverCopied(true);
       setTimeout(() => setCodeCopied(false), 2000);
+      trackUniqueCodeCopy();
     });
   };
 
-  // Track unique continue button click - FAST & NON-BLOCKING with spam prevention
+  // Track unique continue button click
   const trackUniqueContinueClick = async (stepName) => {
-    // PREVENT SPAM - if already in progress, ignore this call
     if (continueClickInProgress || !fingerprint || !linkId || !linkData) {
       if (continueClickInProgress) {
         console.log('Continue click already in progress, ignoring duplicate');
@@ -216,21 +249,16 @@ const InfoPage = () => {
       return;
     }
     
-    // SET FLAG IMMEDIATELY to prevent duplicate calls
     setContinueClickInProgress(true);
     
-    // Run tracking asynchronously without awaiting
     (async () => {
       try {
         const trackingDocId = `${linkData.id}_${fingerprint}_${stepName}`;
         const trackingDocRef = doc(db, 'unique_info_continue_clicks', trackingDocId);
         
-        // Check if this fingerprint has already clicked this continue button for this link
         const trackingDoc = await getDoc(trackingDocRef);
         
         if (!trackingDoc.exists()) {
-          // First time this fingerprint is clicking this continue button for this link
-          // Create tracking document
           await setDoc(trackingDocRef, {
             linkId: linkData.id,
             fingerprint: fingerprint,
@@ -239,7 +267,6 @@ const InfoPage = () => {
             clickCount: 1
           });
 
-          // Increment UNIQUE continue clicks counter for this specific step
           const linkDocRef = doc(db, 'rating_links', linkData.id);
           
           const updateData = {
@@ -249,7 +276,6 @@ const InfoPage = () => {
           
           await updateDoc(linkDocRef, updateData);
         } else {
-          // User has clicked before - just update their click count
           await updateDoc(trackingDocRef, {
             clickCount: increment(1),
             lastClickedAt: serverTimestamp()
@@ -258,7 +284,6 @@ const InfoPage = () => {
       } catch (error) {
         console.error('Error tracking unique continue click:', error);
       } finally {
-        // Reset flag after a short delay to allow legitimate re-clicks if needed
         setTimeout(() => {
           setContinueClickInProgress(false);
         }, 1500);
@@ -485,9 +510,7 @@ const InfoPage = () => {
                   e.currentTarget.style.transform = 'scale(1)';
                 }}
               >
-                  <>
-                    <span>Copy Code</span>
-                  </>
+                <span>Copy Code</span>
               </button>
             </div>
 

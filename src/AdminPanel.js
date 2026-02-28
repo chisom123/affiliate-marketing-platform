@@ -1135,7 +1135,30 @@ const AdminDashboard = () => {
                       {/* Arrow */}
                       <div style={{ fontSize: '24px', color: '#bbb' }}>→</div>
 
-                      {/* Step 4: App Store Open */}
+                      {/* Step 4: Code Copies */}
+                      <div style={{ 
+                        minWidth: '140px',
+                        backgroundColor: '#fce4ec',
+                        padding: '20px 15px',
+                        borderRadius: '8px',
+                        textAlign: 'center',
+                        border: '2px solid #e91e63'
+                      }}>
+                        <p style={{ margin: '0 0 5px 0', fontSize: '11px', color: '#880e4f', fontWeight: '600', textTransform: 'uppercase' }}>
+                          Code Copies
+                        </p>
+                        <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: '#ad1457' }}>
+                          {link.totalCodeCopies || 0}
+                        </p>
+                        <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#c2185b', fontWeight: 'bold' }}>
+                          {((link.totalDownloadClicks || 0) > 0 ? (((link.totalCodeCopies || 0) / link.totalDownloadClicks) * 100).toFixed(1) : 0)}%
+                        </p>
+                      </div>
+
+                      {/* Arrow */}
+                      <div style={{ fontSize: '24px', color: '#bbb' }}>→</div>
+
+                      {/* Step 5: App Store Open */}
                       <div style={{ 
                         minWidth: '140px',
                         backgroundColor: '#e0f2f1',
@@ -1151,14 +1174,14 @@ const AdminDashboard = () => {
                           {link.totalInfoContinueClicksDownload || 0}
                         </p>
                         <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#00897b', fontWeight: 'bold' }}>
-                          {((link.totalDownloadClicks || 0) > 0 ? (((link.totalInfoContinueClicksDownload || 0) / link.totalDownloadClicks) * 100).toFixed(1) : 0)}%
+                          {((link.totalCodeCopies || 0) > 0 ? (((link.totalInfoContinueClicksDownload || 0) / link.totalCodeCopies) * 100).toFixed(1) : 0)}%
                         </p>
                       </div>
 
                       {/* Arrow */}
                       <div style={{ fontSize: '24px', color: '#bbb' }}>→</div>
 
-                      {/* Step 5: Codes Claimed */}
+                      {/* Step 6: Codes Claimed */}
                       <div style={{ 
                         minWidth: '140px',
                         backgroundColor: '#f3e5f5',
