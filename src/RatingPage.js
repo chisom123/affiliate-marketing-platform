@@ -313,34 +313,10 @@ const RatingPage = () => {
 
   const snapPoints = getSnapPoints();
 
-  // Calculate base payout based on star rating
-  const getBasePayout = (stars) => {
-    const payoutTable = {
-      5: 500,
-      4: 400,
-      3: 300,
-      2: 200,
-      1: 100
-    };
-    return payoutTable[stars] || 0;
-  };
-
-  // Get random multiplier based on weighted probabilities
-  const getRandomMultiplier = () => {
-    const random = Math.random() * 100; // 0-100
-    
-    if (random < 60) return 1;        // 60% chance
-    if (random < 85) return 2;        // 25% chance (60 + 25 = 85)
-    if (random < 95) return 3;        // 10% chance (85 + 10 = 95)
-    if (random < 99) return 5;        // 4% chance (95 + 4 = 99)
-    return 10;                         // 1% chance (99 + 1 = 100)
-  };
-
-  // Calculate final earnings with multiplier
-  const calculateEarnings = (stars) => {
-    const basePayout = getBasePayout(stars);
-    const multiplier = getRandomMultiplier();
-    return basePayout * multiplier;
+  // Calculate earnings as a random number between 100 and 900, always ending in 0
+  const calculateEarnings = () => {
+    const randomTens = Math.floor(Math.random() * 81) + 10; // 10–90
+    return randomTens * 10; // 100–900, always ending in 0
   };
 
   // Convert tokens to dollar amount ($0.50 - $1.50)
@@ -714,8 +690,8 @@ const RatingPage = () => {
             return newSpins;
           });
 
-          // Calculate & store earnings for this slot
-          const earnings = calculateEarnings(finalRating);
+          // Calculate & store earnings for this slot (no longer depends on star rating)
+          const earnings = calculateEarnings();
           setCurrentSpinEarnings(earnings);
           setSpinEarnings(prev => {
             const newEarnings = [...prev];
@@ -789,8 +765,7 @@ const RatingPage = () => {
     
     setSelectedRatingIndex(index);
     
-    // ✅ Calculate total earnings from ALL 3 spins (not just selected one)
-    const total = spinEarnings.reduce((sum, points) => sum + points, 0);
+    const total = spinEarnings[index];
     const dollars = convertTokensToDollars(total);
     
     try {
