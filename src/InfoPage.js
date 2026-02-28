@@ -291,6 +291,44 @@ const InfoPage = () => {
     })();
   };
 
+  const handleOpenSocialStar = () => {
+    if (!hasEverCopied) return;
+  
+    trackUniqueContinueClick('download');
+  
+    const deepLink = `socialstar://redeem/${claimCode}`;
+    const appStoreURL = 'https://apps.apple.com/app/socialstar-app/id6473705189';
+  
+    // Listen for the page becoming hidden — if the app opened,
+    // the browser backgrounds and this fires, so we cancel the App Store redirect
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        clearTimeout(fallbackTimer);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
+    };
+  
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+  
+    // Also cancel on blur (some browsers fire this instead of visibilitychange)
+    const handleBlur = () => {
+      clearTimeout(fallbackTimer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleBlur);
+    };
+  
+    window.addEventListener('blur', handleBlur);
+  
+    // Fallback to App Store if neither event fires within 1.5s
+    const fallbackTimer = setTimeout(() => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleBlur);
+      window.location.href = appStoreURL;
+    }, 1500);
+  
+    window.location.href = deepLink;
+  };
+
   if (loading) {
     return (
       <div style={{
@@ -579,12 +617,7 @@ const InfoPage = () => {
               </p>
 
               <button
-                onClick={() => {
-                  if (hasEverCopied) {
-                    trackUniqueContinueClick('download');
-                    window.location.href = 'https://apps.apple.com/app/socialstar-app/id6473705189';
-                  }
-                }}
+                onClick={handleOpenSocialStar}
                 disabled={!hasEverCopied}
                 style={{
                   width: '100%',
