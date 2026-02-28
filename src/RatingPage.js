@@ -1273,7 +1273,7 @@ const RatingPage = () => {
               You Won
             </div>
             <div style={{
-              fontSize: '46px',
+              fontSize: '45px',
               fontWeight: 'bold',
               color: '#FFF',
               display: 'flex',
