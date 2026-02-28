@@ -417,7 +417,7 @@ const InfoPage = () => {
                 <span style={{
                   backgroundColor: '#10B981',
                   color: 'white',
-                  fontSize: '15px',
+                  fontSize: '16px',
                   fontWeight: 'bold',
                   padding: '5px 12px',
                   borderRadius: '200px',
