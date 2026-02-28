@@ -453,7 +453,7 @@ const InfoPage = () => {
                   Claim Winnings
                 </h1>
                 <span style={{
-                  backgroundColor: '#10B981',
+                  backgroundColor: '#00AA00',
                   color: 'white',
                   fontSize: '16px',
                   fontWeight: 'bold',
@@ -482,7 +482,7 @@ const InfoPage = () => {
                   width: '32px',
                   height: '32px',
                   borderRadius: '50%',
-                  backgroundColor: codeCopied ? '#10B981' : '#4169E1',
+                  backgroundColor: codeCopied ? '#00AA00' : '#4169E1',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -543,7 +543,7 @@ const InfoPage = () => {
                 style={{
                   width: '100%',
                   padding: '14px',
-                  backgroundColor: codeCopied ? '#10B981' : '#4169E1',
+                  backgroundColor: codeCopied ? '#00AA00' : '#4169E1',
                   border: 'none',
                   borderRadius: '200px',
                   color: '#FFF',
