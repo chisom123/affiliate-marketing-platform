@@ -1266,24 +1266,24 @@ const RatingPage = () => {
           }}>
             <div style={{
               fontSize: '16px',
-              color: 'rgba(255, 255, 255, 0.7)',
+              color: 'rgba(255, 255, 255)',
               marginBottom: '10px',
               fontWeight: '600'
             }}>
               You Won
             </div>
             <div style={{
-              fontSize: '48px',
+              fontSize: '46px',
               fontWeight: 'bold',
-              color: '#10B981',
+              color: '#FFF',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '12px',
+              gap: '10px',
               marginBottom: '8px'
             }}>
               <span>+{totalEarnings}</span>
-              <Gem size={42} color="#10B981" strokeWidth={2} />
+              <Gem size={42} color="#FFF" strokeWidth={2} />
             </div>
             <div style={{
               fontSize: '20px',
@@ -1417,7 +1417,7 @@ const RatingPage = () => {
                   height: '60px',
                   borderRadius: '5px',
                   backgroundColor: '#2A3A6B',
-                  border: spinsRemaining === 0 && spins[index] ? '2px solid rgba(255, 255, 255, 0.3)' : 'none',
+                  border: 'none',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -1482,13 +1482,6 @@ const RatingPage = () => {
               e.currentTarget.style.transform = 'scale(1)';
             }}
           >
-            <RefreshCw 
-              size={22} 
-              strokeWidth={2.5}
-              style={{ 
-                animation: isSpinning ? 'spin 0.8s linear infinite' : 'none'
-              }} 
-            />
             <span>
               {isSpinning ? 'Spinning...' : 'Spin'}
             </span>
