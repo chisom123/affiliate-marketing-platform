@@ -647,6 +647,7 @@ const RatingPage = () => {
       affiliateId: affiliateId,
       stars: stars,
       fingerprint: fingerprint,
+      points: points,
       spins: spins,
       spinEarnings: spinEarnings
     });

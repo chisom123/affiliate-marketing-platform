@@ -504,7 +504,7 @@ exports.claimWinCode = onCall(
 );
 
 exports.submitRating = onCall({ minInstances: 1 }, async (request) => {
-  const { linkId, affiliateId, stars, fingerprint, spins, spinEarnings } = request.data;
+  const { linkId, affiliateId, stars, fingerprint, points, spins, spinEarnings } = request.data;
 
   if (!linkId || !affiliateId || !stars || !fingerprint) {
     throw new Error('Missing required fields');
@@ -551,9 +551,7 @@ exports.submitRating = onCall({ minInstances: 1 }, async (request) => {
       : 0.25;
 
     // 4. Calculate total points from all spins
-    const totalPoints = spinEarnings 
-      ? spinEarnings.reduce((sum, e) => sum + e, 0) 
-      : 0;
+    const totalPoints = points || 0;
 
     // 5. Get recruiter if exists
     const affiliateDoc = await db.collection('affiliates').doc(affiliateId).get();
