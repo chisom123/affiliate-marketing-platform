@@ -400,15 +400,33 @@ const InfoPage = () => {
               padding: '30px 20px 20px 20px',
               textAlign: 'center'
             }}>
-              <h1 style={{
-                color: 'white',
-                fontSize: 'clamp(1.5rem, 5vw, 2rem)',
-                fontWeight: 'bold',
-                margin: '0',
-                lineHeight: '1.25'
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%'
               }}>
-                Claim Winnings
-              </h1>
+                <h1 style={{
+                  color: 'white',
+                  fontSize: '20px',
+                  fontWeight: 'bold',
+                  margin: '0',
+                }}>
+                  Claim Winnings
+                </h1>
+                <span style={{
+                  backgroundColor: '#10B981',
+                  color: 'white',
+                  fontSize: '15px',
+                  fontWeight: 'bold',
+                  padding: '5px 12px',
+                  borderRadius: '200px',
+                  whiteSpace: 'nowrap',
+                  letterSpacing: '0.3px'
+                }}>
+                  $50 Prize Pool
+                </span>
+              </div>
             </div>
 
             {/* Step 1: Copy Code */}
