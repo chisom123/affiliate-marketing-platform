@@ -649,8 +649,8 @@ const InfoPage = () => {
                   <div style={{
                     width: '22px',
                     height: '22px',
-                    border: '2px solid rgba(255, 255, 255, 0.3)',
-                    borderTop: '2px solid #FFF',
+                    border: '3px solid rgba(255, 255, 255, 0.3)',
+                    borderTop: '3px solid #FFF',
                     borderRadius: '50%',
                     animation: 'spin 1s linear infinite'
                   }} />
