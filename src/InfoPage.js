@@ -120,6 +120,7 @@ const InfoPage = () => {
   const [codeCopied, setCodeCopied] = useState(false);
   const [hasEverCopied, setHasEverCopied] = useState(false);
   const [linkData, setLinkData] = useState(null);
+  const [openingApp, setOpeningApp] = useState(false);
 
   // Initialize fingerprint and check Instagram on component mount
   useEffect(() => {
@@ -293,39 +294,38 @@ const InfoPage = () => {
 
   const handleOpenSocialStar = () => {
     if (!hasEverCopied) return;
-  
+
+    setOpeningApp(true);
     trackUniqueContinueClick('download');
-  
+
     const deepLink = `socialstar://redeem/${claimCode}`;
     const appStoreURL = 'https://apps.apple.com/app/socialstar-app/id6473705189';
-  
-    // Listen for the page becoming hidden — if the app opened,
-    // the browser backgrounds and this fires, so we cancel the App Store redirect
+
     const handleVisibilityChange = () => {
       if (document.hidden) {
         clearTimeout(fallbackTimer);
+        setOpeningApp(false);
         document.removeEventListener('visibilitychange', handleVisibilityChange);
       }
     };
-  
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-  
-    // Also cancel on blur (some browsers fire this instead of visibilitychange)
+
     const handleBlur = () => {
       clearTimeout(fallbackTimer);
+      setOpeningApp(false);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleBlur);
     };
-  
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('blur', handleBlur);
-  
-    // Fallback to App Store if neither event fires within 1.5s
+
     const fallbackTimer = setTimeout(() => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleBlur);
+      setOpeningApp(false);
       window.location.href = appStoreURL;
     }, 1500);
-  
+
     window.location.href = deepLink;
   };
 
@@ -618,7 +618,7 @@ const InfoPage = () => {
 
               <button
                 onClick={handleOpenSocialStar}
-                disabled={!hasEverCopied}
+                disabled={!hasEverCopied || openingApp}
                 style={{
                   width: '100%',
                   padding: '18px',
@@ -628,7 +628,7 @@ const InfoPage = () => {
                   color: hasEverCopied ? '#FFF' : 'rgba(255, 255, 255, 0.4)',
                   fontSize: '18px',
                   fontWeight: 'bold',
-                  cursor: hasEverCopied ? 'pointer' : 'not-allowed',
+                  cursor: hasEverCopied && !openingApp ? 'pointer' : 'not-allowed',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -636,20 +636,27 @@ const InfoPage = () => {
                   transition: 'all 0.2s ease'
                 }}
                 onMouseDown={(e) => {
-                  if (hasEverCopied) {
-                    e.currentTarget.style.transform = 'scale(0.98)';
-                  }
+                  if (hasEverCopied && !openingApp) e.currentTarget.style.transform = 'scale(0.98)';
                 }}
                 onMouseUp={(e) => {
-                  if (hasEverCopied) {
-                    e.currentTarget.style.transform = 'scale(1)';
-                  }
+                  if (hasEverCopied && !openingApp) e.currentTarget.style.transform = 'scale(1)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'scale(1)';
                 }}
               >
-                <span>Open SocialStar</span>
+                {openingApp ? (
+                  <div style={{
+                    width: '22px',
+                    height: '22px',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    borderTop: '2px solid #FFF',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }} />
+                ) : (
+                  <span>Open SocialStar</span>
+                )}
               </button>
             </div>
           </div>
