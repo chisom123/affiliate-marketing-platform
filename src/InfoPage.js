@@ -572,7 +572,7 @@ const InfoPage = () => {
 
             {/* Step 2: Open SocialStar */}
             <div style={{
-              padding: '20px',
+              padding: '20px 20px 30px 20px',
               opacity: hasEverCopied ? 1 : 0.5,
               transition: 'opacity 0.3s ease'
             }}>
