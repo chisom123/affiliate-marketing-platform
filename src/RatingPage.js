@@ -1255,7 +1255,7 @@ const RatingPage = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '10px',
+              gap: '8px',
               marginBottom: '8px'
             }}>
               <span>+{totalEarnings}</span>
