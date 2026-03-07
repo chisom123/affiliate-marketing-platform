@@ -120,6 +120,18 @@ const Spinner = () => (
   }} />
 );
 
+// Button spinner (smaller, inline)
+const ButtonSpinner = () => (
+  <div style={{
+    width: '22px',
+    height: '22px',
+    border: '3px solid rgba(255, 255, 255, 0.3)',
+    borderTop: '3px solid #FFF',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
+  }} />
+);
+
 // ThemeBadge component - flexible width with dynamic ellipsis
 const ThemeBadge = ({ themeName }) => {
   if (!themeName) return null;
@@ -181,6 +193,8 @@ const RatingPage = () => {
   const [loadingInteractions, setLoadingInteractions] = useState(true);
   const [earningsPerRating, setEarningsPerRating] = useState(0.25);
   const [downloadClickInProgress, setDownloadClickInProgress] = useState(false);
+  const [openingApp, setOpeningApp] = useState(false);
+  const [claimCode, setClaimCode] = useState(null);
   
   // Image loading states
   const [profileImageLoading, setProfileImageLoading] = useState(true);
@@ -188,13 +202,13 @@ const RatingPage = () => {
 
   // Slot machine states
   const [spins, setSpins] = useState([]);
-  const [spinEarnings, setSpinEarnings] = useState([0, 0, 0]); // Track earnings for each spin slot
+  const [spinEarnings, setSpinEarnings] = useState([0, 0, 0]);
   const [spinsRemaining, setSpinsRemaining] = useState(3);
   const [isSpinning, setIsSpinning] = useState(false);
   const [hasStartedSpinning, setHasStartedSpinning] = useState(false);
   const [selectedRatingIndex, setSelectedRatingIndex] = useState(null);
   const [showRatingsList, setShowRatingsList] = useState(false);
-  const [currentSpinEarnings, setCurrentSpinEarnings] = useState(0); // For notification display
+  const [currentSpinEarnings, setCurrentSpinEarnings] = useState(0);
   const [showWinScreen, setShowWinScreen] = useState(false);
   const [totalEarnings, setTotalEarnings] = useState(0);
   const [displayedEarnings, setDisplayedEarnings] = useState(0);
@@ -315,20 +329,17 @@ const RatingPage = () => {
 
   // Calculate earnings as a random number between 100 and 900, always ending in 0
   const calculateEarnings = () => {
-    const randomTens = Math.floor(Math.random() * 81) + 10; // 10–90
-    return randomTens * 10; // 100–900, always ending in 0
+    const randomTens = Math.floor(Math.random() * 81) + 10;
+    return randomTens * 10;
   };
 
   // Convert tokens to dollar amount ($0.50 - $1.50)
   const convertTokensToDollars = (tokens) => {
-    // Min tokens: 100 (1 star * 1x) -> $0.50
-    // Max tokens: 5000 (5 stars * 10x) -> $1.50
     const minTokens = 100;
     const maxTokens = 5000;
     const minDollars = 0.50;
     const maxDollars = 1.50;
     
-    // Linear scale between min and max
     const ratio = (tokens - minTokens) / (maxTokens - minTokens);
     const dollars = minDollars + (ratio * (maxDollars - minDollars));
     
@@ -345,7 +356,6 @@ const RatingPage = () => {
           return;
         }
 
-        // In development always use a fresh dev_ fingerprint to bypass duplicate check
         if (isDevelopment) {
           const devFp = `dev_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
           setFingerprint(devFp);
@@ -431,6 +441,7 @@ const RatingPage = () => {
               setDollarAmount(dollars);
               setDisplayedEarnings(earnings);
               setDisplayedDollars(dollars);
+              setClaimCode(winData.code); // cache for returning users
             }
           }
         } else {
@@ -439,7 +450,6 @@ const RatingPage = () => {
 
         trackUniquePageOpen(linkData.id, fingerprint);
         
-        // Check if user has already spun
         const hasSpun = await checkAndLoadSpinState(linkData.id, fingerprint);
         
         await loadInteractions(linkData.id);
@@ -513,12 +523,10 @@ const RatingPage = () => {
         setSpins(savedSpins);
         setSpinEarnings(savedEarnings);
         
-        // Calculate remaining spins based on how many they've already done
         const spinsUsed = savedSpins.filter(s => s !== undefined && s !== null).length;
         const remaining = 3 - spinsUsed;
         setSpinsRemaining(remaining);
         
-        // Mark that spinning has started if any spins have been used
         if (spinsUsed > 0) {
           setHasStartedSpinning(true);
         }
@@ -655,8 +663,6 @@ const RatingPage = () => {
   };
 
   // ── Single spin: animates one slot and resolves with the final rating ──
-  // If forcedRating is provided, the slot always lands on that value.
-  // Otherwise it picks randomly while avoiding anything in usedRatings.
   const runSingleSpin = (slotIndex, usedRatings, forcedRating = null) => {
     return new Promise((resolve) => {
       let spinCount = 0;
@@ -674,10 +680,8 @@ const RatingPage = () => {
 
           let finalRating;
           if (forcedRating !== null) {
-            // This slot is guaranteed — always land on the forced value
             finalRating = forcedRating;
           } else {
-            // Pick randomly, avoiding all used/reserved ratings
             let attempts = 0;
             do {
               finalRating = Math.floor(Math.random() * 5) + 1;
@@ -691,7 +695,6 @@ const RatingPage = () => {
             return newSpins;
           });
 
-          // Calculate & store earnings for this slot (no longer depends on star rating)
           const earnings = calculateEarnings();
           setCurrentSpinEarnings(earnings);
           setSpinEarnings(prev => {
@@ -718,12 +721,9 @@ const RatingPage = () => {
     const totalToSpin = spinsRemaining;
     let slotOffset = 3 - spinsRemaining;
 
-    // Pick a guaranteed 4 or 5, assign it to a random slot among those being spun
     const guaranteedRating = Math.random() < 0.5 ? 4 : 5;
     const guaranteedSlot = slotOffset + Math.floor(Math.random() * totalToSpin);
 
-    // Seed usedRatings with already-settled results + the guaranteed rating
-    // so free slots never accidentally duplicate it
     const usedRatings = [...settledRatings, guaranteedRating];
 
     for (let i = 0; i < totalToSpin; i++) {
@@ -732,11 +732,10 @@ const RatingPage = () => {
 
       const { finalRating, earnings } = await runSingleSpin(
         slotIndex,
-        isGuaranteedSlot ? [] : usedRatings,  // guaranteed slot ignores exclusions
+        isGuaranteedSlot ? [] : usedRatings,
         isGuaranteedSlot ? guaranteedRating : null
       );
 
-      // Only add free-slot results to usedRatings — guaranteed was already seeded above
       if (!isGuaranteedSlot) {
         usedRatings.push(finalRating);
       }
@@ -747,13 +746,11 @@ const RatingPage = () => {
 
       setSpinsRemaining(prev => prev - 1);
 
-      // Short pause between spins so the user can see each result land
       if (i < totalToSpin - 1) {
         await new Promise(resolve => setTimeout(resolve, 600));
       }
     }
 
-    // Persist final spin state to Firestore using the local arrays directly
     if (linkData && fingerprint) {
       saveSpinState(linkData.id, fingerprint, currentSpins, currentEarnings);
     }
@@ -771,27 +768,23 @@ const RatingPage = () => {
     
     try {
       await submitRating(rating, total);
+
+      // Cache the claim code immediately after submission
+      const winCodeDocId = `${linkData.id}_${fingerprint}`;
+      const winCodeRef = doc(db, 'pending_wins', winCodeDocId);
+      const winCodeDoc = await getDoc(winCodeRef);
+      if (winCodeDoc.exists()) {
+        setClaimCode(winCodeDoc.data().code);
+      }
       
-      // Set the target values first
       setTotalEarnings(total);
       setDollarAmount(dollars);
-      
-      // Reset displayed values to 0 before showing win screen
       setDisplayedEarnings(0);
       setDisplayedDollars(0);
-      
-      // Show win screen
       setShowWinScreen(true);
       
-      // Start counting animation after a brief delay to ensure state is set
-      setTimeout(() => {
-        animateCounter(total, dollars);
-      }, 300);
-      
-      // Set hasAlreadyVoted after animation starts
-      setTimeout(() => {
-        setHasAlreadyVoted(true);
-      }, 800);
+      setTimeout(() => animateCounter(total, dollars), 300);
+      setTimeout(() => setHasAlreadyVoted(true), 800);
       
     } catch (error) {
       console.error('Error submitting rating:', error);
@@ -802,12 +795,11 @@ const RatingPage = () => {
 
   // Animate the earnings counter
   const animateCounter = (targetAmount, targetDollars) => {
-    // Clear any existing animation
     if (animationTimerRef.current) {
       clearInterval(animationTimerRef.current);
     }
 
-    const duration = 2000; // 2 seconds
+    const duration = 2000;
     const steps = 60;
     const tokenIncrement = targetAmount / steps;
     const dollarIncrement = targetDollars / steps;
@@ -832,12 +824,52 @@ const RatingPage = () => {
     }, duration / steps);
   };
 
-  const handleContinuePlaying = async () => {
+  // ── Claim Winnings: try deep link, fall back to App Store ──
+  const handleContinuePlaying = () => {
+    if (openingApp) return;
+    setOpeningApp(true);
+
+    // Fire tracking without awaiting — user doesn't need to wait for analytics
     if (linkData && fingerprint) {
-      await trackUniqueDownloadClick(linkData.id, fingerprint);
+      trackUniqueDownloadClick(linkData.id, fingerprint);
     }
-    
-    window.location.href = `/info/${affiliateId}/${linkId}`;
+
+    const appStoreURL = 'https://apps.apple.com/app/socialstar-app/id6473705189';
+
+    if (!claimCode) {
+      setOpeningApp(false);
+      window.location.href = appStoreURL;
+      return;
+    }
+
+    const deepLink = `socialstar://redeem/${claimCode}`;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        clearTimeout(fallbackTimer);
+        setOpeningApp(false);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
+    };
+
+    const handleBlur = () => {
+      clearTimeout(fallbackTimer);
+      setOpeningApp(false);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleBlur);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleBlur);
+
+    const fallbackTimer = setTimeout(() => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleBlur);
+      setOpeningApp(false);
+      window.location.href = appStoreURL;
+    }, 1500);
+
+    window.location.href = deepLink;
   };
 
   const handlePointerDown = (e) => {
@@ -1194,27 +1226,40 @@ const RatingPage = () => {
             </div>
           </div>
 
-          {/* Download button */}
+          {/* Claim Winnings button — win screen */}
           <button
             onClick={handleContinuePlaying}
+            disabled={openingApp}
             style={{
               width: '100%',
               maxWidth: '400px',
-              padding: '20px',
+              height: '64px',
+              padding: '0 20px',
               backgroundColor: 'white',
               border: 'none',
               borderRadius: '200px',
               color: 'black',
               fontSize: '20px',
               fontWeight: 'bold',
-              cursor: 'pointer',
+              cursor: openingApp ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '10px'
             }}
           >
-            <span>Claim Winnings</span>
+            {openingApp ? (
+              <div style={{
+                width: '22px',
+                height: '22px',
+                border: '3px solid rgba(0, 0, 0, 0.2)',
+                borderTop: '3px solid #000',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }} />
+            ) : (
+              <span>Claim Winnings</span>
+            )}
           </button>
         </div>
       )}
@@ -1270,27 +1315,29 @@ const RatingPage = () => {
             </div>
           </div>
 
-          {/* Claim Winnings Button */}
+          {/* Claim Winnings button — winnings footer */}
           <button
             onClick={handleContinuePlaying}
+            disabled={openingApp}
             style={{
               width: '100%',
-              padding: '18px',
-              backgroundColor: '#4169E1',
+              height: '58px',
+              padding: '0 18px',
+              backgroundColor: openingApp ? '#2A3A6B' : '#4169E1',
               border: 'none',
               borderRadius: '200px',
               color: '#FFF',
               fontSize: '18px',
               fontWeight: 'bold',
-              cursor: 'pointer',
+              cursor: openingApp ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '10px',
-              transition: 'transform 0.2s ease'
+              transition: 'background-color 0.2s ease, transform 0.2s ease'
             }}
             onMouseDown={(e) => {
-              e.currentTarget.style.transform = 'scale(0.98)';
+              if (!openingApp) e.currentTarget.style.transform = 'scale(0.98)';
             }}
             onMouseUp={(e) => {
               e.currentTarget.style.transform = 'scale(1)';
@@ -1299,11 +1346,14 @@ const RatingPage = () => {
               e.currentTarget.style.transform = 'scale(1)';
             }}
           >
-            <span>Claim Winnings</span>
+            {openingApp ? (
+              <ButtonSpinner />
+            ) : (
+              <span>Claim Winnings</span>
+            )}
           </button>
         </div>
       )}
-
 
       {/* Earnings Notification - slides up behind slot machine footer */}
       <div 
@@ -1463,7 +1513,6 @@ const RatingPage = () => {
             </span>
           </button>
         </div>
-
 
       <style>{`
         @keyframes spin {
