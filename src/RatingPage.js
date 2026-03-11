@@ -329,8 +329,7 @@ const RatingPage = () => {
 
   // Calculate earnings as a random number between 100 and 900, always ending in 0
   const calculateEarnings = () => {
-    const randomTens = Math.floor(Math.random() * 81) + 10;
-    return randomTens * 10;
+    return 100;
   };
 
   // Convert tokens to dollar amount ($0.50 - $1.50)
