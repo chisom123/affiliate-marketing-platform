@@ -327,9 +327,10 @@ const RatingPage = () => {
 
   const snapPoints = getSnapPoints();
 
-  // Calculate earnings as a random number between 100 and 900, always ending in 0
+  // Calculate earnings as a random number between 100 and 400, always ending in 0
   const calculateEarnings = () => {
-    return 100;
+    const randomTens = Math.floor(Math.random() * 31) + 10;
+    return randomTens * 10;
   };
 
   // Convert tokens to dollar amount ($0.50 - $1.50)
