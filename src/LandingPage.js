@@ -206,7 +206,7 @@ const LandingPage = () => {
         return (
           <div style={{ textAlign: 'center' }}>
             {renderImageWithPlaceholder(
-              "https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/partner-website%2FIMG_6491.png?alt=media&token=20585ca4-4079-4fd7-8451-55a5205cba1e",
+              "https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/partner-website%2FIMG_7096.png?alt=media&token=737293aa-3b41-40e3-90b4-98ef4a6bf9c6",
               "Instagram story with rating link",
               "step_1",
               "250px"
@@ -218,7 +218,7 @@ const LandingPage = () => {
         return (
           <div style={{ textAlign: 'center' }}>
             {renderImageWithPlaceholder(
-              "https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/partner-website%2FIMG_6492%202.png?alt=media&token=981bd85a-ee50-445d-a8b1-550d0f924149",
+              "https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/partner-website%2FIMG_7097.png?alt=media&token=191cc089-4f9b-4335-b473-06fe55502e6d",
               "Rating interface on mobile",
               "step_2",
               "250px"
