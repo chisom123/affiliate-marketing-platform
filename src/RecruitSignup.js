@@ -494,7 +494,7 @@ const RecruitSignup = () => {
 const styles = {
   container: {
     minHeight: '100vh',
-    background: 'linear-gradient(135deg, #10183C 0%, #1A2245 100%)',
+    backgroundColor: '#10183C',
     display: 'flex',
     flexDirection: 'column'
   },
