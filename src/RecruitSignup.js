@@ -613,7 +613,7 @@ const styles = {
     border: 'none',
     borderRadius: '200px',
     fontSize: '16px',
-    fontWeight: '600',
+    fontWeight: '700',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
     marginTop: '8px'
