@@ -564,6 +564,16 @@ exports.submitRating = onCall({ minInstances: 1 }, async (request) => {
     const winCodeDocId = `${linkDoc.id}_${fingerprint}`;
 
     await db.runTransaction(async (transaction) => {
+      // ALL READS FIRST
+      const recruiterSubDoc = recruiterId 
+        ? await transaction.get(db.collection('affiliates').doc(recruiterId).collection('recruits').doc(affiliateId))
+        : null;
+      
+      const recruitLinkDoc = recruiterId
+        ? await transaction.get(db.collection('affiliates').doc(recruiterId).collection('recruits').doc(affiliateId).collection('recruitLinkStats').doc(linkDoc.id))
+        : null;
+    
+      // THEN ALL WRITES
       transaction.set(ratingRef, {
         linkId: linkDoc.id,
         linkIdString: linkId,
@@ -577,28 +587,74 @@ exports.submitRating = onCall({ minInstances: 1 }, async (request) => {
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
         createdAt: admin.firestore.FieldValue.serverTimestamp()
       });
-
+    
       transaction.update(linkDoc.ref, {
         totalRatings: admin.firestore.FieldValue.increment(1),
         earnings: admin.firestore.FieldValue.increment(earningsPerRating),
         lastRatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
-
+    
       transaction.update(db.collection('affiliates').doc(affiliateId), {
         totalRatings: admin.firestore.FieldValue.increment(1),
         totalEarnings: admin.firestore.FieldValue.increment(earningsPerRating),
         balance: admin.firestore.FieldValue.increment(earningsPerRating)
       });
-
+    
       if (recruiterId) {
-        const recruiterEarnings = 0.10;
-        transaction.update(db.collection('affiliates').doc(recruiterId), {
-          balance: admin.firestore.FieldValue.increment(recruiterEarnings),
-          totalEarnings: admin.firestore.FieldValue.increment(recruiterEarnings),
-          recruiterEarnings: admin.firestore.FieldValue.increment(recruiterEarnings)
-        });
+        const recruiterSubRef = db.collection('affiliates').doc(recruiterId)
+          .collection('recruits').doc(affiliateId);
+        
+        const recruitLinkRef = db.collection('affiliates').doc(recruiterId)
+          .collection('recruits').doc(affiliateId)
+          .collection('recruitLinkStats').doc(linkDoc.id);
+    
+        const previousLinkRatings = recruitLinkDoc.exists ? (recruitLinkDoc.data()?.totalRatings || 0) : 0;
+        const currentLinkRatings = previousLinkRatings + 1;
+        const crossesThreshold = previousLinkRatings < 10 && currentLinkRatings >= 10;
+    
+        transaction.set(recruiterSubRef, {
+          totalRatings: admin.firestore.FieldValue.increment(1),
+          lastRatingAt: admin.firestore.FieldValue.serverTimestamp(),
+          ...(crossesThreshold && { storiesCompleted: admin.firestore.FieldValue.increment(1) })
+        }, { merge: true });
+    
+        if (recruitLinkDoc.exists) {
+          transaction.update(recruitLinkRef, {
+            totalRatings: admin.firestore.FieldValue.increment(1),
+            lastRatingAt: admin.firestore.FieldValue.serverTimestamp(),
+            ...(crossesThreshold && { 
+              completedAt: admin.firestore.FieldValue.serverTimestamp(),
+              storiesCompleted: admin.firestore.FieldValue.increment(1),
+              earnings: admin.firestore.FieldValue.increment(1.00)
+            })
+          });
+        } else {
+          transaction.set(recruitLinkRef, {
+            linkId: linkDoc.id,
+            affiliateId: affiliateId,
+            title: linkDoc.data().title || '',
+            photoUrl: linkDoc.data().photoUrl || null,
+            theme: linkDoc.data().theme || null,
+            linkUrl: linkDoc.data().url || '',
+            totalRatings: 1,
+            storiesCompleted: 0,
+            earnings: 0.0,
+            linkCreatedAt: linkDoc.data().createdAt || null,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            lastRatingAt: admin.firestore.FieldValue.serverTimestamp(),
+            completedAt: null
+          });
+        }
+    
+        if (crossesThreshold) {
+          transaction.update(db.collection('affiliates').doc(recruiterId), {
+            balance: admin.firestore.FieldValue.increment(1.00),
+            totalEarnings: admin.firestore.FieldValue.increment(1.00),
+            recruiterEarnings: admin.firestore.FieldValue.increment(1.00)
+          });
+        }
       }
-
+    
       const winCode = `SS${fingerprint.substring(0, 3).toUpperCase()}${linkId.substring(0, 3).toUpperCase()}${Date.now().toString(36).slice(-2).toUpperCase()}`;
       transaction.set(db.collection('pending_wins').doc(winCodeDocId), {
         code: winCode,
