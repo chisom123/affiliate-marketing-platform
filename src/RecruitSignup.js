@@ -294,37 +294,21 @@ const RecruitSignup = () => {
             </div>
           </div>
         </header>
-        
+  
         <div style={styles.authContainer}>
           <div style={styles.authCard}>
-            <h2 style={styles.title}>Account Created!</h2>
-            <p style={styles.subtitle}>
-              Your account has been created successfully
-            </p>
-            
-            <div style={styles.successContent}>
-              <h3 style={styles.successTitle}>Next Steps</h3>
-              <ol style={styles.stepsList}>
-                <li style={styles.step}>
-                  <strong>Download Partner App</strong>
-                  <p style={styles.stepDescription}>
-                    Available on the App Store
-                  </p>
-                </li>
-                <li style={styles.step}>
-                  <strong>Sign In</strong>
-                  <p style={styles.stepDescription}>
-                    Use the email and password you just created
-                  </p>
-                </li>
-                <li style={styles.step}>
-                  <strong>Start Earning</strong>
-                  <p style={styles.stepDescription}>
-                    Post your first story and start earning!
-                  </p>
-                </li>
-              </ol>
-              
+            <div style={{ textAlign: 'center' }}>
+  
+              {/* Party popper */}
+              <div style={{ fontSize: '52px', marginBottom: '24px', lineHeight: 1 }}>
+                🎉
+              </div>
+  
+              <h2 style={{ ...styles.title, marginBottom: '10px' }}>Account Created</h2>
+              <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '15px', margin: '0 0 36px' }}>
+                Download our partner app and sign in to get started
+              </p>
+  
               <a
                 href="https://apps.apple.com/us/app/socialstar-partners/id6751140592"
                 target="_blank"
@@ -334,20 +318,21 @@ const RecruitSignup = () => {
                   textDecoration: 'none',
                   textAlign: 'center',
                   display: 'block',
-                  boxSizing: 'border-box', // Add this line
+                  boxSizing: 'border-box',
+                  marginTop: 0,
                   transform: hoverStates.downloadButton ? 'translateY(-1px)' : 'translateY(0)',
                   backgroundColor: hoverStates.downloadButton ? '#3557C7' : '#4169E1'
                 }}
                 onMouseEnter={() => setHoverStates(prev => ({ ...prev, downloadButton: true }))}
                 onMouseLeave={() => setHoverStates(prev => ({ ...prev, downloadButton: false }))}
               >
-                Continue
+                Continue in App
               </a>
+  
             </div>
-            
           </div>
         </div>
-        
+  
         <style>{`input::placeholder { color: rgba(255,255,255,0.5); }`}</style>
       </div>
     );
