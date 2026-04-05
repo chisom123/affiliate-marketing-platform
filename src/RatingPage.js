@@ -834,7 +834,7 @@ const RatingPage = () => {
       trackUniqueDownloadClick(linkData.id, fingerprint);
     }
 
-    const appStoreURL = 'https://apps.apple.com/app/socialstar-photo-competitions/id6473705189';
+    const appStoreURL = 'https://apps.apple.com/us/app/socialstar-photo-competitions/id6473705189?ppid=905a5311-b6ba-4523-87ae-bb7925f70485';
 
     if (!claimCode) {
       setOpeningApp(false);
