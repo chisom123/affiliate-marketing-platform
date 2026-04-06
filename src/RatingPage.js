@@ -1201,7 +1201,7 @@ const RatingPage = () => {
               marginBottom: '20px',
               fontWeight: '600'
             }}>
-              You Won
+              You Earned
             </div>
             <div style={{
               fontSize: '72px',
@@ -1258,7 +1258,7 @@ const RatingPage = () => {
                 animation: 'spin 1s linear infinite'
               }} />
             ) : (
-              <span>Claim Winnings</span>
+              <span>Claim Points</span>
             )}
           </button>
         </div>
@@ -1291,7 +1291,7 @@ const RatingPage = () => {
               marginBottom: '10px',
               fontWeight: '600'
             }}>
-              You Won
+              You Earned
             </div>
             <div style={{
               fontSize: '45px',
@@ -1349,7 +1349,7 @@ const RatingPage = () => {
             {openingApp ? (
               <ButtonSpinner />
             ) : (
-              <span>Claim Winnings</span>
+              <span>Claim Points</span>
             )}
           </button>
         </div>
