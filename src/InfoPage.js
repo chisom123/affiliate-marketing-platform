@@ -349,7 +349,7 @@ const InfoPage = () => {
                       <ProfilePicture url={row.isUserRow ? null : row.profilePictureUrl} size={40} />
                       <div style={{ minWidth: 0 }}>
                         <p style={{ fontSize: 16, fontWeight: 'bold', color: 'white', margin: '0 0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {row.isUserRow ? 'You' : (row.name || 'Player')}
+                          {row.isUserRow ? 'Me' : (row.name || 'Player')}
                         </p>
                         {row.prize > 0 && (
                           <span style={{ fontSize: 14, fontWeight: 'bold', color: 'white', backgroundColor: '#00AA00', borderRadius: 200, padding: '2px 8px', display: 'inline-block' }}>
