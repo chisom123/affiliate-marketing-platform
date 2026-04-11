@@ -1,23 +1,83 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import {
+  doc,
+  getDoc,
+  getDocs,
+  collection,
+  query,
+  where,
+  setDoc,
+  updateDoc,
+  increment,
+  serverTimestamp
+} from 'firebase/firestore';
+import { db } from './firebase';
 
 const APP_STORE_URL = 'https://apps.apple.com/app/socialstar-app/id6473705189';
 
 const SuccessPage = () => {
   const { affiliateId, linkId } = useParams();
   const [openingApp, setOpeningApp] = useState(false);
+  const [linkDocId, setLinkDocId] = useState(null);
+  const [fingerprint, setFingerprint] = useState(null);
 
-  // Auto-redirect to App Store after 3 seconds
   useEffect(() => {
-    const timer = setTimeout(() => {
-      window.location.href = APP_STORE_URL;
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, []);
+    const fp = localStorage.getItem(`info_fingerprint_${linkId}`);
+    if (fp) setFingerprint(fp);
+
+    (async () => {
+      try {
+        const snap = await getDocs(
+          query(collection(db, 'rating_links'), where('linkId', '==', linkId))
+        );
+        if (!snap.empty) {
+          setLinkDocId(snap.docs[0].id);
+        }
+      } catch (e) {
+        console.error('Error resolving link doc ID:', e);
+      }
+    })();
+  }, [linkId]);
+
+  const trackDownloadTap = async (ldId, fp) => {
+    if (!ldId || !fp) return;
+    try {
+      const trackingDocId = `${ldId}_${fp}`;
+      const trackingRef = doc(db, 'unique_download_taps', trackingDocId);
+      const trackingDoc = await getDoc(trackingRef);
+
+      if (!trackingDoc.exists()) {
+        await setDoc(trackingRef, {
+          linkId: ldId,
+          fingerprint: fp,
+          firstTappedAt: serverTimestamp(),
+          count: 1
+        });
+        await updateDoc(doc(db, 'rating_links', ldId), {
+          totalDownloadTaps: increment(1),
+          lastDownloadTapAt: serverTimestamp()
+        });
+      } else {
+        await updateDoc(trackingRef, {
+          count: increment(1),
+          lastTappedAt: serverTimestamp()
+        });
+      }
+    } catch (e) {
+      console.error('Error tracking download tap:', e);
+    }
+  };
 
   const handleDownload = () => {
     if (openingApp) return;
     setOpeningApp(true);
+
+    // Fire and forget — don't block the redirect
+    if (linkDocId && fingerprint) {
+      trackDownloadTap(linkDocId, fingerprint);
+    }
+
     window.location.href = APP_STORE_URL;
     setTimeout(() => setOpeningApp(false), 2000);
   };
@@ -44,8 +104,6 @@ const SuccessPage = () => {
         width: '100%', maxWidth: '500px',
         display: 'flex', flexDirection: 'column', gap: 16,
       }}>
-
-        {/* Card */}
         <div style={{
           backgroundColor: '#1A2245',
           borderRadius: 12, padding: '30px 24px',
@@ -53,7 +111,6 @@ const SuccessPage = () => {
           display: 'flex', flexDirection: 'column', gap: 20,
           animation: 'fadeUp 0.5s ease 0.1s both',
         }}>
-          {/* Emoji */}
           <div style={{ fontSize: 60, animation: 'scaleIn 0.5s ease forwards' }}>
             🎉
           </div>
@@ -65,12 +122,6 @@ const SuccessPage = () => {
             Download SocialStar and start your first photo competition with friends.
           </p>
 
-          {/* Auto-redirect note */}
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, margin: 0 }}>
-            Taking you to the App Store...
-          </p>
-
-          {/* CTA button */}
           <button
             onClick={handleDownload}
             disabled={openingApp}
@@ -100,7 +151,6 @@ const SuccessPage = () => {
           </button>
         </div>
 
-        {/* Branding */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, alignSelf: 'flex-start', marginTop: 10 }}>
           <img
             src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a"

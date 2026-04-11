@@ -8,7 +8,11 @@ import {
   collection,
   query,
   where,
-  getDocs
+  getDocs,
+  setDoc,
+  updateDoc,
+  increment,
+  serverTimestamp
 } from 'firebase/firestore';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -58,7 +62,6 @@ const generateFingerprint = async () => {
 const FUNCTIONS_BASE_URL = 'https://us-central1-pingbear-96b4c.cloudfunctions.net';
 const APP_STORE_URL = 'https://apps.apple.com/app/socialstar-app/id6473705189';
 
-// ── Spinner ───────────────────────────────────────────────────────────────────
 const Spinner = ({ size = 40 }) => (
   <div style={{
     width: `${size}px`, height: `${size}px`, flexShrink: 0,
@@ -68,10 +71,8 @@ const Spinner = ({ size = 40 }) => (
   }} />
 );
 
-// ── Profile picture ───────────────────────────────────────────────────────────
 const ProfilePicture = ({ url, size = 40 }) => {
   const [loaded, setLoaded] = useState(false);
-
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%', flexShrink: 0,
@@ -94,7 +95,6 @@ const ProfilePicture = ({ url, size = 40 }) => {
   );
 };
 
-// ── Prize calc ────────────────────────────────────────────────────────────────
 const calcPrizeCents = (rank, firstPlacePrize, decayRate, minPayout) => {
   if (decayRate === 0) return rank === 1 ? Math.floor(firstPlacePrize * 100) : 0;
   const cents = Math.floor(firstPlacePrize * 100 * Math.pow(decayRate, rank - 1));
@@ -112,24 +112,25 @@ const calcMaxPrizePool = (firstPlacePrize, decayRate, minPayout, maxParticipants
   return Math.ceil(total / 100);
 };
 
-// ── Main ──────────────────────────────────────────────────────────────────────
 const InfoPage = () => {
   const { affiliateId, linkId } = useParams();
   const navigate = useNavigate();
 
-  const [fingerprint, setFingerprint]         = useState(null);
-  const [isValidEnvironment, setIsValid]      = useState(true);
-  const [loading, setLoading]                 = useState(true);
-  const [error, setError]                     = useState('');
-  const [pointsWon, setPointsWon]             = useState(0);
-  const [pot, setPot]                         = useState(null);
-  const [participants, setParticipants]       = useState([]);
-  const [leaderboardLoading, setLbLoading]    = useState(true);
-  const [timeRemaining, setTimeRemaining]     = useState('');
-  const [userPosition, setUserPosition]       = useState(null);
+  const [fingerprint, setFingerprint]       = useState(null);
+  const [isValidEnvironment, setIsValid]    = useState(true);
+  const [loading, setLoading]               = useState(true);
+  const [error, setError]                   = useState('');
+  const [pointsWon, setPointsWon]           = useState(0);
+  const [pot, setPot]                       = useState(null);
+  const [participants, setParticipants]     = useState([]);
+  const [leaderboardLoading, setLbLoading]  = useState(true);
+  const [timeRemaining, setTimeRemaining]   = useState('');
+  const [userPosition, setUserPosition]     = useState(null);
+  const [linkDocId, setLinkDocId]           = useState(null); // stored for tracking
+  const [continueInProgress, setContinueInProgress] = useState(false);
   const timerRef = useRef(null);
 
-  // ── Fingerprint ──────────────────────────────────────────────────────────────
+  // Fingerprint
   useEffect(() => {
     (async () => {
       try {
@@ -148,7 +149,7 @@ const InfoPage = () => {
     })();
   }, [linkId]);
 
-  // ── Win data ─────────────────────────────────────────────────────────────────
+  // Win data — also caches linkDocId for tracking
   useEffect(() => {
     if (!fingerprint || !linkId || !isValidEnvironment) return;
     (async () => {
@@ -156,6 +157,7 @@ const InfoPage = () => {
         const snap = await getDocs(query(collection(db, 'rating_links'), where('linkId', '==', linkId)));
         if (snap.empty) { setError('Rating link not found'); setLoading(false); return; }
         const ld = { id: snap.docs[0].id, ...snap.docs[0].data() };
+        setLinkDocId(ld.id); // cache for use in tracking
         const winDoc = await getDoc(doc(db, 'pending_wins', `${ld.id}_${fingerprint}`));
         if (winDoc.exists()) {
           setPointsWon(winDoc.data().points || 0);
@@ -170,7 +172,7 @@ const InfoPage = () => {
     })();
   }, [fingerprint, linkId, isValidEnvironment]);
 
-  // ── Leaderboard ──────────────────────────────────────────────────────────────
+  // Leaderboard
   useEffect(() => {
     (async () => {
       try {
@@ -178,10 +180,8 @@ const InfoPage = () => {
         if (!res.ok) throw new Error('Failed');
         const { pot: potData, participants: parts } = await res.json();
         setPot(potData);
-
         const tiedGroups = {};
         parts.forEach(p => { (tiedGroups[p.rank] = tiedGroups[p.rank] || []).push(p); });
-
         setParticipants(parts.map((p, i) => ({
           ...p,
           position: i + 1,
@@ -192,23 +192,20 @@ const InfoPage = () => {
     })();
   }, []);
 
-  // ── Project user position ────────────────────────────────────────────────────
+  // Project user position
   useEffect(() => {
     if (!participants.length || !pot || pointsWon === 0) return;
-    let projPos = participants.length + 1, projRank = participants.length + 1;
     const insertAt = participants.findIndex(p => pointsWon > p.totalStars);
     const userIndex = insertAt === -1 ? participants.length : insertAt;
-    // If tied with participant above, share their rank
     const tiedAbove = userIndex > 0 && participants[userIndex - 1].totalStars === pointsWon;
-    projRank = tiedAbove ? participants[userIndex - 1].rank : userIndex + 1;
-    projPos = userIndex + 1;
+    const projRank = tiedAbove ? participants[userIndex - 1].rank : userIndex + 1;
     const tiedWithUser = participants.filter(p => p.totalStars === pointsWon);
     const tiedCount = tiedWithUser.length + 1;
     const prize = calcPrizeCents(projRank, pot.firstPlacePrize, pot.decayRate, pot.minPayout) / 100 / tiedCount;
-    setUserPosition({ position: projPos, rank: projRank, prize, totalStars: pointsWon });
+    setUserPosition({ position: userIndex + 1, rank: projRank, prize, totalStars: pointsWon });
   }, [participants, pointsWon, pot]);
 
-  // ── Timer ────────────────────────────────────────────────────────────────────
+  // Timer
   useEffect(() => {
     if (!pot?.endDate) return;
     const update = () => {
@@ -223,24 +220,60 @@ const InfoPage = () => {
     return () => clearInterval(timerRef.current);
   }, [pot]);
 
+  // ── Track info continue click ─────────────────────────────────────────────
+  const trackInfoContinueClick = async (ldId, fp) => {
+    if (!ldId || !fp) return;
+    try {
+      const trackingDocId = `${ldId}_${fp}`;
+      const trackingRef = doc(db, 'unique_info_continue_clicks', trackingDocId);
+      const trackingDoc = await getDoc(trackingRef);
+
+      if (!trackingDoc.exists()) {
+        await setDoc(trackingRef, {
+          linkId: ldId,
+          fingerprint: fp,
+          firstClickedAt: serverTimestamp(),
+          clickCount: 1
+        });
+        await updateDoc(doc(db, 'rating_links', ldId), {
+          totalInfoContinueClicksDownload: increment(1),
+          lastInfoContinueClickAt: serverTimestamp()
+        });
+      } else {
+        await updateDoc(trackingRef, {
+          clickCount: increment(1),
+          lastClickedAt: serverTimestamp()
+        });
+      }
+    } catch (e) {
+      console.error('Error tracking info continue click:', e);
+    }
+  };
+
+  const handleContinue = async () => {
+    if (continueInProgress) return;
+    setContinueInProgress(true);
+
+    // Fire and forget — don't block navigation
+    if (linkDocId && fingerprint) {
+      trackInfoContinueClick(linkDocId, fingerprint);
+    }
+
+    navigate(`/promo/${affiliateId}/${linkId}`);
+  };
+
   const maxPrizePool = pot
     ? calcMaxPrizePool(pot.firstPlacePrize, pot.decayRate, pot.minPayout, pot.maxParticipants)
     : 0;
 
-  const handleContinue = () => {
-    navigate(`/promo/${affiliateId}/${linkId}`);
-  };
-
   const globalStyles = `@keyframes spin { to { transform: rotate(360deg); } } * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; } .grecaptcha-badge { visibility: hidden !important; }`;
 
-  // ── Loading ──────────────────────────────────────────────────────────────────
   if (loading) return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#10183C' }}>
       <style>{globalStyles}</style><Spinner />
     </div>
   );
 
-  // ── Error / invalid env ──────────────────────────────────────────────────────
   if (!isValidEnvironment || error) return (
     <div style={{ minHeight: '100vh', backgroundColor: '#10183C', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <style>{globalStyles}</style>
@@ -256,20 +289,15 @@ const InfoPage = () => {
     </div>
   );
 
-  // ── Main UI — matches PostSignupLeaderboardView exactly ──────────────────────
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: '#10183C', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <style>{globalStyles}</style>
 
-      {/* Scrollable body */}
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 50 }}>
-
-        {/* Header - scrolls with content */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px 20px' }}>
           <span style={{ fontSize: 18, fontWeight: 'bold', color: 'white' }}>Prizes</span>
         </div>
 
-        {/* Prize Pool card */}
         <div style={{ margin: '8px 20px 0', backgroundColor: '#1A2245', borderRadius: 12, padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
@@ -287,7 +315,6 @@ const InfoPage = () => {
           </div>
         </div>
 
-        {/* Leaderboard */}
         <div style={{ margin: '20px 20px 0', backgroundColor: '#1A2245', borderRadius: 10, overflow: 'hidden' }}>
           {leaderboardLoading ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Spinner size={28} /></div>
@@ -303,26 +330,19 @@ const InfoPage = () => {
                 prize: userPosition.prize,
                 totalStars: pointsWon,
               };
-              if (insertAt === -1) {
-                list.push(userRow);
-              } else {
-                list.splice(insertAt, 0, userRow);
-              }
+              if (insertAt === -1) { list.push(userRow); } else { list.splice(insertAt, 0, userRow); }
             }
 
             const userRowIndex = list.findIndex(r => r.isUserRow);
 
-            // Recalculate prizes based on new ranks after insertion
             const recalcList = list.map((row, i) => {
               if (row.isUserRow) return row;
               const newRank = (userRowIndex !== -1 && i > userRowIndex) ? row.rank + 1 : row.rank;
-              // Count real participants at this new rank
               const tiedRealCount = list.filter((r, ri) => {
                 if (r.isUserRow) return false;
                 const rNewRank = (userRowIndex !== -1 && ri > userRowIndex) ? r.rank + 1 : r.rank;
                 return rNewRank === newRank;
               }).length;
-              // If this participant ties with the user (same star count), split with user too
               const tiesWithUser = userPosition && row.totalStars === pointsWon;
               const totalTied = tiesWithUser ? tiedRealCount + 1 : tiedRealCount;
               const newPrize = pot
@@ -333,9 +353,7 @@ const InfoPage = () => {
 
             return recalcList.map((row, i) => {
               const displayPosition = (!row.isUserRow && userRowIndex !== -1 && i > userRowIndex)
-                ? row.position + 1
-                : row.position;
-
+                ? row.position + 1 : row.position;
               return (
                 <div key={row.isUserRow ? 'user-row' : (row.userId || i)}>
                   <div style={{
@@ -370,24 +388,17 @@ const InfoPage = () => {
               );
             });
           })()}
-
-
-          {/* Spacer so last row clears the fixed bar */}
         </div>
       </div>
 
-      {/* Fixed bottom bar — matches Swift VStack at bottom */}
       <div style={{ flexShrink: 0 }}>
-        {/* User stats row */}
         <div style={{ backgroundColor: '#2A3255', padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ width: 35, flexShrink: 0, textAlign: 'center' }}>
             <span style={{ fontSize: 18, fontWeight: 'bold', color: 'white' }}>
               {userPosition ? userPosition.position : '--'}
             </span>
           </div>
-
           <ProfilePicture url={null} size={40} />
-
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontSize: 16, fontWeight: 'bold', color: 'white', margin: '0 0 4px' }}>Me</p>
             {userPosition && userPosition.prize > 0 && (
@@ -396,17 +407,16 @@ const InfoPage = () => {
               </span>
             )}
           </div>
-
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: '#6A5ACD', borderRadius: 200, padding: '2.75px 10px', flexShrink: 0 }}>
             <span style={{ fontSize: 17, fontWeight: 'bold', color: 'white' }}>{pointsWon.toLocaleString()}</span>
             <Gem size={18} color="white" strokeWidth={2} />
           </div>
         </div>
 
-        {/* Continue → Promo Page */}
         <div style={{ backgroundColor: '#10183C', padding: '12px 20px' }}>
           <button
             onClick={handleContinue}
+            disabled={continueInProgress}
             style={{
               width: '100%', height: 55, backgroundColor: '#4169E1',
               border: 'none', borderRadius: 200,

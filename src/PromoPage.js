@@ -4,6 +4,19 @@ import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 import { productAuth } from './firebase';
 import { setConfirmationResult } from './authState';
 import { Gem } from 'lucide-react';
+import {
+  doc,
+  getDoc,
+  getDocs,
+  collection,
+  query,
+  where,
+  setDoc,
+  updateDoc,
+  increment,
+  serverTimestamp
+} from 'firebase/firestore';
+import { db } from './firebase';
 
 const COUNTRIES = [
   { iso: 'US', name: 'United States', code: '1', flag: '🇺🇸' },
@@ -30,6 +43,29 @@ const PromoPage = () => {
   const [countrySearch, setCountrySearch] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [linkDocId, setLinkDocId] = useState(null);
+  const [fingerprint, setFingerprint] = useState(null);
+
+  // Resolve linkDocId and fingerprint on mount
+  useEffect(() => {
+    // Pull fingerprint from localStorage — set by InfoPage
+    const fp = localStorage.getItem(`info_fingerprint_${linkId}`);
+    if (fp) setFingerprint(fp);
+
+    // Resolve link doc ID
+    (async () => {
+      try {
+        const snap = await getDocs(
+          query(collection(db, 'rating_links'), where('linkId', '==', linkId))
+        );
+        if (!snap.empty) {
+          setLinkDocId(snap.docs[0].id);
+        }
+      } catch (e) {
+        console.error('Error resolving link doc ID:', e);
+      }
+    })();
+  }, [linkId]);
 
   useEffect(() => {
     if (!window.recaptchaVerifier) {
@@ -55,6 +91,36 @@ const PromoPage = () => {
     c.iso.toLowerCase().includes(countrySearch.toLowerCase())
   );
 
+  // ── Track successful SMS send ─────────────────────────────────────────────
+  const trackPromoCtaClick = async (ldId, fp) => {
+    if (!ldId || !fp) return;
+    try {
+      const trackingDocId = `${ldId}_${fp}`;
+      const trackingRef = doc(db, 'unique_promo_cta_clicks', trackingDocId);
+      const trackingDoc = await getDoc(trackingRef);
+
+      if (!trackingDoc.exists()) {
+        await setDoc(trackingRef, {
+          linkId: ldId,
+          fingerprint: fp,
+          firstClickedAt: serverTimestamp(),
+          clickCount: 1
+        });
+        await updateDoc(doc(db, 'rating_links', ldId), {
+          totalPromoCtaClicks: increment(1),
+          lastPromoCtaClickAt: serverTimestamp()
+        });
+      } else {
+        await updateDoc(trackingRef, {
+          clickCount: increment(1),
+          lastClickedAt: serverTimestamp()
+        });
+      }
+    } catch (e) {
+      console.error('Error tracking promo CTA click:', e);
+    }
+  };
+
   const handleGetStarted = async () => {
     setError('');
     const digits = phoneNumber.replace(/\D/g, '');
@@ -74,6 +140,12 @@ const PromoPage = () => {
       );
 
       setConfirmationResult(confirmationResult);
+
+      // Only track after SMS successfully sent
+      if (linkDocId && fingerprint) {
+        trackPromoCtaClick(linkDocId, fingerprint);
+      }
+
       navigate(`/verify/${affiliateId}/${linkId}`, {
         state: { phoneNumber: formattedPhone }
       });
@@ -111,10 +183,7 @@ const PromoPage = () => {
 
       <div id="recaptcha-container" />
 
-      {/* Hero background */}
-      <div style={{
-        position: 'absolute', inset: 0,
-      }}>
+      <div style={{ position: 'absolute', inset: 0 }}>
         <img
           src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/partner-website%2F6b6357f22a2bcff580b0c9b6870a0868-2.jpg?alt=media&token=3de53fa0-cc5c-47c2-992c-9e1a79e9ae42"
           alt=""
@@ -122,21 +191,17 @@ const PromoPage = () => {
         />
       </div>
 
-      {/* Dark overlay */}
       <div style={{
         position: 'absolute', inset: 0,
         backgroundColor: 'rgba(0,0,0,0.55)',
         animation: 'fadeIn 0.6s ease forwards',
       }} />
 
-      {/* Content */}
       <div style={{
         position: 'relative', zIndex: 10,
         height: '100%',
         display: 'flex', flexDirection: 'column',
       }}>
-
-        {/* Top — headline + badge + features */}
         <div style={{
           flex: 1,
           display: 'flex', flexDirection: 'column',
@@ -165,11 +230,8 @@ const PromoPage = () => {
             </span>
             <Gem size={23} color="white" strokeWidth={2} />
           </div>
-
-
         </div>
 
-        {/* Bottom — phone entry + button */}
         <div style={{
           padding: '20px 24px 40px',
           display: 'flex', flexDirection: 'column', gap: 12,
@@ -177,8 +239,6 @@ const PromoPage = () => {
           backgroundColor: 'rgba(0,0,0,0.3)',
           backdropFilter: 'blur(10px)',
         }}>
-
-          {/* Phone input row */}
           <div style={{ display: 'flex', height: 56 }}>
             <button
               onClick={() => setShowCountryPicker(true)}
@@ -213,14 +273,12 @@ const PromoPage = () => {
             />
           </div>
 
-          {/* Error */}
           {error && (
             <p style={{ color: '#FF6B6B', fontSize: 14, fontWeight: '600', margin: 0, textAlign: 'center' }}>
               {error}
             </p>
           )}
 
-          {/* Get Started button */}
           <button
             onClick={handleGetStarted}
             disabled={isLoading}
@@ -252,7 +310,6 @@ const PromoPage = () => {
         </div>
       </div>
 
-      {/* Country picker modal */}
       {showCountryPicker && (
         <div
           style={{

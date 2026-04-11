@@ -990,7 +990,7 @@ const AdminDashboard = () => {
               alignItems: 'center',
               marginBottom: '20px'
             }}>
-              <h2 style={{ margin: '0', color: '#495057' }}>Rating Links - Conversion Funnel</h2>
+              <h2 style={{ margin: '0', color: '#495057' }}>Rating Links</h2>
             </div>
 
             <div style={{ 
@@ -1003,162 +1003,142 @@ const AdminDashboard = () => {
                 const affiliate = affiliates.find(a => a.id === link.affiliateId);
                 const analytics = linkAnalytics[link.id] || {};
                 const isExpired = link.expiresAt && link.expiresAt < new Date();
-                
+
+                const pageOpens        = link.totalPageOpens || 0;
+                const ratings          = link.totalRatings || 0;
+                const claimPoints      = link.totalDownloadClicks || 0;
+                const infoContinue     = link.totalInfoContinueClicksDownload || 0;
+                const smsSent          = link.totalPromoCtaClicks || 0;
+                const verified         = link.totalVerifySuccesses || 0;
+                const appStore         = link.totalDownloadTaps || 0;
+                const codesClaimed     = link.totalCodesClaimed || 0;
+
+                const pct = (num, denom) =>
+                  denom > 0 ? ((num / denom) * 100).toFixed(1) + '%' : '—';
+
+                const breakdownSteps = [
+                  { label: 'Page opens',    value: pageOpens,    conv: '100%' },
+                  { label: 'Ratings',       value: ratings,      conv: pct(ratings, pageOpens) },
+                  { label: 'Claim points',  value: claimPoints,  conv: pct(claimPoints, ratings) },
+                  { label: 'Info continue', value: infoContinue, conv: pct(infoContinue, claimPoints) },
+                  { label: 'SMS sent',      value: smsSent,      conv: pct(smsSent, infoContinue) },
+                  { label: 'Verified',      value: verified,     conv: pct(verified, smsSent) },
+                  { label: 'App store',     value: appStore,     conv: pct(appStore, verified) },
+                  { label: 'Codes claimed', value: codesClaimed, conv: pct(codesClaimed, appStore) },
+                ];
+
                 return (
-                  <div key={link.id} style={{ 
-                    padding: '25px',
-                    borderBottom: '1px solid #eee'
-                  }}>
+                  <div key={link.id} style={{ padding: '25px', borderBottom: '1px solid #eee' }}>
+
                     {/* Header */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-                      <div style={{ flex: 1 }}>
-                        <h4 style={{ margin: '0 0 5px 0', fontSize: '18px', fontWeight: 'bold' }}>
+                      <div>
+                        <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: 'bold' }}>
                           {affiliate?.firstName} {affiliate?.lastName}
                         </h4>
-                        <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#6c757d' }}>
+                        <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#6c757d' }}>
                           {affiliate?.email}
                         </p>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#6c757d', fontFamily: 'monospace' }}>
-                          Link ID: {link.linkId}
-                        </p>
                         <p style={{ margin: '0', fontSize: '12px', color: '#6c757d', fontFamily: 'monospace' }}>
-                          Created: {link.createdAt.toLocaleString()}
+                          Link: {link.linkId} · Created: {link.createdAt.toLocaleDateString()}
                         </p>
                       </div>
-                      
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                          <span style={{
-                            padding: '6px 12px',
-                            borderRadius: '200px',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            backgroundColor: isExpired ? '#f8d7da' : '#d4edda',
-                            color: isExpired ? '#721c24' : '#155724',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            {isExpired ? 'EXPIRED' : 'ACTIVE'}
-                          </span>
-                          <span style={{
-                            padding: '6px 12px',
-                            borderRadius: '200px',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            backgroundColor: '#fff3e0',
-                            color: '#e65100',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            {analytics.avgRating || '0.00'} ★
-                          </span>
-                        </div>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <span style={{
+                          padding: '4px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: 'bold',
+                          backgroundColor: isExpired ? '#f8d7da' : '#d4edda',
+                          color: isExpired ? '#721c24' : '#155724'
+                        }}>
+                          {isExpired ? 'EXPIRED' : 'ACTIVE'}
+                        </span>
+                        <span style={{
+                          padding: '4px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: 'bold',
+                          backgroundColor: '#fff3e0', color: '#e65100'
+                        }}>
+                          {analytics.avgRating || '0.00'} avg
+                        </span>
                       </div>
                     </div>
 
-                    {/* Conversion Funnel */}
-                    <div style={{ 
-                      display: 'flex',
+                    {/* Headline funnel */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr auto 1fr',
+                      gap: '10px',
                       alignItems: 'center',
-                      gap: '15px',
-                      overflowX: 'auto',
-                      paddingBottom: '10px'
+                      marginBottom: '20px'
                     }}>
-                      {/* Step 1: Page Opens */}
-                      <div style={{ 
-                        minWidth: '140px',
-                        backgroundColor: '#e3f2fd',
-                        padding: '20px 15px',
-                        borderRadius: '8px',
-                        textAlign: 'center',
-                        border: '2px solid #2196f3'
+                      <div style={{
+                        backgroundColor: '#f8f9fa', borderRadius: '8px',
+                        padding: '16px', textAlign: 'center'
                       }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '11px', color: '#1976d2', fontWeight: '600', textTransform: 'uppercase' }}>
-                          Page Opens
-                        </p>
-                        <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: '#1565c0' }}>
-                          {link.totalPageOpens || 0}
-                        </p>
-                        <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#1976d2', fontWeight: 'bold' }}>
-                          100%
-                        </p>
-                      </div>
-
-                      {/* Arrow */}
-                      <div style={{ fontSize: '24px', color: '#bbb' }}>→</div>
-
-                      {/* Step 2: Ratings */}
-                      <div style={{ 
-                        minWidth: '140px',
-                        backgroundColor: '#e8f5e9',
-                        padding: '20px 15px',
-                        borderRadius: '8px',
-                        textAlign: 'center',
-                        border: '2px solid #4caf50'
-                      }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '11px', color: '#2e7d32', fontWeight: '600', textTransform: 'uppercase' }}>
+                        <p style={{ margin: '0 0 6px 0', fontSize: '11px', fontWeight: '600', color: '#6c757d', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                           Ratings
                         </p>
-                        <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: '#1b5e20' }}>
-                          {link.totalRatings || 0}
-                        </p>
-                        <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#388e3c', fontWeight: 'bold' }}>
-                          {((link.totalPageOpens || 0) > 0 ? (((link.totalRatings || 0) / link.totalPageOpens) * 100).toFixed(1) : 0)}%
+                        <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: '#212529' }}>
+                          {ratings.toLocaleString()}
                         </p>
                       </div>
 
-                      {/* Arrow */}
-                      <div style={{ fontSize: '24px', color: '#bbb' }}>→</div>
-
-                      {/* Step 3: Continue Playing */}
-                      <div style={{ 
-                        minWidth: '140px',
-                        backgroundColor: '#fff3e0',
-                        padding: '20px 15px',
-                        borderRadius: '8px',
-                        textAlign: 'center',
-                        border: '2px solid #ff9800'
-                      }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '11px', color: '#e65100', fontWeight: '600', textTransform: 'uppercase' }}>
-                          Continue Taps
-                        </p>
-                        <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: '#ef6c00' }}>
-                          {link.totalDownloadClicks || 0}
-                        </p>
-                        <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#f57c00', fontWeight: 'bold' }}>
-                          {((link.totalRatings || 0) > 0 ? (((link.totalDownloadClicks || 0) / link.totalRatings) * 100).toFixed(1) : 0)}%
-                        </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                        <span style={{ fontSize: '20px', color: '#adb5bd' }}>›</span>
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: '#6c757d', whiteSpace: 'nowrap' }}>
+                          {pct(codesClaimed, ratings)}
+                        </span>
                       </div>
 
-                      {/* Arrow */}
-                      <div style={{ fontSize: '24px', color: '#bbb' }}>→</div>
-
-                      {/* Step 4: Codes Claimed */}
-                      <div style={{ 
-                        minWidth: '140px',
-                        backgroundColor: '#f3e5f5',
-                        padding: '20px 15px',
-                        borderRadius: '8px',
-                        textAlign: 'center',
-                        border: '2px solid #9c27b0'
+                      <div style={{
+                        backgroundColor: '#f8f9fa', borderRadius: '8px',
+                        padding: '16px', textAlign: 'center'
                       }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '11px', color: '#6a1b9a', fontWeight: '600', textTransform: 'uppercase' }}>
-                          Codes Claimed
+                        <p style={{ margin: '0 0 6px 0', fontSize: '11px', fontWeight: '600', color: '#6c757d', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Codes claimed
                         </p>
-                        <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: '#7b1fa2' }}>
-                          {link.totalCodesClaimed || 0}
-                        </p>
-                        <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#8e24aa', fontWeight: 'bold' }}>
-                          {((link.totalDownloadClicks || 0) > 0 ? (((link.totalCodesClaimed || 0) / link.totalDownloadClicks) * 100).toFixed(1) : 0)}%
+                        <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: '#212529' }}>
+                          {codesClaimed.toLocaleString()}
                         </p>
                       </div>
                     </div>
+
+                    {/* Divider */}
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
+                      <div style={{ flex: 1, height: '1px', backgroundColor: '#dee2e6' }} />
+                      <span style={{ fontSize: '11px', color: '#adb5bd', whiteSpace: 'nowrap' }}>full breakdown</span>
+                      <div style={{ flex: 1, height: '1px', backgroundColor: '#dee2e6' }} />
+                    </div>
+
+                    {/* Breakdown funnel */}
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'stretch', overflowX: 'auto', paddingBottom: '4px' }}>
+                      {breakdownSteps.map((step, i) => (
+                        <React.Fragment key={step.label}>
+                          <div style={{
+                            minWidth: '95px', flexShrink: 0,
+                            backgroundColor: '#f8f9fa', borderRadius: '8px',
+                            padding: '12px', textAlign: 'center'
+                          }}>
+                            <p style={{ margin: '0 0 6px 0', fontSize: '10px', fontWeight: '600', color: '#6c757d', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                              {step.label}
+                            </p>
+                            <p style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: 'bold', color: '#212529' }}>
+                              {step.value.toLocaleString()}
+                            </p>
+                            <p style={{ margin: '0', fontSize: '11px', color: '#6c757d' }}>
+                              {step.conv}
+                            </p>
+                          </div>
+                          {i < breakdownSteps.length - 1 && (
+                            <div style={{ display: 'flex', alignItems: 'center', color: '#adb5bd', fontSize: '16px', flexShrink: 0 }}>
+                              ›
+                            </div>
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </div>
+
                   </div>
                 );
               })}
-              
+
               {ratingLinks.length === 0 && (
                 <div style={{ padding: '40px', textAlign: 'center', color: '#6c757d' }}>
                   No rating links yet
