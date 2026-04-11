@@ -283,7 +283,7 @@ const PromoPage = () => {
             onClick={handleGetStarted}
             disabled={isLoading}
             style={{
-              width: '100%', height: 55,
+              width: '100%', height: 58,
               backgroundColor: '#4169E1',
               border: 'none', borderRadius: 200,
               color: 'white', fontSize: 20, fontWeight: 700,

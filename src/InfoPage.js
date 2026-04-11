@@ -418,9 +418,9 @@ const InfoPage = () => {
             onClick={handleContinue}
             disabled={continueInProgress}
             style={{
-              width: '100%', height: 55, backgroundColor: '#4169E1',
+              width: '100%', height: 58, backgroundColor: '#4169E1',
               border: 'none', borderRadius: 200,
-              color: 'white', fontSize: 18, fontWeight: 'bold',
+              color: 'white', fontSize: 20, fontWeight: 'bold',
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
             onMouseDown={e => { e.currentTarget.style.opacity = '0.85'; }}

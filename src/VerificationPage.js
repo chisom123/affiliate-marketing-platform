@@ -285,10 +285,10 @@ const VerificationPage = () => {
                 <button
                   onClick={handleVerify}
                   style={{
-                    width: '100%', height: 60,
+                    width: '100%', height: 58,
                     backgroundColor: '#4169E1',
                     border: 'none', borderRadius: 200,
-                    color: 'white', fontSize: 18, fontWeight: 'bold',
+                    color: 'white', fontSize: 20, fontWeight: 'bold',
                     cursor: 'pointer', marginTop: 20,
                   }}
                   onMouseDown={e => { e.currentTarget.style.opacity = '0.85'; }}

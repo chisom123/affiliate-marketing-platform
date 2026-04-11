@@ -1233,7 +1233,7 @@ const RatingPage = () => {
             style={{
               width: '100%',
               maxWidth: '400px',
-              height: '64px',
+              height: '58px',
               padding: '0 20px',
               backgroundColor: 'white',
               border: 'none',
@@ -1327,7 +1327,7 @@ const RatingPage = () => {
               border: 'none',
               borderRadius: '200px',
               color: '#FFF',
-              fontSize: '18px',
+              fontSize: '20px',
               fontWeight: 'bold',
               cursor: openingApp ? 'not-allowed' : 'pointer',
               display: 'flex',
@@ -1481,12 +1481,13 @@ const RatingPage = () => {
             disabled={isSpinning || spinsRemaining === 0}
             style={{
               width: '100%',
-              padding: '18px',
+              height: '58px',
+              padding: '0 20px',
               backgroundColor: spinsRemaining > 0 && !isSpinning ? '#4169E1' : '#666',
               border: 'none',
               borderRadius: '200px',
               color: spinsRemaining > 0 && !isSpinning ? '#FFF' : '#c2c2c2',
-              fontSize: '18px',
+              fontSize: '20px',
               fontWeight: 'bold',
               cursor: spinsRemaining > 0 && !isSpinning ? 'pointer' : 'not-allowed',
               display: 'flex',
