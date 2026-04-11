@@ -834,11 +834,11 @@ const RatingPage = () => {
       trackUniqueDownloadClick(linkData.id, fingerprint);
     }
 
-    const appStoreURL = 'https://apps.apple.com/us/app/socialstar-photo-competitions/id6473705189?ppid=28c912a0-e4fa-499d-838a-349ca0790647';
+    const infoPageURL = `/info/${affiliateId}/${linkId}`;
 
     if (!claimCode) {
       setOpeningApp(false);
-      window.location.href = appStoreURL;
+      window.location.href = infoPageURL;
       return;
     }
 
@@ -866,7 +866,7 @@ const RatingPage = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleBlur);
       setOpeningApp(false);
-      window.location.href = appStoreURL;
+      window.location.href = infoPageURL;
     }, 1500);
 
     window.location.href = deepLink;
