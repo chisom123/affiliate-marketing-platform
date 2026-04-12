@@ -625,7 +625,7 @@ exports.submitRating = onCall({ minInstances: 1 }, async (request) => {
             ...(crossesThreshold && { 
               completedAt: admin.firestore.FieldValue.serverTimestamp(),
               storiesCompleted: admin.firestore.FieldValue.increment(1),
-              earnings: admin.firestore.FieldValue.increment(1.00)
+              earnings: admin.firestore.FieldValue.increment(5.00)
             })
           });
         } else {
@@ -648,9 +648,9 @@ exports.submitRating = onCall({ minInstances: 1 }, async (request) => {
     
         if (crossesThreshold) {
           transaction.update(db.collection('affiliates').doc(recruiterId), {
-            balance: admin.firestore.FieldValue.increment(1.00),
-            totalEarnings: admin.firestore.FieldValue.increment(1.00),
-            recruiterEarnings: admin.firestore.FieldValue.increment(1.00)
+            balance: admin.firestore.FieldValue.increment(5.00),
+            totalEarnings: admin.firestore.FieldValue.increment(5.00),
+            recruiterEarnings: admin.firestore.FieldValue.increment(5.00)
           });
         }
       }
