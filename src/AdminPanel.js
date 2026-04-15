@@ -26,6 +26,7 @@ const AdminDashboard = () => {
   const [selectedWithdrawals, setSelectedWithdrawals] = useState([]);
   const [processingAction, setProcessingAction] = useState(false);
   const [decryptionErrors, setDecryptionErrors] = useState(new Set());
+  const [claimedCodes, setClaimedCodes] = useState({});
 
   // Check authentication state
   useEffect(() => {
@@ -96,6 +97,31 @@ const AdminDashboard = () => {
       unsubscribeLinks();
     };
   }, [user]);
+
+  useEffect(() => {
+    if (!user || ratingLinks.length === 0) return;
+  
+    const fetchClaimedCodes = async () => {
+      const result = {};
+      for (const link of ratingLinks) {
+        const q = query(
+          collection(db, 'pending_wins'),
+          where('linkId', '==', link.id),
+          where('claimed', '==', true)
+        );
+        const snapshot = await getDocs(q);
+        result[link.id] = snapshot.docs.map(doc => ({
+          code: doc.data().code,
+          claimedBy: doc.data().claimedBy,
+          claimedAt: doc.data().claimedAt?.toDate?.() || null,
+          points: doc.data().points
+        }));
+      }
+      setClaimedCodes(result);
+    };
+  
+    fetchClaimedCodes();
+  }, [user, ratingLinks]);
 
   useEffect(() => {
     const calculateLinkAnalytics = async () => {
@@ -1134,6 +1160,61 @@ const AdminDashboard = () => {
                         </React.Fragment>
                       ))}
                     </div>
+                    
+                    {/* Claimed Codes Section */}
+                    {(claimedCodes[link.id]?.length > 0) && (
+                      <div style={{ marginTop: '20px' }}>
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
+                          <div style={{ flex: 1, height: '1px', backgroundColor: '#dee2e6' }} />
+                          <span style={{ fontSize: '11px', color: '#adb5bd', whiteSpace: 'nowrap' }}>
+                            claimed codes ({claimedCodes[link.id].length})
+                          </span>
+                          <div style={{ flex: 1, height: '1px', backgroundColor: '#dee2e6' }} />
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {claimedCodes[link.id].map((claim, i) => (
+                            <div key={i} style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              backgroundColor: '#f8f9fa',
+                              borderRadius: '8px',
+                              padding: '10px 14px',
+                              fontSize: '13px'
+                            }}>
+                              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                <span style={{
+                                  fontFamily: 'monospace',
+                                  fontWeight: 'bold',
+                                  color: '#212529',
+                                  letterSpacing: '0.05em'
+                                }}>
+                                  {claim.code}
+                                </span>
+                                <span style={{
+                                  color: '#6c757d',
+                                  fontSize: '12px',
+                                  fontFamily: 'monospace'
+                                }}>
+                                  UID: {claim.claimedBy}
+                                </span>
+                              </div>
+                              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                <span style={{ color: '#6c757d', fontSize: '12px' }}>
+                                  {claim.points} pts
+                                </span>
+                                <span style={{ color: '#adb5bd', fontSize: '11px' }}>
+                                  {claim.claimedAt
+                                    ? claim.claimedAt.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
+                                    : '—'}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                   </div>
                 );
