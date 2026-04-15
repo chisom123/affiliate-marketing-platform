@@ -102,22 +102,31 @@ const AdminDashboard = () => {
     if (!user || ratingLinks.length === 0) return;
   
     const fetchClaimedCodes = async () => {
-      const result = {};
-      for (const link of ratingLinks) {
-        const q = query(
-          collection(db, 'pending_wins'),
-          where('linkId', '==', link.id),
-          where('claimed', '==', true)
+      const chunkSize = 10;
+  
+      for (let i = 0; i < ratingLinks.length; i += chunkSize) {
+        const chunk = ratingLinks.slice(i, i + chunkSize);
+  
+        const entries = await Promise.all(
+          chunk.map(async (link) => {
+            const q = query(
+              collection(db, 'pending_wins'),
+              where('linkId', '==', link.id),
+              where('claimed', '==', true)
+            );
+            const snapshot = await getDocs(q);
+            const codes = snapshot.docs.map(doc => ({
+              code: doc.data().code,
+              claimedBy: doc.data().claimedBy,
+              claimedAt: doc.data().claimedAt?.toDate?.() || null,
+              points: doc.data().points
+            }));
+            return [link.id, codes];
+          })
         );
-        const snapshot = await getDocs(q);
-        result[link.id] = snapshot.docs.map(doc => ({
-          code: doc.data().code,
-          claimedBy: doc.data().claimedBy,
-          claimedAt: doc.data().claimedAt?.toDate?.() || null,
-          points: doc.data().points
-        }));
+  
+        setClaimedCodes(prev => ({ ...prev, ...Object.fromEntries(entries) }));
       }
-      setClaimedCodes(result);
     };
   
     fetchClaimedCodes();
