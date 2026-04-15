@@ -119,7 +119,7 @@ const SuccessPage = () => {
             You're all set!
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16, lineHeight: 1.6, margin: 0 }}>
-            Download SocialStar and start your first photo competition with friends.
+            Start your first photo competition with friends
           </p>
 
           <button
@@ -132,6 +132,7 @@ const SuccessPage = () => {
               color: 'white', fontSize: 20, fontWeight: 'bold',
               cursor: openingApp ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: 12,
             }}
             onMouseDown={e => { e.currentTarget.style.opacity = '0.85'; }}
             onMouseUp={e => { e.currentTarget.style.opacity = '1'; }}
@@ -147,7 +148,7 @@ const SuccessPage = () => {
                 borderRadius: '50%',
                 animation: 'spin 0.8s linear infinite',
               }} />
-            ) : 'Download SocialStar'}
+            ) : 'Continue'}
           </button>
         </div>
 
