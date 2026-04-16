@@ -119,7 +119,7 @@ const SuccessPage = () => {
             You're all set!
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16, lineHeight: 1.6, margin: 0 }}>
-            Start your first photo competition with friends
+          Your SocialStar account has been created
           </p>
 
           <button
