@@ -17,16 +17,17 @@ import {
 } from 'firebase/firestore';
 
 const SUGGESTED_THEMES = [
-  'OOTD',
-  'Night Out',
-  'Mirror Check',
+  'Selfie',
+  'Outfit of the day',
+  'Mood',
   'WTF',
-  'Getting Ready',
-  'Power Nap',
+  'Food',
+  'Getting ready',
+  'Woke up like this',
+  'Golden hour',
+  'Out n about',
   'Caught in 4K',
-  'McDinner',
-  'Class',
-  'Another Late Night',
+  'WTF',
 ];
 
 const ThemesPage = () => {
