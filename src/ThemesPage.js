@@ -20,7 +20,6 @@ const SUGGESTED_THEMES = [
   'Selfie',
   'Outfit of the day',
   'Mood',
-  'WTF',
   'Food',
   'Getting ready',
   'Woke up like this',
