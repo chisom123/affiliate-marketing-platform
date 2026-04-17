@@ -1,18 +1,28 @@
+// VerificationPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { doc, getDoc, collection, query, where, getDocs, setDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  setDoc,
+  updateDoc,
+  increment,
+  serverTimestamp,
+} from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { db, productFunctions } from './firebase';
 import { getConfirmationResult, clearConfirmationResult } from './authState';
-
-const APP_STORE_URL = 'https://apps.apple.com/app/socialstar-app/id6473705189';
 
 const VerificationPage = () => {
   const navigate = useNavigate();
   const { affiliateId, linkId } = useParams();
   const location = useLocation();
-  const { phoneNumber } = location.state || {};
+  const { phoneNumber, selectedThemes, competitionName } = location.state || {};
   const confirmationResult = getConfirmationResult();
 
   const [code, setCode] = useState('');
@@ -22,7 +32,6 @@ const VerificationPage = () => {
   const [linkDocId, setLinkDocId] = useState(null);
   const [fingerprint, setFingerprint] = useState(null);
 
-  // Resolve linkDocId and fingerprint on mount
   useEffect(() => {
     const fp = localStorage.getItem(`info_fingerprint_${linkId}`);
     if (fp) setFingerprint(fp);
@@ -69,7 +78,6 @@ const VerificationPage = () => {
     }
   };
 
-  // ── Track successful verification ─────────────────────────────────────────
   const trackVerifySuccess = async (ldId, fp) => {
     if (!ldId || !fp) return;
     try {
@@ -89,7 +97,6 @@ const VerificationPage = () => {
           lastVerifySuccessAt: serverTimestamp()
         });
       } else {
-        // Already verified — just update count, don't increment the link counter
         await updateDoc(trackingRef, {
           count: increment(1),
           lastVerifiedAt: serverTimestamp()
@@ -116,21 +123,26 @@ const VerificationPage = () => {
     setIsLoading(true);
 
     try {
-      // 1. Confirm SMS code
+      // 1. Confirm SMS code — always runs
       const userCredential = await confirmationResult.confirm(code);
-      const userId = userCredential.user.uid;
 
-      // 2. Fetch winCode
+      // 2. Fetch win code — always runs
       const winCode = await fetchWinCode();
 
-      // 3. Hash phone number
+      // 3. Hash phone number — always runs
       const phoneNumberHash = await hashPhoneNumber(phoneNumber);
 
-      // 4. Call createWebUser
+      // 4. Create web user — always runs, critical path
+      // Also attempts competition creation inside the function if data is present
       const createWebUser = httpsCallable(productFunctions, 'createWebUser');
-      await createWebUser({ winCode, phoneNumberHash });
+      await createWebUser({
+        winCode,
+        phoneNumberHash,
+        competitionName: competitionName || null,
+        selectedThemes: selectedThemes || null,
+      });
 
-      // 5. Track success — only fires if all above succeeded
+      // 5. Track verify success — always runs
       if (linkDocId && fingerprint) {
         trackVerifySuccess(linkDocId, fingerprint);
       }
