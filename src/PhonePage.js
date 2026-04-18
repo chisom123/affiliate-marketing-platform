@@ -179,7 +179,7 @@ const PhonePage = () => {
       <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', flexDirection: 'column' }}>
 
         {/* Back button */}
-        <div style={{ padding: '20px 24px 0' }}>
+        <div style={{ padding: '20px 20px 0' }}>
           <button
             onClick={() => navigate(-1)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
@@ -189,7 +189,7 @@ const PhonePage = () => {
         </div>
 
         {/* Title + badge */}
-        <div style={{ padding: '32px 24px 0px', animation: 'fadeUp 0.5s ease 0.1s both' }}>
+        <div style={{ padding: '32px 20px 0px', animation: 'fadeUp 0.5s ease 0.1s both' }}>
           <h1 style={{
             fontSize: 'clamp(28px, 8vw, 38px)', fontWeight: 800,
             color: 'white', margin: '0 0 16px 0', lineHeight: 1.15, letterSpacing: '-0.5px',
@@ -219,8 +219,8 @@ const PhonePage = () => {
               display: 'flex',
               gap: 10,
               overflowX: 'auto',
-              paddingLeft: 24,
-              paddingRight: 24,
+              paddingLeft: 20,
+              paddingRight: 20,
               paddingBottom: 4,
               scrollbarWidth: 'none',
             }}
@@ -270,7 +270,7 @@ const PhonePage = () => {
 
         {/* Phone input + CTA */}
         <div style={{
-          padding: '20px 24px 40px',
+          padding: '20px 20px 40px',
           display: 'flex', flexDirection: 'column', gap: 12,
           animation: 'fadeUp 0.5s ease 0.4s both',
           backgroundColor: '#1A2245',
