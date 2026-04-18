@@ -57,10 +57,10 @@ const PhotoStrip = () => {
           <div key={i} style={{ flexShrink: 0, width: CARD_WIDTH, height: 180, borderRadius: 14, overflow: 'hidden', position: 'relative' }}>
             <img src={photo.imageUrl} alt={photo.theme} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0) 100%)', padding: '28px 8px 8px' }}>
-              <div style={{ color: 'white', fontSize: 11, fontWeight: 700, lineHeight: 1.3, marginBottom: 4 }}>{photo.theme}</div>
+              {/* <div style={{ color: 'white', fontSize: 11, fontWeight: 700, lineHeight: 1.3, marginBottom: 4 }}>{photo.theme}</div> */}
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, backgroundColor: '#DAA520', borderRadius: 200, padding: '2px 7px' }}>
-                <span style={{ color: 'white', fontSize: 12, fontWeight: 700 }}>{photo.ratings.toLocaleString()}</span>
-                <span style={{ fontSize: '14px', color: 'white', lineHeight: 1 }}>★</span>
+                <span style={{ color: 'white', fontSize: 13, fontWeight: 700 }}>{photo.ratings.toLocaleString()}</span>
+                <span style={{ fontSize: '15px', color: 'white', lineHeight: 1 }}>★</span>
               </div>
             </div>
           </div>
