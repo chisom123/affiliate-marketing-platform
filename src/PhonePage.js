@@ -158,6 +158,13 @@ const PhonePage = () => {
     setIsLoading(false);
   };
 
+  const renderThemeName = (name) => {
+    if (name === 'Outfit of the day') {
+      return <><span>Outfit of</span><br /><span>the day</span></>;
+    }
+    return name;
+  };
+
   return (
     <div style={{
       position: 'fixed', inset: 0, overflow: 'hidden',
@@ -247,8 +254,8 @@ const PhonePage = () => {
                   position: 'absolute', inset: 0,
                   background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 100%)',
                   display: 'flex',
-                  alignItems: 'flex-end',    // bottom
-                  justifyContent: 'flex-start', // left
+                  alignItems: 'flex-end',
+                  justifyContent: 'flex-start',
                   padding: '10px 10px',
                 }}>
                   <div style={{
@@ -256,9 +263,9 @@ const PhonePage = () => {
                     fontSize: 16,
                     fontWeight: 800,
                     lineHeight: 1.2,
-                    textAlign: 'left',       // left-align text
+                    textAlign: 'left',
                   }}>
-                    {name}
+                    {renderThemeName(name)}
                   </div>
                 </div>
               </div>
