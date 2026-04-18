@@ -13,7 +13,6 @@ import VerificationPage from './VerificationPage';
 import SuccessPage from './SuccessPage';
 import RecruitSignup from './RecruitSignup';
 import ThemesPage from './ThemesPage';
-import NamePage from './NamePage';
 import PhonePage from './PhonePage';
 
 function App() {
@@ -43,9 +42,6 @@ function App() {
 
         {/* Themes Page - Theme selection during onboarding */}
         <Route path="/themes/:affiliateId/:linkId" element={<ThemesPage />} />
-
-        {/* Name Page - Competition naming during onboarding */}
-        <Route path="/name/:affiliateId/:linkId" element={<NamePage />} />
 
         {/* Phone Page - Phone number input during onboarding */}
         <Route path="/phone/:affiliateId/:linkId" element={<PhonePage />} />
