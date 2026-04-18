@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 
-const APP_STORE_URL = 'https://apps.apple.com/app/socialstar-app/id6473705189';
+const APP_STORE_URL = 'https://apps.apple.com/us/app/socialstar-photo-competitions/id6473705189?ppid=e9023d29-f1f3-41cc-8d27-89e179d3251b';
 
 const SuccessPage = () => {
   const { affiliateId, linkId } = useParams();
