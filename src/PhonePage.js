@@ -279,8 +279,8 @@ const PhonePage = () => {
             <button
               onClick={() => setShowCountryPicker(true)}
               style={{
-                backgroundColor: 'rgba(255,255,255,0.15)',
-                border: '1px solid rgba(255,255,255,0.2)',
+                backgroundColor: '#323862',
+                border: 'none',
                 borderRadius: '10px 0 0 10px',
                 padding: '0 14px',
                 color: 'white', fontSize: 16, fontWeight: 'bold',
@@ -299,9 +299,8 @@ const PhonePage = () => {
               onKeyDown={e => { if (e.key === 'Enter') handleGetStarted(); }}
               style={{
                 flex: 1,
-                backgroundColor: 'rgba(255,255,255,0.15)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderLeft: 'none',
+                backgroundColor: '#3B4374',
+                border: 'none',
                 borderRadius: '0 10px 10px 0',
                 padding: '0 16px',
                 color: 'white', fontSize: 16, fontWeight: 'bold',
@@ -369,15 +368,15 @@ const PhonePage = () => {
             <div style={{ padding: '16px 16px 8px' }}>
               <input
                 autoFocus
-                placeholder="Search country..."
+                placeholder="Search Country"
                 value={countrySearch}
                 onChange={e => setCountrySearch(e.target.value)}
                 style={{
                   width: '100%', height: 44,
-                  backgroundColor: '#2A3A6B',
+                  backgroundColor: '#3B4374',
                   border: 'none', borderRadius: 10,
                   padding: '0 16px',
-                  color: 'white', fontSize: 16,
+                  color: 'white', fontSize: 16, fontWeight: 'bold',
                 }}
               />
             </div>
