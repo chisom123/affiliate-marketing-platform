@@ -364,7 +364,7 @@ const PromoPage = () => {
             }}
           >
             <p style={{ color: 'white', fontSize: 20, fontWeight: 800, margin: '0 0 28px', letterSpacing: '-0.3px', textAlign: 'center' }}>
-              Get Started
+              Start Competition
             </p>
 
             <div style={{ display: 'flex', height: 56, marginBottom: 12 }}>
