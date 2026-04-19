@@ -304,7 +304,7 @@ const InfoPage = () => {
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, margin: '0 0 6px' }}>Prize Pool</p>
               <div style={{ display: 'inline-block', backgroundColor: '#00AA00', borderRadius: 12, padding: '3px 10px' }}>
                 <span style={{ color: 'white', fontSize: 28, fontWeight: 'bold' }}>
-                  {leaderboardLoading ? '$100' : `$${maxPrizePool}`}
+                  {leaderboardLoading ? '$50' : `$${maxPrizePool}`}
                 </span>
               </div>
             </div>

@@ -1222,7 +1222,7 @@ const RatingPage = () => {
               color: 'white',
               opacity: 0.9
             }}>
-              $100 Prize Pool
+              $50 Prize Pool
             </div>
           </div>
 
@@ -1311,7 +1311,7 @@ const RatingPage = () => {
               fontWeight: '600',
               color: 'white'
             }}>
-              $100 Prize Pool
+              $50 Prize Pool
             </div>
           </div>
 
