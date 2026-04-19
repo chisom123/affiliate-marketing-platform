@@ -12,8 +12,6 @@ import PromoPage from './PromoPage';
 import VerificationPage from './VerificationPage';
 import SuccessPage from './SuccessPage';
 import RecruitSignup from './RecruitSignup';
-import ThemesPage from './ThemesPage';
-import PhonePage from './PhonePage';
 
 function App() {
   return (
@@ -39,12 +37,6 @@ function App() {
 
         {/* Success Page - After phone verification */}
         <Route path="/success/:affiliateId/:linkId" element={<SuccessPage />} />
-
-        {/* Themes Page - Theme selection during onboarding */}
-        <Route path="/themes/:affiliateId/:linkId" element={<ThemesPage />} />
-
-        {/* Phone Page - Phone number input during onboarding */}
-        <Route path="/phone/:affiliateId/:linkId" element={<PhonePage />} />
 
         {/* Admin Panel - Business management */}
         <Route path="/admin" element={<AdminPanel />} />

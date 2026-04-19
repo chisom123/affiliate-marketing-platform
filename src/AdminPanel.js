@@ -1043,7 +1043,6 @@ const AdminDashboard = () => {
                 const ratings          = link.totalRatings || 0;
                 const claimPoints      = link.totalDownloadClicks || 0;
                 const infoContinue     = link.totalInfoContinueClicksDownload || 0;
-                const promoCta         = link.totalPromoCtaClicks || 0;
                 const themesContinue   = link.totalThemesContinueClicks || 0;
                 const phoneCta         = link.totalPhoneCtaClicks || 0;
                 const verified         = link.totalVerifySuccesses || 0;
@@ -1057,9 +1056,8 @@ const AdminDashboard = () => {
                   { label: 'Page opens',      value: pageOpens,      conv: '100%' },
                   { label: 'Ratings',         value: ratings,        conv: pct(ratings, pageOpens) },
                   { label: 'Claim points',    value: claimPoints,    conv: pct(claimPoints, ratings) },
-                  { label: 'Leaderboard CTA',   value: infoContinue,   conv: pct(infoContinue, claimPoints) },
-                  { label: 'Promo CTA',       value: promoCta,       conv: pct(promoCta, infoContinue) },
-                  { label: 'Themes continue', value: themesContinue, conv: pct(themesContinue, promoCta) },
+                  { label: 'Leaderboard CTA', value: infoContinue,   conv: pct(infoContinue, claimPoints) },
+                  { label: 'Themes continue', value: themesContinue, conv: pct(themesContinue, infoContinue) },
                   { label: 'Phone CTA',       value: phoneCta,       conv: pct(phoneCta, themesContinue) },
                   { label: 'Verified',        value: verified,       conv: pct(verified, phoneCta) },
                   { label: 'App store',       value: appStore,       conv: pct(appStore, verified) },
