@@ -600,6 +600,9 @@ exports.submitRating = onCall({ minInstances: 1 }, async (request) => {
         balance: admin.firestore.FieldValue.increment(earningsPerRating)
       });
     
+      // ============================================================
+      // NEW RECRUIT SYSTEM: $10 one-time payout at 10 LIFETIME ratings
+      // ============================================================
       if (recruiterId) {
         const recruiterSubRef = db.collection('affiliates').doc(recruiterId)
           .collection('recruits').doc(affiliateId);
@@ -608,25 +611,28 @@ exports.submitRating = onCall({ minInstances: 1 }, async (request) => {
           .collection('recruits').doc(affiliateId)
           .collection('recruitLinkStats').doc(linkDoc.id);
     
-        const previousLinkRatings = recruitLinkDoc.exists ? (recruitLinkDoc.data()?.totalRatings || 0) : 0;
-        const currentLinkRatings = previousLinkRatings + 1;
-        const crossesThreshold = previousLinkRatings < 10 && currentLinkRatings >= 10;
+        // Get current recruit data
+        const currentRecruitData = recruiterSubDoc.exists ? recruiterSubDoc.data() : {};
+        const previousLifetimeRatings = currentRecruitData.totalRatings || 0;
+        const currentLifetimeRatings = previousLifetimeRatings + 1;
+        const hasAlreadyEarnedBonus = currentRecruitData.hasEarnedRecruitmentBonus || false;
+        
+        // Check if we just crossed the 10 lifetime rating threshold AND haven't paid yet
+        const crossesLifetimeThreshold = !hasAlreadyEarnedBonus && 
+                                         previousLifetimeRatings < 10 && 
+                                         currentLifetimeRatings >= 10;
     
+        // Update recruit's lifetime stats
         transaction.set(recruiterSubRef, {
           totalRatings: admin.firestore.FieldValue.increment(1),
-          lastRatingAt: admin.firestore.FieldValue.serverTimestamp(),
-          ...(crossesThreshold && { storiesCompleted: admin.firestore.FieldValue.increment(1) })
+          lastRatingAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
     
+        // Update per-link stats (kept for UI tracking purposes)
         if (recruitLinkDoc.exists) {
           transaction.update(recruitLinkRef, {
             totalRatings: admin.firestore.FieldValue.increment(1),
-            lastRatingAt: admin.firestore.FieldValue.serverTimestamp(),
-            ...(crossesThreshold && { 
-              completedAt: admin.firestore.FieldValue.serverTimestamp(),
-              storiesCompleted: admin.firestore.FieldValue.increment(1),
-              earnings: admin.firestore.FieldValue.increment(5.00)
-            })
+            lastRatingAt: admin.firestore.FieldValue.serverTimestamp()
           });
         } else {
           transaction.set(recruitLinkRef, {
@@ -637,20 +643,34 @@ exports.submitRating = onCall({ minInstances: 1 }, async (request) => {
             theme: linkDoc.data().theme || null,
             linkUrl: linkDoc.data().url || '',
             totalRatings: 1,
-            storiesCompleted: 0,
-            earnings: 0.0,
             linkCreatedAt: linkDoc.data().createdAt || null,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            lastRatingAt: admin.firestore.FieldValue.serverTimestamp(),
-            completedAt: null
+            lastRatingAt: admin.firestore.FieldValue.serverTimestamp()
           });
         }
     
-        if (crossesThreshold) {
+        // PAY RECRUITER $10 ONE TIME when lifetime threshold is crossed
+        if (crossesLifetimeThreshold) {
+          // Pay the recruiter
           transaction.update(db.collection('affiliates').doc(recruiterId), {
-            balance: admin.firestore.FieldValue.increment(5.00),
-            totalEarnings: admin.firestore.FieldValue.increment(5.00),
-            recruiterEarnings: admin.firestore.FieldValue.increment(5.00)
+            balance: admin.firestore.FieldValue.increment(10.00),
+            totalEarnings: admin.firestore.FieldValue.increment(10.00),
+            recruiterEarnings: admin.firestore.FieldValue.increment(10.00),
+            totalRecruits: admin.firestore.FieldValue.increment(1) // Count as a "completed" recruit
+          });
+          
+          // Mark this recruit as paid so we never pay again
+          transaction.update(recruiterSubRef, {
+            hasEarnedRecruitmentBonus: true,
+            bonusPaidAt: admin.firestore.FieldValue.serverTimestamp(),
+            bonusAmount: 10.00
+          });
+          
+          logger.info('Recruitment bonus paid!', { 
+            recruiterId, 
+            recruitId: affiliateId, 
+            amount: 10.00,
+            lifetimeRatings: currentLifetimeRatings
           });
         }
       }
