@@ -25,7 +25,7 @@ import {
 const SUGGESTED_THEMES = [
   { name: 'OOTD',             imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F3992207a92b1378d9d6a4b711f4b1189-2.jpg?alt=media&token=7923d0e1-2b1c-489e-b7ad-744a3131865b' },
   { name: 'Mood',             imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F07d3c9a11e7539d2410ffba6fc1b969a-2.jpg?alt=media&token=c88d655d-6548-48bf-bd9a-0d1067ea2718' },
-  { name: 'Out n about',      imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F7fe4ac7d95e7adbd454164b1ff561cf8-2.jpg?alt=media&token=7de3722b-33fa-494e-844c-1f1a79c0882a' },
+  { name: 'Out n about',      imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F013c53e237e2c457aa4ebdb6b3b1a921-2.jpg?alt=media&token=470a2a5b-0c8e-4f2e-84eb-8d03672ed118' },
   { name: 'Food',             imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F373c672b221c21f630b8c5601fde8a24-2.jpg?alt=media&token=0f8f0026-1521-4e90-b27d-06af04286481' },
   { name: 'Selfie',           imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F7dff83b50d757c446a0b32bf00964af9-2.jpg?alt=media&token=c47a7ca5-3bf7-436b-bff8-9142d4171e5e' },
   { name: 'Getting ready',    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2Fb77e4c2ff5e677c6aec0707bdf52ada2-2.jpg?alt=media&token=f5cffd04-ee83-4c96-9008-69e68ae2f04d' },
