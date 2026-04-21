@@ -23,16 +23,16 @@ import {
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const SUGGESTED_THEMES = [
-  { name: 'Outfit of the day', imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F3992207a92b1378d9d6a4b711f4b1189-2.jpg?alt=media&token=7923d0e1-2b1c-489e-b7ad-744a3131865b' },
-  { name: 'Mood',              imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F07d3c9a11e7539d2410ffba6fc1b969a-2.jpg?alt=media&token=c88d655d-6548-48bf-bd9a-0d1067ea2718' },
-  { name: 'Selfie',            imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F7dff83b50d757c446a0b32bf00964af9-2.jpg?alt=media&token=c47a7ca5-3bf7-436b-bff8-9142d4171e5e' },
-  { name: 'Food',              imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F373c672b221c21f630b8c5601fde8a24-2.jpg?alt=media&token=0f8f0026-1521-4e90-b27d-06af04286481' },
-  { name: 'Getting ready',     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2Fb77e4c2ff5e677c6aec0707bdf52ada2-2.jpg?alt=media&token=f5cffd04-ee83-4c96-9008-69e68ae2f04d' },
-  { name: 'Woke up like this', imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F60de91dff3951a060cbfc7c065fecb46-2.jpg?alt=media&token=78df393a-15be-4d62-a19e-18246ce83ed3' },
-  { name: 'Golden hour',       imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2Ffeb407d9c1580f8a7608e2fb43d3a059-2-2.jpg?alt=media&token=1835be03-231c-45dc-84d6-a5c738386da9' },
-  { name: 'Out n about',       imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F7fe4ac7d95e7adbd454164b1ff561cf8-2.jpg?alt=media&token=7de3722b-33fa-494e-844c-1f1a79c0882a' },
-  { name: 'Caught in 4K',      imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F9f0aceb82a7f9360d5bc93d5173c0500-2.jpg?alt=media&token=f2f42a17-06bc-4e79-858e-07771374d612' },
-  { name: 'WTF',               imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F66a00648f5ad9bc0f332f5e79d3779ed-2.jpg?alt=media&token=3e19c738-3af7-452a-8c06-891d3361fc92' },
+  { name: 'OOTD',             imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F3992207a92b1378d9d6a4b711f4b1189-2.jpg?alt=media&token=7923d0e1-2b1c-489e-b7ad-744a3131865b' },
+  { name: 'Mood',             imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F07d3c9a11e7539d2410ffba6fc1b969a-2.jpg?alt=media&token=c88d655d-6548-48bf-bd9a-0d1067ea2718' },
+  { name: 'Out n about',      imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F7fe4ac7d95e7adbd454164b1ff561cf8-2.jpg?alt=media&token=7de3722b-33fa-494e-844c-1f1a79c0882a' },
+  { name: 'Food',             imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F373c672b221c21f630b8c5601fde8a24-2.jpg?alt=media&token=0f8f0026-1521-4e90-b27d-06af04286481' },
+  { name: 'Selfie',           imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F7dff83b50d757c446a0b32bf00964af9-2.jpg?alt=media&token=c47a7ca5-3bf7-436b-bff8-9142d4171e5e' },
+  { name: 'Getting ready',    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2Fb77e4c2ff5e677c6aec0707bdf52ada2-2.jpg?alt=media&token=f5cffd04-ee83-4c96-9008-69e68ae2f04d' },
+  { name: 'Golden hour',      imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2Ffeb407d9c1580f8a7608e2fb43d3a059-2-2.jpg?alt=media&token=1835be03-231c-45dc-84d6-a5c738386da9' },
+  { name: 'Woke up like this',imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F60de91dff3951a060cbfc7c065fecb46-2.jpg?alt=media&token=78df393a-15be-4d62-a19e-18246ce83ed3' },
+  { name: 'Caught in 4K',     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F9f0aceb82a7f9360d5bc93d5173c0500-2.jpg?alt=media&token=f2f42a17-06bc-4e79-858e-07771374d612' },
+  { name: 'WTF',              imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F66a00648f5ad9bc0f332f5e79d3779ed-2.jpg?alt=media&token=3e19c738-3af7-452a-8c06-891d3361fc92' },
 ];
 
 const COUNTRIES = [
