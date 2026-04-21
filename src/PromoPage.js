@@ -234,42 +234,47 @@ const PromoPage = () => {
         }
         .theme-card-check {
           position: absolute; top: 8px; right: 8px;
-          width: 24px; height: 24px; border-radius: 50%; background: #4169E1;
+          width: 24px; height: 24px; border-radius: 50%;
+          background: transparent;
+          border: 2px solid rgba(255,255,255,0.6);
           display: flex; align-items: center; justify-content: center;
-          opacity: 0; transform: scale(0.6);
-          transition: opacity 0.2s ease, transform 0.2s ease;
+          transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+          transform: scale(1);
         }
-        .theme-card.selected .theme-card-check { opacity: 1; transform: scale(1); }
+        .theme-card.selected .theme-card-check {
+          background: #4169E1;
+          border-color: #4169E1;
+          transform: scale(1.05);
+        }
+        .theme-card-check svg path {
+          stroke: transparent;
+          transition: stroke 0.2s ease;
+        }
+        .theme-card.selected .theme-card-check svg path {
+          stroke: white;
+        }
       `}</style>
 
       <div id="recaptcha-container" />
 
-      {/* ── Hero ── */}
-      <div style={{ padding: '50px 24px 0px', animation: 'fadeUp 0.5s ease 0.1s both' }}>
-        <h1 style={{
-          fontSize: 'clamp(28px, 8vw, 38px)', fontWeight: 800,
-          color: 'white', margin: '0 0 16px 0', lineHeight: 1.15, letterSpacing: '-0.5px',
-        }}>
-          Photo competitions<br />with friends
-        </h1>
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          backgroundColor: '#6A5ACD', borderRadius: 200,
-          padding: '8px 15px', marginBottom: 50,
-        }}>
-          <span style={{ fontSize: 22, fontWeight: 800, color: 'white', letterSpacing: '-0.3px', lineHeight: 1 }}>
-            Win More Points
-          </span>
-          <Gem size={23} color="white" strokeWidth={2} />
-        </div>
-      </div>
-
       {/* ── Theme picker ── */}
-      <div style={{ padding: '0 20px', animation: 'fadeUp 0.5s ease 0.2s both' }}>
-        <div style={{ marginBottom: 14 }}>
+      <div style={{ padding: '24px 20px 0px', animation: 'fadeUp 0.5s ease 0.1s both' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24,
+        }}>
           <p style={{ color: 'white', fontSize: 20, fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>
-            Pick Themes
+            New Competition
           </p>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            backgroundColor: '#6A5ACD', borderRadius: 200,
+            padding: '6px 12px',
+          }}>
+            <span style={{ fontSize: 19, fontWeight: 800, color: 'white', lineHeight: 1 }}>
+              Win Points
+            </span>
+            <Gem size={20} color="white" strokeWidth={2} />
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
