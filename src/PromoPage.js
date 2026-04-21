@@ -257,24 +257,32 @@ const PromoPage = () => {
 
       <div id="recaptcha-container" />
 
-      {/* ── Theme picker ── */}
-      <div style={{ padding: '24px 20px 0px', animation: 'fadeUp 0.5s ease 0.1s both' }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24,
+      {/* ── Hero ── */}
+      <div style={{ padding: '50px 24px 0px', animation: 'fadeUp 0.5s ease 0.1s both' }}>
+        <h1 style={{
+          fontSize: 'clamp(28px, 8vw, 38px)', fontWeight: 800,
+          color: 'white', margin: '0 0 16px 0', lineHeight: 1.15, letterSpacing: '-0.5px',
         }}>
+          Photo Competitions<br />with friends
+        </h1>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          backgroundColor: '#6A5ACD', borderRadius: 200,
+          padding: '8px 15px', marginBottom: 50,
+        }}>
+          <span style={{ fontSize: 22, fontWeight: 800, color: 'white', letterSpacing: '-0.3px', lineHeight: 1 }}>
+            Win More Points
+          </span>
+          <Gem size={23} color="white" strokeWidth={2} />
+        </div>
+      </div>
+
+      {/* ── Theme picker ── */}
+      <div style={{ padding: '0 20px', animation: 'fadeUp 0.5s ease 0.2s both' }}>
+        <div style={{ marginBottom: 14 }}>
           <p style={{ color: 'white', fontSize: 20, fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>
-            New Competition
+            Pick Themes
           </p>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            backgroundColor: '#6A5ACD', borderRadius: 200,
-            padding: '6px 12px',
-          }}>
-            <span style={{ fontSize: 19, fontWeight: 800, color: 'white', lineHeight: 1 }}>
-              Win Points
-            </span>
-            <Gem size={20} color="white" strokeWidth={2} />
-          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -369,7 +377,7 @@ const PromoPage = () => {
             }}
           >
             <p style={{ color: 'white', fontSize: 20, fontWeight: 800, margin: '0 0 28px', letterSpacing: '-0.3px', textAlign: 'center' }}>
-              Get Started
+              Start Competition
             </p>
 
             <div style={{ display: 'flex', height: 56, marginBottom: 12 }}>
