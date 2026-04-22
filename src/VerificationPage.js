@@ -1,20 +1,8 @@
-// VerificationPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import {
-  doc,
-  getDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-  setDoc,
-  updateDoc,
-  increment,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
+import { doc, getDoc, collection, query, where, getDocs, setDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { db, productFunctions } from './firebase';
 import { getConfirmationResult, clearConfirmationResult } from './authState';
 
@@ -22,7 +10,7 @@ const VerificationPage = () => {
   const navigate = useNavigate();
   const { affiliateId, linkId } = useParams();
   const location = useLocation();
-  const { phoneNumber, selectedThemes, competitionName } = location.state || {};
+  const { phoneNumber } = location.state || {};
   const confirmationResult = getConfirmationResult();
 
   const [code, setCode] = useState('');
@@ -32,6 +20,7 @@ const VerificationPage = () => {
   const [linkDocId, setLinkDocId] = useState(null);
   const [fingerprint, setFingerprint] = useState(null);
 
+  // Resolve linkDocId and fingerprint on mount
   useEffect(() => {
     const fp = localStorage.getItem(`info_fingerprint_${linkId}`);
     if (fp) setFingerprint(fp);
@@ -78,6 +67,7 @@ const VerificationPage = () => {
     }
   };
 
+  // ── Track successful verification ─────────────────────────────────────────
   const trackVerifySuccess = async (ldId, fp) => {
     if (!ldId || !fp) return;
     try {
@@ -97,6 +87,7 @@ const VerificationPage = () => {
           lastVerifySuccessAt: serverTimestamp()
         });
       } else {
+        // Already verified — just update count, don't increment the link counter
         await updateDoc(trackingRef, {
           count: increment(1),
           lastVerifiedAt: serverTimestamp()
@@ -111,38 +102,33 @@ const VerificationPage = () => {
     setError('');
 
     if (!code || code.length < 4) {
-      setError('Please enter the verification code.');
+      setError('Please enter the verification code');
       return;
     }
 
     if (!confirmationResult) {
-      setError('Session expired. Please go back and try again.');
+      setError('Session expired. Please go back and try again');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // 1. Confirm SMS code — always runs
+      // 1. Confirm SMS code
       const userCredential = await confirmationResult.confirm(code);
+      const userId = userCredential.user.uid;
 
-      // 2. Fetch win code — always runs
+      // 2. Fetch winCode
       const winCode = await fetchWinCode();
 
-      // 3. Hash phone number — always runs
+      // 3. Hash phone number
       const phoneNumberHash = await hashPhoneNumber(phoneNumber);
 
-      // 4. Create web user — always runs, critical path
-      // Also attempts competition creation inside the function if data is present
+      // 4. Call createWebUser
       const createWebUser = httpsCallable(productFunctions, 'createWebUser');
-      await createWebUser({
-        winCode,
-        phoneNumberHash,
-        competitionName: competitionName || null,
-        selectedThemes: selectedThemes || null,
-      });
+      await createWebUser({ winCode, phoneNumberHash });
 
-      // 5. Track verify success — always runs
+      // 5. Track success — only fires if all above succeeded
       if (linkDocId && fingerprint) {
         trackVerifySuccess(linkDocId, fingerprint);
       }
@@ -155,11 +141,11 @@ const VerificationPage = () => {
       console.error('Verification error:', err);
       setIsLoading(false);
       if (err.code === 'auth/invalid-verification-code') {
-        setError('Invalid code. Please check and try again.');
+        setError('Invalid code. Please check and try again');
       } else if (err.code === 'auth/code-expired') {
-        setError('Code expired. Please resend and try again.');
+        setError('Code expired. Please resend and try again');
       } else {
-        setError(err.message || 'Verification failed. Please try again.');
+        setError(err.message || 'Verification failed. Please try again');
       }
     }
   };
@@ -186,7 +172,7 @@ const VerificationPage = () => {
       await signInWithPhoneNumber(productAuth, phoneNumber, window.recaptchaVerifier);
     } catch (err) {
       console.error('Resend error:', err);
-      setError('Failed to resend code. Please try again.');
+      setError('Failed to resend code. Please try again');
     }
 
     setIsResending(false);
@@ -241,20 +227,11 @@ const VerificationPage = () => {
             width: '100%',
           }}>
             <p style={{
-              color: 'white', fontSize: 18, fontWeight: 'bold',
-              textAlign: 'center', margin: '0 0 8px',
+              color: 'white', fontSize: 20, fontWeight: 'bold',
+              textAlign: 'center', margin: '0 0 30px',
             }}>
               Enter verification code
             </p>
-
-            {phoneNumber && (
-              <p style={{
-                color: 'rgba(255,255,255,0.6)', fontSize: 14,
-                textAlign: 'center', margin: '0 0 25px',
-              }}>
-                Sent to {phoneNumber}
-              </p>
-            )}
 
             <input
               type="number"
@@ -301,7 +278,7 @@ const VerificationPage = () => {
                     backgroundColor: '#4169E1',
                     border: 'none', borderRadius: 200,
                     color: 'white', fontSize: 20, fontWeight: 'bold',
-                    cursor: 'pointer', marginTop: 20,
+                    cursor: 'pointer', marginTop: 15,
                   }}
                   onMouseDown={e => { e.currentTarget.style.opacity = '0.85'; }}
                   onMouseUp={e => { e.currentTarget.style.opacity = '1'; }}
