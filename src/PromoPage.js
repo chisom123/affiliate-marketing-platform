@@ -286,7 +286,7 @@ const PromoPage = () => {
             letterSpacing: '-0.5px',
             animation: 'fadeUp 0.5s ease 0.1s both',
           }}>
-            Photo competitions<br />with friends
+            Continue Playing<br />with Friends
           </h1>
 
           <div style={{
