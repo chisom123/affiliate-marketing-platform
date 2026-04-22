@@ -36,7 +36,7 @@ const detectCountry = () => {
 // Replace imageUrl with your real assets. Theme + ratings show as overlay on each card.
 const CAROUSEL_PHOTOS = [
   { imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2Fb5e8e167f3bba281d0da3cc6d386f08f-2.jpg?alt=media&token=ca7700c0-9a2e-4c62-b54f-9921dd735d74', theme: 'McDinner', ratings: 18 },
-  { imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2F07d3c9a11e7539d2410ffba6fc1b969a-2.jpg?alt=media&token=c88d655d-6548-48bf-bd9a-0d1067ea2718', theme: 'Night Out', ratings: 22 },
+  { imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/themes%2Ffeb407d9c1580f8a7608e2fb43d3a059-2-2.jpg?alt=media&token=1835be03-231c-45dc-84d6-a5c738386da9', theme: 'Night Out', ratings: 22 },
   { imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/carousel%2F655f4315a879b0dec798fda69813857c-2.jpg?alt=media&token=7cb94bdf-f5ab-4191-9067-f61f399f3991', theme: 'OOTD', ratings: 20 },
   { imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/carousel%2Fed80ca57adbd8b105ebd9ae951e76bd6-2.jpg?alt=media&token=70cf0c6c-10fe-4cb2-ba1a-2ffde7056232', theme: 'Power Nap', ratings: 27 },
   { imageUrl: 'https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/carousel%2F4d0bf56bcaf63c1ec70ac1fadb616930-2-2.jpg?alt=media&token=b9530927-737b-4f1c-a900-a2f7f8e527fd', theme: 'Getting Ready', ratings: 13 },
