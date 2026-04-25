@@ -105,7 +105,7 @@ const VerificationPage = () => {
       clearConfirmationResult();
       setIsLoading(false);
       setStatusMessage('');
-      window.location.href = 'itms-apps://apps.apple.com/app/socialstar-app/id6473705189';
+      window.location.href = 'itms-apps://apps.apple.com/app/socialstar-photo-competitions/id6473705189?ppid=e9023d29-f1f3-41cc-8d27-89e179d3251b';
 
     } catch (err) {
       console.error('Verification error:', err);
