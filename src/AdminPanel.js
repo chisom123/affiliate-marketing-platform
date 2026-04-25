@@ -1039,27 +1039,25 @@ const AdminDashboard = () => {
                 const analytics = linkAnalytics[link.id] || {};
                 const isExpired = link.expiresAt && link.expiresAt < new Date();
 
-                const pageOpens        = link.totalPageOpens || 0;
-                const ratings          = link.totalRatings || 0;
-                const claimPoints      = link.totalDownloadClicks || 0;
-                const infoContinue     = link.totalInfoContinueClicksDownload || 0;
-                const smsSent          = link.totalPromoCtaClicks || 0;
-                const verified         = link.totalVerifySuccesses || 0;
-                const appStore         = link.totalDownloadTaps || 0;
-                const codesClaimed     = link.totalCodesClaimed || 0;
+                const pageOpens    = link.totalPageOpens || 0;
+                const ratings      = link.totalRatings || 0;
+                const claimPoints  = link.totalDownloadClicks || 0;
+                const infoContinue = link.totalInfoContinueClicksDownload || 0;
+                const smsSent      = link.totalPromoCtaClicks || 0;
+                const verified     = link.totalVerifySuccesses || 0;
+                const codesClaimed = link.totalCodesClaimed || 0;
 
                 const pct = (num, denom) =>
                   denom > 0 ? ((num / denom) * 100).toFixed(1) + '%' : '—';
 
                 const breakdownSteps = [
-                  { label: 'Page opens',    value: pageOpens,    conv: '100%' },
+                  { label: 'Page Opens',    value: pageOpens,    conv: '100%' },
                   { label: 'Ratings',       value: ratings,      conv: pct(ratings, pageOpens) },
-                  { label: 'Claim points',  value: claimPoints,  conv: pct(claimPoints, ratings) },
-                  { label: 'Leaderboard', value: infoContinue, conv: pct(infoContinue, claimPoints) },
-                  { label: 'SMS sent',      value: smsSent,      conv: pct(smsSent, infoContinue) },
+                  { label: 'Claim Points',  value: claimPoints,  conv: pct(claimPoints, ratings) },
+                  { label: 'Leaderboard',   value: infoContinue, conv: pct(infoContinue, claimPoints) },
+                  { label: 'SMS Sent',      value: smsSent,      conv: pct(smsSent, infoContinue) },
                   { label: 'Verified',      value: verified,     conv: pct(verified, smsSent) },
-                  { label: 'App store',     value: appStore,     conv: pct(appStore, verified) },
-                  { label: 'Codes claimed', value: codesClaimed, conv: pct(codesClaimed, appStore) },
+                  { label: 'Codes Claimed', value: codesClaimed, conv: pct(codesClaimed, verified) },
                 ];
 
                 return (

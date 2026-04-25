@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { doc, getDoc, collection, query, where, getDocs, setDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions';
 import { db, productFunctions } from './firebase';
 import { getConfirmationResult, clearConfirmationResult } from './authState';
 
@@ -17,25 +17,18 @@ const VerificationPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState('');
+  const [statusMessage, setStatusMessage] = useState('');
   const [linkDocId, setLinkDocId] = useState(null);
   const [fingerprint, setFingerprint] = useState(null);
 
-  // Resolve linkDocId and fingerprint on mount
   useEffect(() => {
     const fp = localStorage.getItem(`info_fingerprint_${linkId}`);
     if (fp) setFingerprint(fp);
-
     (async () => {
       try {
-        const snap = await getDocs(
-          query(collection(db, 'rating_links'), where('linkId', '==', linkId))
-        );
-        if (!snap.empty) {
-          setLinkDocId(snap.docs[0].id);
-        }
-      } catch (e) {
-        console.error('Error resolving link doc ID:', e);
-      }
+        const snap = await getDocs(query(collection(db, 'rating_links'), where('linkId', '==', linkId)));
+        if (!snap.empty) setLinkDocId(snap.docs[0].id);
+      } catch (e) { console.error(e); }
     })();
   }, [linkId]);
 
@@ -53,93 +46,71 @@ const VerificationPage = () => {
     try {
       const fp = localStorage.getItem(`info_fingerprint_${linkId}`);
       if (!fp) return null;
-      const linksSnap = await getDocs(
-        query(collection(db, 'rating_links'), where('linkId', '==', linkId))
-      );
+      const linksSnap = await getDocs(query(collection(db, 'rating_links'), where('linkId', '==', linkId)));
       if (linksSnap.empty) return null;
-      const linkDocId = linksSnap.docs[0].id;
-      const winDoc = await getDoc(doc(db, 'pending_wins', `${linkDocId}_${fp}`));
+      const ldId = linksSnap.docs[0].id;
+      const winDoc = await getDoc(doc(db, 'pending_wins', `${ldId}_${fp}`));
       if (!winDoc.exists()) return null;
       return winDoc.data().code || null;
-    } catch (e) {
-      console.error('Error fetching winCode:', e);
-      return null;
-    }
+    } catch (e) { console.error(e); return null; }
   };
 
-  // ── Track successful verification ─────────────────────────────────────────
   const trackVerifySuccess = async (ldId, fp) => {
     if (!ldId || !fp) return;
     try {
       const trackingDocId = `${ldId}_${fp}`;
       const trackingRef = doc(db, 'unique_verify_successes', trackingDocId);
       const trackingDoc = await getDoc(trackingRef);
-
       if (!trackingDoc.exists()) {
-        await setDoc(trackingRef, {
-          linkId: ldId,
-          fingerprint: fp,
-          verifiedAt: serverTimestamp(),
-          count: 1
-        });
-        await updateDoc(doc(db, 'rating_links', ldId), {
-          totalVerifySuccesses: increment(1),
-          lastVerifySuccessAt: serverTimestamp()
-        });
+        await setDoc(trackingRef, { linkId: ldId, fingerprint: fp, verifiedAt: serverTimestamp(), count: 1 });
+        await updateDoc(doc(db, 'rating_links', ldId), { totalVerifySuccesses: increment(1), lastVerifySuccessAt: serverTimestamp() });
       } else {
-        // Already verified — just update count, don't increment the link counter
-        await updateDoc(trackingRef, {
-          count: increment(1),
-          lastVerifiedAt: serverTimestamp()
-        });
+        await updateDoc(trackingRef, { count: increment(1), lastVerifiedAt: serverTimestamp() });
       }
-    } catch (e) {
-      console.error('Error tracking verify success:', e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const handleVerify = async () => {
     setError('');
-
-    if (!code || code.length < 4) {
-      setError('Please enter the verification code');
-      return;
-    }
-
-    if (!confirmationResult) {
-      setError('Session expired. Please go back and try again');
-      return;
-    }
+    if (!code || code.length < 4) { setError('Please enter the verification code'); return; }
+    if (!confirmationResult) { setError('Session expired. Please go back and try again'); return; }
 
     setIsLoading(true);
 
     try {
-      // 1. Confirm SMS code
+      setStatusMessage('Verifying...');
       const userCredential = await confirmationResult.confirm(code);
       const userId = userCredential.user.uid;
 
-      // 2. Fetch winCode
+      const phoneNumberHash = await hashPhoneNumber(phoneNumber);
       const winCode = await fetchWinCode();
 
-      // 3. Hash phone number
-      const phoneNumberHash = await hashPhoneNumber(phoneNumber);
+      // Fetch affiliate data from marketing project
+      let unseenPhotoUrl = null;
+      let affiliateFirstName = null;
+      try {
+        const affiliateDoc = await getDoc(doc(db, 'affiliates', affiliateId));
+        if (affiliateDoc.exists()) {
+          unseenPhotoUrl = affiliateDoc.data()?.unseenPhotoUrl || null;
+          affiliateFirstName = affiliateDoc.data()?.firstName || null;
+        }
+      } catch (e) { console.error('Error fetching affiliate data:', e); }
 
-      // 4. Call createWebUser
-      const createWebUser = httpsCallable(productFunctions, 'createWebUser');
-      await createWebUser({ winCode, phoneNumberHash });
+      setStatusMessage('Saving your profile...');
+      const saveUserProfile = httpsCallable(productFunctions, 'saveUserProfile');
+      await saveUserProfile({ winCode, phoneNumberHash, affiliateId, unseenPhotoUrl, affiliateFirstName });
 
-      // 5. Track success — only fires if all above succeeded
-      if (linkDocId && fingerprint) {
-        trackVerifySuccess(linkDocId, fingerprint);
-      }
+      if (linkDocId && fingerprint) trackVerifySuccess(linkDocId, fingerprint);
 
       clearConfirmationResult();
       setIsLoading(false);
-      navigate(`/success/${affiliateId}/${linkId}`);
+      setStatusMessage('');
+      window.location.href = 'itms-apps://apps.apple.com/app/socialstar-app/id6473705189';
 
     } catch (err) {
       console.error('Verification error:', err);
       setIsLoading(false);
+      setStatusMessage('');
       if (err.code === 'auth/invalid-verification-code') {
         setError('Invalid code. Please check and try again');
       } else if (err.code === 'auth/code-expired') {
@@ -153,39 +124,21 @@ const VerificationPage = () => {
   const handleResend = async () => {
     setError('');
     setIsResending(true);
-
     try {
       const { RecaptchaVerifier, signInWithPhoneNumber } = await import('firebase/auth');
       const { productAuth } = await import('./firebase');
-
-      if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear();
-        window.recaptchaVerifier = null;
-      }
-
-      window.recaptchaVerifier = new RecaptchaVerifier(
-        productAuth,
-        'recaptcha-container',
-        { size: 'invisible' }
-      );
-
+      if (window.recaptchaVerifier) { window.recaptchaVerifier.clear(); window.recaptchaVerifier = null; }
+      window.recaptchaVerifier = new RecaptchaVerifier(productAuth, 'recaptcha-container', { size: 'invisible' });
       await signInWithPhoneNumber(productAuth, phoneNumber, window.recaptchaVerifier);
     } catch (err) {
       console.error('Resend error:', err);
       setError('Failed to resend code. Please try again');
     }
-
     setIsResending(false);
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#10183C',
-      display: 'flex',
-      flexDirection: 'column',
-      padding: '20px',
-    }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#10183C', display: 'flex', flexDirection: 'column', padding: '20px' }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
@@ -198,15 +151,7 @@ const VerificationPage = () => {
 
       <div id="recaptcha-container" />
 
-      <button
-        onClick={() => navigate(-1)}
-        style={{
-          background: 'none', border: 'none',
-          color: 'white', cursor: 'pointer',
-          display: 'flex', alignItems: 'center',
-          padding: 0, marginBottom: 0,
-        }}
-      >
+      <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}>
         <ArrowLeft size={27} color="white" strokeWidth={2} />
       </button>
 
@@ -227,7 +172,7 @@ const VerificationPage = () => {
             width: '100%',
           }}>
             <p style={{
-              color: 'white', fontSize: 20, fontWeight: 'bold',
+              color: 'white', fontSize: 18, fontWeight: 'bold',
               textAlign: 'center', margin: '0 0 30px',
             }}>
               Enter verification code
@@ -240,46 +185,29 @@ const VerificationPage = () => {
               value={code}
               onChange={e => setCode(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleVerify(); }}
-              style={{
-                width: '100%', height: 60,
-                backgroundColor: '#3B4374',
-                border: 'none', borderRadius: 10,
-                padding: '0 16px',
-                color: 'white', fontSize: 16, fontWeight: 'bold',
-              }}
+              style={{ width: '100%', height: 60, backgroundColor: '#3B4374', border: 'none', borderRadius: 10, padding: '0 16px', color: 'white', fontSize: 16, fontWeight: 'bold' }}
             />
 
             {error && (
-              <p style={{
-                color: '#FF0000', fontSize: 16, fontWeight: 'bold',
-                textAlign: 'center', margin: '20px 0 0',
-                lineHeight: 1.5,
-              }}>
+              <p style={{ color: '#FF6B6B', fontSize: 16, fontWeight: 'bold', textAlign: 'center', margin: '20px 0 0', lineHeight: 1.5 }}>
                 {error}
               </p>
             )}
 
             {isLoading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0' }}>
-                <div style={{
-                  width: 28, height: 28,
-                  border: '3px solid rgba(255,255,255,0.2)',
-                  borderTop: '3px solid white',
-                  borderRadius: '50%',
-                  animation: 'spin 0.8s linear infinite',
-                }} />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', gap: 12 }}>
+                <div style={{ width: 28, height: 28, border: '3px solid rgba(255,255,255,0.2)', borderTop: '3px solid white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                {statusMessage && (
+                  <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: '600', margin: 0 }}>
+                    {statusMessage}
+                  </p>
+                )}
               </div>
             ) : (
               <>
                 <button
                   onClick={handleVerify}
-                  style={{
-                    width: '100%', height: 58,
-                    backgroundColor: '#4169E1',
-                    border: 'none', borderRadius: 200,
-                    color: 'white', fontSize: 20, fontWeight: 'bold',
-                    cursor: 'pointer', marginTop: 15,
-                  }}
+                  style={{ width: '100%', height: 58, backgroundColor: '#4169E1', border: 'none', borderRadius: 200, color: 'white', fontSize: 20, fontWeight: 'bold', cursor: 'pointer', marginTop: 15 }}
                   onMouseDown={e => { e.currentTarget.style.opacity = '0.85'; }}
                   onMouseUp={e => { e.currentTarget.style.opacity = '1'; }}
                   onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
@@ -292,29 +220,17 @@ const VerificationPage = () => {
                 <button
                   onClick={handleResend}
                   disabled={isResending}
-                  style={{
-                    width: '100%', background: 'none', border: 'none',
-                    cursor: isResending ? 'not-allowed' : 'pointer',
-                    marginTop: 25, marginBottom: 10,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                  }}
+                  style={{ width: '100%', background: 'none', border: 'none', cursor: isResending ? 'not-allowed' : 'pointer', marginTop: 25, marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
                 >
-                  <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16 }}>
-                    Didn't receive a code?
-                  </span>
-                  <span style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-                    {isResending ? 'Sending...' : 'Resend Code'}
-                  </span>
+                  <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16 }}>Didn't receive a code?</span>
+                  <span style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>{isResending ? 'Sending...' : 'Resend Code'}</span>
                 </button>
               </>
             )}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 30 }}>
-            <img
-              src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a"
-              alt="Star" style={{ width: 22, height: 22 }}
-            />
+            <img src="https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/star-filled-fiveointed-shape-3.png?alt=media&token=a90a8c97-594c-49f0-82f0-a00519fbbd3a" alt="Star" style={{ width: 22, height: 22 }} />
             <span style={{ fontSize: 18, color: 'white', fontWeight: 'bold' }}>SocialStar</span>
           </div>
         </div>

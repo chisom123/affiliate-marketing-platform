@@ -10,7 +10,6 @@ import AdminPanel from './AdminPanel';
 import InfoPage from './InfoPage';
 import PromoPage from './PromoPage';
 import VerificationPage from './VerificationPage';
-import SuccessPage from './SuccessPage';
 import RecruitSignup from './RecruitSignup';
 
 function App() {
@@ -34,9 +33,6 @@ function App() {
 
         {/* Verification Page - SMS code verification */}
         <Route path="/verify/:affiliateId/:linkId" element={<VerificationPage />} />
-
-        {/* Success Page - After phone verification */}
-        <Route path="/success/:affiliateId/:linkId" element={<SuccessPage />} />
 
         {/* Admin Panel - Business management */}
         <Route path="/admin" element={<AdminPanel />} />
