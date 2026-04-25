@@ -172,7 +172,7 @@ const VerificationPage = () => {
             width: '100%',
           }}>
             <p style={{
-              color: 'white', fontSize: 18, fontWeight: 'bold',
+              color: 'white', fontSize: 19, fontWeight: 'bold',
               textAlign: 'center', margin: '0 0 30px',
             }}>
               Enter verification code
