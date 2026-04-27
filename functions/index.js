@@ -601,7 +601,7 @@ exports.submitRating = onCall({ minInstances: 1 }, async (request) => {
       });
     
       // ============================================================
-      // NEW RECRUIT SYSTEM: $10 one-time payout at 10 LIFETIME ratings
+      // NEW RECRUIT SYSTEM: $5 one-time payout at 10 LIFETIME ratings
       // ============================================================
       if (recruiterId) {
         const recruiterSubRef = db.collection('affiliates').doc(recruiterId)
@@ -649,13 +649,13 @@ exports.submitRating = onCall({ minInstances: 1 }, async (request) => {
           });
         }
     
-        // PAY RECRUITER $10 ONE TIME when lifetime threshold is crossed
+        // PAY RECRUITER $5 ONE TIME when lifetime threshold is crossed
         if (crossesLifetimeThreshold) {
           // Pay the recruiter
           transaction.update(db.collection('affiliates').doc(recruiterId), {
-            balance: admin.firestore.FieldValue.increment(10.00),
-            totalEarnings: admin.firestore.FieldValue.increment(10.00),
-            recruiterEarnings: admin.firestore.FieldValue.increment(10.00),
+            balance: admin.firestore.FieldValue.increment(5.00),
+            totalEarnings: admin.firestore.FieldValue.increment(5.00),
+            recruiterEarnings: admin.firestore.FieldValue.increment(5.00),
             totalRecruits: admin.firestore.FieldValue.increment(1) // Count as a "completed" recruit
           });
           
@@ -663,13 +663,13 @@ exports.submitRating = onCall({ minInstances: 1 }, async (request) => {
           transaction.update(recruiterSubRef, {
             hasEarnedRecruitmentBonus: true,
             bonusPaidAt: admin.firestore.FieldValue.serverTimestamp(),
-            bonusAmount: 10.00
+            bonusAmount: 5.00
           });
           
           logger.info('Recruitment bonus paid!', { 
             recruiterId, 
             recruitId: affiliateId, 
-            amount: 10.00,
+            amount: 5.00,
             lifetimeRatings: currentLifetimeRatings
           });
         }
