@@ -1,70 +1,84 @@
-# Getting Started with Create React App
+# Affiliate Marketing Platform
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Full-stack affiliate marketing platform with a complete conversion funnel—partners share links, viewers rate stories, enter phone numbers to unlock bonus content, and sign up as recruits. Includes admin dashboard for performance tracking and payout management using Wise/PayPal.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 📱 Overview
 
-### `npm start`
+This platform powers the affiliate program for the photo competition app. Affiliates create links, share them on Instagram Stories, and earn money when their friends rate the story. Viewers who rate the story are given points they can redeem in the main app's global leaderboard.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 🛠️ Tech Stack
 
-### `npm test`
+- **React** – Frontend
+- **Firebase** – Auth, Firestore, Cloud Functions, Storage
+- **Wise / PayPal** – Manual payout processing via admin dashboard
+- **PostHog** – Analytics
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## ✨ Key Features
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### User-Facing Pages
+- **Rate page** – Rate the affiliate's story 1-5 stars
+- **Phone entry page** – Enter phone number to view a bonus photo (conversion event)
+- **Recruit signup page** – Sign up as a new affiliate through an existing affiliate's link
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Admin Dashboard
+- Track affiliate performance and conversion rates
+- Generate Wise CSV exports for batch payouts
+- Manage payouts via Wise/PayPal
+- View funnel analytics
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Backend (Cloud Functions)
+- **`submitRating`** – Processes ratings, awards points, tracks earnings
+- **`processGlobalPayouts`** – Identifies affiliates with $5+ earnings, generates Wise CSV
+- **`claimWinCode`** – Bridges web ratings to the iOS app via claim codes
+- **`downloadWiseCSV`** – Exports CSV for Wise batch uploads
+- **`completePayouts`** – Marks payouts as completed and notifies affiliates
 
-### `npm run eject`
+---
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 🏗️ Architecture
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Built on a **Firebase-first** backend:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+- **Firestore** – Stores affiliate data, ratings, link stats, and tracking events
+- **Cloud Functions** – Serverless logic for payout generation, CSV export, and win code claims
+- **Firebase Auth** – Authentication for admin dashboard
+- **PostHog** – Product analytics for tracking funnel performance
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+---
 
-## Learn More
+## 📸 Screenshots
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+| Admin Dashboard | Rate Page |
+|-----------------|-----------|
+| <img width="300" alt="Admin Dashboard" src="https://github.com/user-attachments/assets/99a1f54e-f173-44f3-88a1-031efc942e17" /> | <img width="300" alt="Rate Page" src="https://github.com/user-attachments/assets/020a159e-7d47-48ee-8bec-b09cd6b1c40a" /> |
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
 
-### Code Splitting
+## 🔗 Related Repos
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+- [Photo Competition iOS App](https://github.com/chisom123/photo-competition-ios) – Main app where users compete and earn points
+- [Affiliate Partner App (iOS)](https://github.com/chisom123/affiliate-partner-ios) – iOS app for affiliates to manage campaigns, track earnings, and view their dashboard
+- [Admin Dashboard](https://github.com/chisom123/competition-admin-dashboard) – React admin dashboard for managing competitions, users, and payouts (separate from this platform)
 
-### Analyzing the Bundle Size
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## ⚙️ Setup
 
-### Making a Progressive Web App
+This project uses Firebase. To run it locally:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+1. Clone the repo  
+2. Create a Firebase project and enable Auth, Firestore, and Cloud Functions  
+3. Add your Firebase config to the environment variables  
+4. Run `npm install` and `npm start`
 
-### Advanced Configuration
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## 📈 Evolution
 
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Originally built as a simple affiliate dashboard, this platform evolved into a complete marketing funnel—handling everything from link creation to conversion tracking, recruit signups, and batch payout management via Wise CSV exports.
