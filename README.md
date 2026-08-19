@@ -1,6 +1,6 @@
 # Affiliate Marketing Platform
 
-Full-stack affiliate marketing platform with a complete conversion funnel—partners share links, viewers rate stories, enter phone numbers to unlock bonus content, and sign up as recruits. Includes admin dashboard for performance tracking and payout management using Wise/PayPal.
+Affiliate marketing platform with a complete conversion funnel. Partners share links, viewers rate stories, enter phone numbers to unlock bonus content, and sign up as recruits. Includes admin dashboard for performance tracking and payout management using Wise/PayPal.
 
 ---
 
